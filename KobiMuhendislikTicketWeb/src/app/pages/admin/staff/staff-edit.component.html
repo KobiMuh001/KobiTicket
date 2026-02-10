@@ -1,0 +1,221 @@
+<div class="staff-edit-page">
+  <!-- Breadcrumb -->
+  <nav class="breadcrumb">
+    <a routerLink="/admin/staff">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+      Personel Listesi
+    </a>
+    <span class="separator">/</span>
+    <span class="current">Personel Düzenle</span>
+  </nav>
+
+  <!-- Loading State -->
+  @if (isLoading) {
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p>Personel bilgileri yükleniyor...</p>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error && !isLoading) {
+    <div class="alert alert-error">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <span>{{ error }}</span>
+      <button class="alert-close" (click)="dismissError()">×</button>
+    </div>
+  }
+
+  <!-- Success Message -->
+  @if (successMessage) {
+    <div class="alert alert-success">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+      </svg>
+      <span>{{ successMessage }}</span>
+      <button class="alert-close" (click)="dismissSuccess()">×</button>
+    </div>
+  }
+
+  @if (staff && !isLoading) {
+    <div class="edit-layout">
+      <!-- Staff Info Card -->
+      <div class="info-card">
+        <div class="card-header">
+          <div class="staff-avatar large">{{ getInitials(staff.fullName) }}</div>
+          <div class="staff-info">
+            <h2>{{ staff.fullName }}</h2>
+            <p>{{ staff.department || 'Departman belirtilmemiş' }}</p>
+            <span class="status-badge" [class.status-active]="staff.isActive" [class.status-inactive]="!staff.isActive">
+              {{ staff.isActive ? 'Aktif' : 'Pasif' }}
+            </span>
+          </div>
+        </div>
+
+        @if (workload) {
+          <div class="workload-section">
+            <h3>İş Yükü Durumu</h3>
+            
+            <div class="workload-stats">
+              <div class="stat-item">
+                <span class="stat-value">{{ workload.assignedTickets }}</span>
+                <span class="stat-label">Toplam Atanan</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-value">{{ workload.openTickets }}</span>
+                <span class="stat-label">Açık Talepler</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-value">{{ workload.processingTickets }}</span>
+                <span class="stat-label">İşleniyor</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-value">{{ workload.resolvedToday }}</span>
+                <span class="stat-label">Bugün Çözülen</span>
+              </div>
+            </div>
+
+            <div class="capacity-section">
+              <div class="capacity-header">
+                <span>Kapasite Kullanımı</span>
+                <span>{{ workload.openTickets }} / {{ formData.maxConcurrentTickets }}</span>
+              </div>
+              <div class="capacity-bar large">
+                <div 
+                  class="capacity-fill" 
+                  [class]="getCapacityClass()"
+                  [style.width.%]="getCapacityPercentage()">
+                </div>
+              </div>
+              <div class="capacity-status">
+                @if (workload.isAvailable) {
+                  <span class="availability-badge available">Müsait</span>
+                } @else {
+                  <span class="availability-badge busy">Meşgul</span>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Edit Form -->
+      <div class="form-card">
+        <div class="card-header">
+          <h3>Personel Bilgileri</h3>
+        </div>
+
+        <form (ngSubmit)="saveStaff()">
+          <div class="form-body">
+            <div class="form-group">
+              <label for="fullName">Ad Soyad *</label>
+              <input 
+                type="text" 
+                id="fullName" 
+                class="form-input"
+                [(ngModel)]="formData.fullName"
+                name="fullName"
+                placeholder="Personel adı soyadı"
+                required>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="email">E-posta *</label>
+                <input 
+                  type="email" 
+                  id="email" 
+                  class="form-input"
+                  [(ngModel)]="formData.email"
+                  name="email"
+                  placeholder="ornek@sirket.com"
+                  required>
+              </div>
+
+              <div class="form-group">
+                <label for="phone">Telefon</label>
+                <input 
+                  type="text" 
+                  id="phone" 
+                  class="form-input"
+                  [value]="formData.phone"
+                  (input)="formatPhoneNumber($event)"
+                  name="phone"
+                  placeholder="(5XX) XXX XXXX">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="department">Departman</label>
+                <select 
+                  id="department" 
+                  class="form-select"
+                  [(ngModel)]="formData.department"
+                  name="department">
+                  <option value="">Seçiniz</option>
+                  @for (dept of departmentOptions; track dept) {
+                    <option [value]="dept">{{ dept }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="maxTickets">Maks. Eşzamanlı Talep *</label>
+                <input 
+                  type="number" 
+                  id="maxTickets" 
+                  class="form-input"
+                  [(ngModel)]="formData.maxConcurrentTickets"
+                  name="maxTickets"
+                  min="1"
+                  max="50"
+                  required>
+                <span class="form-hint">Aynı anda atanabilecek maksimum talep sayısı</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input 
+                  type="checkbox" 
+                  [(ngModel)]="formData.isActive"
+                  name="isActive">
+                <span class="checkmark"></span>
+                <span class="label-text">Personel Aktif</span>
+              </label>
+              <span class="form-hint">Pasif personellere yeni talep atanamaz</span>
+            </div>
+          </div>
+
+          <div class="form-footer">
+            <a routerLink="/admin/staff" class="btn btn-secondary">İptal</a>
+            <button 
+              type="submit" 
+              class="btn btn-primary"
+              [disabled]="isSaving || !isFormValid()">
+              @if (isSaving) {
+                <span class="spinner-small"></span>
+                Kaydediliyor...
+              } @else {
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                  <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                  <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                Kaydet
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

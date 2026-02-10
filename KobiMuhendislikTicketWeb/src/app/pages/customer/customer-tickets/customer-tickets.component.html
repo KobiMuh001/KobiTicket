@@ -1,0 +1,145 @@
+<div class="customer-tickets">
+  <div class="page-header">
+    <div class="header-left">
+      <h1>Destek Taleplerim</h1>
+      <p>Tüm destek taleplerinizi buradan takip edebilirsiniz.</p>
+    </div>
+    <a routerLink="/customer/tickets/new" class="btn-primary">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="16"/>
+        <line x1="8" y1="12" x2="16" y2="12"/>
+      </svg>
+      Yeni Talep
+    </a>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-card">
+    <div class="filters-row">
+      <div class="search-box">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input 
+          type="text" 
+          placeholder="Talep ara..."
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="applyFilters()">
+      </div>
+
+      <div class="filter-select">
+        <select [(ngModel)]="statusFilter" (ngModelChange)="applyFilters()">
+          <option value="">Tüm Durumlar</option>
+          <option value="Açık">Açık</option>
+          <option value="İşlemde">İşlemde</option>
+          <option value="Çözüldü">Çözüldü</option>
+          <option value="Kapatıldı">Kapatıldı</option>
+        </select>
+      </div>
+
+      <div class="filter-select">
+        <select [(ngModel)]="priorityFilter" (ngModelChange)="applyFilters()">
+          <option value="">Tüm Öncelikler</option>
+          <option value="Düşük">Düşük</option>
+          <option value="Orta">Orta</option>
+          <option value="Yüksek">Yüksek</option>
+          <option value="Kritik">Kritik</option>
+        </select>
+      </div>
+
+      @if (searchQuery || statusFilter || priorityFilter) {
+        <button class="btn-clear" (click)="clearFilters()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+          Temizle
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (isLoading) {
+    <div class="loading-container">
+      <div class="loading-spinner"></div>
+      <p>Yükleniyor...</p>
+    </div>
+  } @else if (filteredTickets.length === 0) {
+    <div class="empty-state">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+        <polyline points="14 2 14 8 20 8"/>
+      </svg>
+      @if (tickets.length === 0) {
+        <h3>Henüz Talebiniz Yok</h3>
+        <p>Henüz bir destek talebi oluşturmamışsınız.</p>
+        <a routerLink="/customer/tickets/new" class="btn-primary">İlk Talebinizi Oluşturun</a>
+      } @else {
+        <h3>Sonuç Bulunamadı</h3>
+        <p>Arama kriterlerinize uygun talep bulunamadı.</p>
+        <button class="btn-secondary" (click)="clearFilters()">Filtreleri Temizle</button>
+      }
+    </div>
+  } @else {
+    <div class="tickets-list">
+      @for (ticket of filteredTickets; track ticket.id) {
+        <div class="ticket-card">
+          <div class="ticket-header">
+            <div class="ticket-info">
+              <h3 class="ticket-title">{{ ticket.title }}</h3>
+              <div class="ticket-meta">
+                <span class="ticket-id">#{{ ticket.id }}</span>
+                @if (ticket.assetName) {
+                  <span class="ticket-asset">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                    </svg>
+                    {{ ticket.assetName }}
+                  </span>
+                }
+              </div>
+            </div>
+            <div class="ticket-badges">
+              <span class="badge" [ngClass]="getStatusClass(ticket.status)">{{ ticket.status }}</span>
+              <span class="badge" [ngClass]="getPriorityClass(ticket.priority)">{{ ticket.priority }}</span>
+            </div>
+          </div>
+
+          <p class="ticket-description">{{ ticket.description }}</p>
+
+          <div class="ticket-footer">
+            <div class="ticket-dates">
+              <span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                Oluşturulma: {{ ticket.createdAt | date:'dd.MM.yyyy HH:mm' }}
+              </span>
+              @if (ticket.updatedAt) {
+                <span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  Son Güncelleme: {{ ticket.updatedAt | date:'dd.MM.yyyy HH:mm' }}
+                </span>
+              }
+            </div>
+            <a [routerLink]="['/customer/tickets', ticket.id]" class="btn-detail">
+              Detay
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

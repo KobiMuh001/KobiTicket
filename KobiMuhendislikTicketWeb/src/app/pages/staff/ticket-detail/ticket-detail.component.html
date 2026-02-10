@@ -1,0 +1,202 @@
+<div class="ticket-detail-container">
+  <!-- Back button -->
+  <div class="back-nav">
+    <button class="back-link" (click)="location.back()">
+      ← Geri Dön
+    </button>
+  </div>
+
+  <!-- Loading state -->
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Ticket yükleniyor...</p>
+  </div>
+
+  <!-- Error message -->
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+    <button (click)="error = null" class="close-btn">×</button>
+  </div>
+
+  <!-- Success message -->
+  <div *ngIf="successMessage" class="success-message">
+    {{ successMessage }}
+    <button (click)="successMessage = null" class="close-btn">×</button>
+  </div>
+
+  <!-- Ticket content -->
+  <div *ngIf="!isLoading && ticket" class="ticket-content">
+    <!-- Header -->
+    <div class="ticket-header">
+      <div class="header-left">
+        <h1>{{ ticket.title }}</h1>
+        <div class="ticket-meta">
+          <span class="ticket-id">#{{ ticket.id }}</span>
+          <span class="badge" [ngClass]="getStatusClass(ticket.status)">{{ getStatusText(ticket.status) }}</span>
+          <span class="badge" [ngClass]="getPriorityClass(ticket.priority)">{{ getPriorityText(ticket.priority) }}</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <!-- Not assigned - Show claim button -->
+        <ng-container *ngIf="!ticket.assignedPerson">
+          <button (click)="claimTicket()" class="btn btn-primary">
+            Ticketı Üstlen
+          </button>
+        </ng-container>
+        
+        <!-- My ticket - Show action buttons -->
+        <ng-container *ngIf="isMyTicket && ticket.status !== 4 && ticket.status !== 5">
+          <button *ngIf="ticket.status === 1" (click)="updateStatus(2)" class="btn btn-primary">
+            İşleme Al
+          </button>
+          <button *ngIf="ticket.status === 2" (click)="showResolveModal = true" class="btn btn-success">
+            Çözüldü Olarak İşaretle
+          </button>
+          <button (click)="releaseTicket()" class="btn btn-secondary">
+            Ticketı Bırak
+          </button>
+        </ng-container>
+        
+        <!-- Assigned to someone else -->
+        <span *ngIf="ticket.assignedPerson && !isMyTicket" class="assigned-info">
+          Atanan: {{ ticket.assignedPerson }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Main grid -->
+    <div class="content-grid">
+      <!-- Left column - Details -->
+      <div class="detail-section">
+        <div class="detail-card">
+          <h3>Ticket Detayları</h3>
+          <div class="detail-row">
+            <label>Açıklama:</label>
+            <p class="description">{{ ticket.description }}</p>
+          </div>
+          <div class="detail-row">
+            <label>Oluşturan:</label>
+            <span>{{ ticket.creatorName || 'Bilinmiyor' }}</span>
+          </div>
+          <div class="detail-row">
+            <label>Oluşturma Tarihi:</label>
+            <span>{{ formatDate(ticket.createdDate) }}</span>
+          </div>
+          <div class="detail-row" *ngIf="ticket.resolvedAt">
+            <label>Çözülme Tarihi:</label>
+            <span>{{ formatDate(ticket.resolvedDate) }}</span>
+          </div>
+        </div>
+
+        <div class="detail-card" *ngIf="ticket.asset">
+          <h3>Varlık Bilgileri</h3>
+          <div class="detail-row">
+            <label>Ürün Adı:</label>
+            <span>{{ ticket.asset.productName }}</span>
+          </div>
+          <div class="detail-row">
+            <label>Seri No:</label>
+            <span>{{ ticket.asset.serialNumber }}</span>
+          </div>
+          <div class="detail-row">
+            <label>Durum:</label>
+            <span>{{ ticket.asset.status }}</span>
+          </div>
+        </div>
+
+        <div class="detail-card" *ngIf="ticket.solutionNote">
+          <h3>Çözüm Notu</h3>
+          <p class="solution-note">{{ ticket.solutionNote }}</p>
+        </div>
+      </div>
+
+      <!-- Right column - Tabs -->
+      <div class="activity-section">
+        <div class="tabs">
+          <button 
+            class="tab" 
+            [class.active]="activeTab === 'comments'"
+            (click)="activeTab = 'comments'">
+            Yorumlar ({{ comments.length }})
+          </button>
+          <button 
+            class="tab" 
+            [class.active]="activeTab === 'history'"
+            (click)="activeTab = 'history'">
+            Geçmiş ({{ history.length }})
+          </button>
+        </div>
+
+        <!-- Comments Tab -->
+        <div *ngIf="activeTab === 'comments'" class="tab-content">
+          <!-- Add comment -->
+          <div class="add-comment" *ngIf="ticket.status !== 4 && ticket.status !== 5">
+            <textarea 
+              [(ngModel)]="newComment" 
+              placeholder="Mesajınızı yazın..."
+              rows="3"></textarea>
+            <button (click)="addComment()" class="btn btn-primary" [disabled]="!newComment.trim()">
+              Mesaj Gönder
+            </button>
+          </div>
+
+          <!-- Comments list -->
+          <div class="comments-list" #commentsContainer>
+            <div *ngIf="comments.length === 0" class="empty-state">
+              Henüz yorum yok
+            </div>
+            <div *ngFor="let comment of comments" class="comment-item">
+              <div class="comment-header">
+                <span class="comment-author">{{ comment.authorName }}</span>
+                <span class="comment-date">{{ formatDate(comment.createdDate) }}</span>
+              </div>
+              <p class="comment-content">{{ comment.message }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- History Tab -->
+        <div *ngIf="activeTab === 'history'" class="tab-content">
+          <div class="history-list">
+            <div *ngIf="history.length === 0" class="empty-state">
+              Henüz geçmiş yok
+            </div>
+            <div *ngFor="let item of history" class="history-item">
+              <div class="history-icon">
+                <span *ngIf="item.action === 'StatusChanged'">🔄</span>
+                <span *ngIf="item.action === 'Assigned'">👤</span>
+                <span *ngIf="item.action === 'Created'">➕</span>
+                <span *ngIf="item.action === 'Resolved'">✅</span>
+              </div>
+              <div class="history-content">
+                <p>{{ item.description }}</p>
+                <span class="history-date">{{ formatDate(item.createdDate) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Resolve Modal -->
+<div *ngIf="showResolveModal" class="modal-overlay" (click)="showResolveModal = false">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Ticketı Çöz</h3>
+      <button (click)="showResolveModal = false" class="close-btn">×</button>
+    </div>
+    <div class="modal-body">
+      <label>Çözüm Notu *</label>
+      <textarea 
+        [(ngModel)]="solutionNote" 
+        placeholder="Yapılan işlem ve çözümü açıklayın..."
+        rows="5"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button (click)="showResolveModal = false" class="btn btn-secondary">İptal</button>
+      <button (click)="resolveTicket()" class="btn btn-success">Çöz ve Kapat</button>
+    </div>
+  </div>
+</div>

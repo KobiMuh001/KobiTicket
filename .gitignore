@@ -1,0 +1,29 @@
+# Angular
+node_modules/
+dist/
+.angular/
+*.log
+
+# .NET / Visual Studio
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.sln.docstates
+.vscode/
+Debug/
+Release/
+
+# npm
+package-lock.json
+yarn.lock
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+*.pem

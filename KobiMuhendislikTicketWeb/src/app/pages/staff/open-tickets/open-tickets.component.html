@@ -1,0 +1,111 @@
+<div class="open-tickets-page">
+  <div class="page-header">
+    <div class="header-left">
+      <h1>Açık Ticketlar</h1>
+      <p class="subtitle">Atanmamış ve bekleyen ticketlar</p>
+    </div>
+  </div>
+
+  @if (error) {
+    <div class="alert alert-error">
+      {{ error }}
+      <button class="close-btn" (click)="error = null">×</button>
+    </div>
+  }
+
+  @if (successMessage) {
+    <div class="alert alert-success">
+      {{ successMessage }}
+    </div>
+  }
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="filter-group">
+      <label>Öncelik:</label>
+      <select (change)="onPriorityFilterChange($event)" [value]="selectedPriority">
+        <option value="all">Tümü</option>
+        <option value="4">Kritik</option>
+        <option value="3">Yüksek</option>
+        <option value="2">Normal</option>
+        <option value="1">Düşük</option>
+      </select>
+    </div>
+    <div class="results-count">
+      {{ filteredTickets.length }} açık ticket
+    </div>
+    <button class="refresh-btn" (click)="loadTickets()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="23 4 23 10 17 10"/>
+        <polyline points="1 20 1 14 7 14"/>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+      </svg>
+      Yenile
+    </button>
+  </div>
+
+  <!-- Tickets Grid -->
+  <div class="tickets-container">
+    @if (isLoading) {
+      <div class="loading">Yükleniyor...</div>
+    } @else if (filteredTickets.length === 0) {
+      <div class="empty-state">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <p>Tüm ticketlar atanmış! 🎉</p>
+      </div>
+    } @else {
+      <div class="tickets-grid">
+        @for (ticket of filteredTickets; track ticket.id) {
+          <div class="ticket-card" [class]="'priority-border-' + getPriorityClass(ticket.priority)">
+            <div class="ticket-header">
+              <span class="priority-badge" [class]="getPriorityClass(ticket.priority)">
+                {{ getPriorityText(ticket.priority) }}
+              </span>
+              <span class="time-ago">{{ getTimeAgo(ticket.createdDate) }}</span>
+            </div>
+            
+            <h3 class="ticket-title">{{ ticket.title }}</h3>
+            <p class="ticket-description">{{ ticket.description }}</p>
+            
+            <div class="ticket-meta">
+              <div class="meta-item">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                <span>{{ ticket.companyName || 'Bilinmiyor' }}</span>
+              </div>
+              @if (ticket.assetName) {
+                <div class="meta-item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                  </svg>
+                  <span>{{ ticket.assetName }}</span>
+                </div>
+              }
+            </div>
+            
+            <div class="ticket-footer">
+              <span class="created-date">{{ formatDate(ticket.createdDate) }}</span>
+              <div class="footer-actions">
+                <a class="detail-btn" [routerLink]="['/staff/tickets', ticket.id]">
+                  Detay
+                </a>
+                <button class="claim-btn" (click)="claimTicket(ticket.id)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14M5 12h14"/>
+                  </svg>
+                  Üstlen
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

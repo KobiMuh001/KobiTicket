@@ -1,0 +1,147 @@
+<div class="my-tickets-page">
+  <div class="page-header">
+    <div class="header-left">
+      <h1>Ticketlarım</h1>
+      <p class="subtitle">Size atanmış tüm ticketlar</p>
+    </div>
+  </div>
+
+  @if (error) {
+    <div class="alert alert-error">
+      {{ error }}
+      <button class="close-btn" (click)="error = null">×</button>
+    </div>
+  }
+
+  @if (successMessage) {
+    <div class="alert alert-success">
+      {{ successMessage }}
+    </div>
+  }
+
+  <!-- Notifications Section -->
+  @if (notifications.length > 0) {
+    <div class="notifications-section">
+      <div class="notifications-header">
+        <h3>🔔 Bildirimler</h3>
+        <span class="unread-badge">{{ unreadNotificationsCount }}</span>
+      </div>
+      <div class="notifications-list">
+        @for (notification of notifications.slice(0, 5); track notification.id) {
+          <div [class.notification-item]="true" [class.unread]="!notification.isRead">
+            <div class="notification-content">
+              <p class="notification-title">{{ notification.title }}</p>
+              <p class="notification-message">{{ notification.message }}</p>
+              <span class="notification-time">{{ formatDate(notification.createdDate) }}</span>
+            </div>
+            <div class="notification-actions">
+              @if (!notification.isRead) {
+                <button class="mark-read-btn" (click)="markNotificationAsRead(notification.id)" title="Okundu olarak işaretle">✓</button>
+              }
+              <button class="delete-btn" (click)="deleteNotification(notification.id)" title="Sil">×</button>
+            </div>
+          </div>
+        }
+        @if (notifications.length > 5) {
+          <div class="see-more">
+            <a href="#more-notifications">Tüm bildirimleri görmek için tıklayın</a>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="filter-group">
+      <label>Durum:</label>
+      <select (change)="onStatusFilterChange($event)" [value]="selectedStatus">
+        <option value="all">Tümü</option>
+        <option value="1">Açık</option>
+        <option value="2">İşlemde</option>
+        <option value="3">Müşteri Bekliyor</option>
+        <option value="4">Çözüldü</option>
+        <option value="5">Kapalı</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Öncelik:</label>
+      <select (change)="onPriorityFilterChange($event)" [value]="selectedPriority">
+        <option value="all">Tümü</option>
+        <option value="1">Düşük</option>
+        <option value="2">Normal</option>
+        <option value="3">Yüksek</option>
+        <option value="4">Kritik</option>
+      </select>
+    </div>
+    <div class="results-count">
+      {{ filteredTickets.length }} ticket bulundu
+    </div>
+  </div>
+
+  <!-- Tickets Table -->
+  <div class="tickets-card">
+    @if (isLoading) {
+      <div class="loading">Yükleniyor...</div>
+    } @else if (filteredTickets.length === 0) {
+      <div class="empty-state">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <path d="M9 15l2 2 4-4"/>
+        </svg>
+        <p>Henüz size atanmış ticket yok</p>
+      </div>
+    } @else {
+      <div class="table-responsive">
+        <table class="tickets-table">
+          <thead>
+            <tr>
+              <th>Başlık</th>
+              <th>Müşteri</th>
+              <th>Durum</th>
+              <th>Öncelik</th>
+              <th>Tarih</th>
+              <th>İşlemler</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ticket of filteredTickets; track ticket.id) {
+              <tr [routerLink]="['/staff/tickets', ticket.id]" class="clickable-row">
+                <td class="title-cell">
+                  <span class="ticket-title">{{ ticket.title }}</span>
+                  @if (ticket.assetName) {
+                    <span class="asset-name">{{ ticket.assetName }}</span>
+                  }
+                </td>
+                <td>{{ ticket.companyName || '-' }}</td>
+                <td>
+                  <span class="status-badge" [class]="getStatusClass(ticket.status)">
+                    {{ getStatusText(ticket.status) }}
+                  </span>
+                </td>
+                <td>
+                  <span class="priority-badge" [class]="getPriorityClass(ticket.priority)">
+                    {{ getPriorityText(ticket.priority) }}
+                  </span>
+                </td>
+                <td class="date-cell">{{ formatDate(ticket.createdDate) }}</td>
+                <td class="actions-cell" (click)="$event.stopPropagation()">
+                  @if (ticket.status !== 4 && ticket.status !== 5) {
+                    <button class="action-btn release" (click)="releaseTicket(ticket.id, $event)" 
+                            title="Ticketı Bırak">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 11 12 14 22 4"/>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                      </svg>
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

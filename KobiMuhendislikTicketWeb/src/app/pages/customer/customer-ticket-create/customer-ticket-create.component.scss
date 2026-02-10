@@ -1,0 +1,352 @@
+.customer-ticket-create {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 25px;
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #6c757d;
+    text-decoration: none;
+    font-size: 14px;
+    margin-bottom: 15px;
+    transition: color 0.2s;
+
+    svg {
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    &:hover {
+      color: #0a6847;
+    }
+  }
+
+  h1 {
+    font-size: 26px;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin: 0 0 6px 0;
+  }
+
+  p {
+    color: #6c757d;
+    font-size: 14px;
+    margin: 0;
+  }
+}
+
+// Alerts
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-size: 14px;
+
+  svg {
+    flex-shrink: 0;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+
+.alert-success {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.alert-error {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+// Form Card
+.form-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.form-group {
+  margin-bottom: 22px;
+
+  label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 8px;
+
+    .required {
+      color: #ef4444;
+    }
+  }
+
+  input,
+  textarea,
+  select {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: all 0.2s;
+    background: #fff;
+
+    &:focus {
+      outline: none;
+      border-color: #0a6847;
+      box-shadow: 0 0 0 3px rgba(10, 104, 71, 0.1);
+    }
+
+    &::placeholder {
+      color: #9ca3af;
+    }
+
+    &:disabled {
+      background: #f3f4f6;
+      cursor: not-allowed;
+    }
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 120px;
+    line-height: 1.5;
+  }
+
+  select {
+    cursor: pointer;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 15px center;
+    appearance: none;
+    padding-right: 40px;
+  }
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+// File Upload Styles
+.file-upload-container {
+  position: relative;
+  display: block;
+  margin-bottom: 12px;
+
+  .file-input {
+    display: none;
+  }
+
+  .file-upload-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 30px;
+    border: 2px dashed #d1d5db;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    cursor: pointer;
+    transition: all 0.3s;
+
+    svg {
+      color: #6b7280;
+      stroke-width: 1.5;
+    }
+
+    .file-text {
+      font-weight: 500;
+      color: #374151;
+      text-align: center;
+    }
+
+    .file-hint {
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    &:hover {
+      border-color: #0a6847;
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+
+      svg {
+        color: #0a6847;
+      }
+
+      .file-text {
+        color: #0a6847;
+      }
+    }
+  }
+}
+
+.file-selected {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+  background: #d1fae5;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+  color: #065f46;
+  font-size: 14px;
+  margin-bottom: 12px;
+
+  svg {
+    flex-shrink: 0;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  span {
+    flex: 1;
+    word-break: break-word;
+  }
+
+  .clear-file {
+    background: none;
+    border: none;
+    color: #065f46;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px 8px;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    border-radius: 4px;
+
+    &:hover {
+      background: rgba(6, 95, 70, 0.1);
+    }
+  }
+}
+
+.image-preview {
+  margin-top: 12px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid #e5e7eb;
+  max-height: 300px;
+
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #f1f3f4;
+}
+
+.btn-cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  background: #f3f4f6;
+  color: #4b5563;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #e5e7eb;
+  }
+}
+
+.btn-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 28px;
+  background: linear-gradient(135deg, #0a6847, #0d8b5e);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  svg {
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(10, 104, 71, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .form-card {
+    padding: 20px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .btn-cancel,
+  .btn-submit {
+    width: 100%;
+  }
+
+  .file-upload-label {
+    padding: 20px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header h1 {
+    font-size: 22px;
+  }
+}

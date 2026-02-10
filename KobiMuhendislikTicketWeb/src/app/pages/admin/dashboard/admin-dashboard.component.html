@@ -1,0 +1,300 @@
+﻿<div class="dashboard">
+  <div class="page-header">
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">Hoş geldiniz! İşte güncel durumunuz.</p>
+  </div>
+
+  @if (isLoading) {
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p>Veriler yükleniyor...</p>
+    </div>
+  } @else {
+    @if (errorMessage) {
+      <div class="alert alert-error">
+        {{ errorMessage }}
+      </div>
+    }
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+      @for (stat of stats; track stat.title) {
+        <div class="stat-card" [class]="'stat-card--' + stat.color">
+          <div class="stat-icon">
+            @switch (stat.icon) {
+              @case ('ticket') {
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+              }
+              @case ('open') {
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+              }
+              @case ('processing') {
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2v4"/>
+                  <path d="M12 18v4"/>
+                  <path d="M4.93 4.93l2.83 2.83"/>
+                  <path d="M16.24 16.24l2.83 2.83"/>
+                  <path d="M2 12h4"/>
+                  <path d="M18 12h4"/>
+                  <path d="M4.93 19.07l2.83-2.83"/>
+                  <path d="M16.24 7.76l2.83-2.83"/>
+                </svg>
+              }
+              @case ('resolved') {
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+              }
+              @case ('users') {
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+              }
+            }
+          </div>
+          <div class="stat-content">
+            <span class="stat-title">{{ stat.title }}</span>
+            <span class="stat-value">{{ stat.value }}</span>
+          </div>
+          @if (stat.change > 0) {
+            <div class="stat-change" [class.increase]="stat.changeType === 'increase'" [class.decrease]="stat.changeType === 'decrease'">
+              @if (stat.changeType === 'increase') {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                  <polyline points="17 6 23 6 23 12"/>
+                </svg>
+              } @else {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/>
+                  <polyline points="17 18 23 18 23 12"/>
+                </svg>
+              }
+              <span>%{{ stat.change }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-grid">
+      <!-- Monthly Chart -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Son 30 Günlük Ticket Trend'i</h3>
+          <span class="chart-subtitle">Açılan vs Çözülen</span>
+        </div>
+        <div class="chart-container">
+          <svg class="bar-chart" viewBox="0 0 900 250" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <linearGradient id="openGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#60a5fa;stop-opacity:0.6" />
+              </linearGradient>
+              <linearGradient id="resolvedGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#34d399;stop-opacity:0.6" />
+              </linearGradient>
+            </defs>
+            
+            <!-- Background grid -->
+            @for (i of [0, 1, 2, 3, 4]; track i) {
+              <line x1="50" [attr.y1]="45 + i * 35" x2="880" [attr.y2]="45 + i * 35" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="2,2"/>
+              <text x="40" [attr.y]="50 + i * 35" font-size="11" fill="#9ca3af" text-anchor="end">{{ 16 - i * 4 }}</text>
+            }
+            
+            <!-- Y-axis -->
+            <line x1="50" y1="30" x2="50" y2="180" stroke="#d1d5db" stroke-width="2"/>
+            
+            <!-- X-axis -->
+            <line x1="50" y1="180" x2="880" y2="180" stroke="#d1d5db" stroke-width="2"/>
+            
+            <!-- Bars -->
+            @for (item of monthlyChartData; track item.label; let idx = $index) {
+              <g [attr.data-index]="idx">
+                <!-- Açılan bar -->
+                <rect 
+                  [attr.x]="50 + idx * 27 + 3" 
+                  [attr.y]="180 - (item.opened * 10)" 
+                  [attr.width]="11" 
+                  [attr.height]="item.opened * 10" 
+                  [attr.fill]="'url(#openGradient)'" 
+                  [attr.rx]="2"
+                  class="bar-item">
+                </rect>
+                <!-- Çözülen bar -->
+                <rect 
+                  [attr.x]="50 + idx * 27 + 15" 
+                  [attr.y]="180 - (item.resolved * 10)" 
+                  [attr.width]="11" 
+                  [attr.height]="item.resolved * 10" 
+                  [attr.fill]="'url(#resolvedGradient)'" 
+                  [attr.rx]="2"
+                  class="bar-item">
+                </rect>
+                <!-- Tarih label -->
+                <text [attr.x]="50 + idx * 27 + 11" y="205" font-size="10" fill="#6b7280" text-anchor="middle" font-weight="500">{{ item.label }}</text>
+              </g>
+            }
+          </svg>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item">
+            <span class="legend-color" style="background: linear-gradient(135deg, #3b82f6, #60a5fa)"></span>
+            <span>Açılan</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color" style="background: linear-gradient(135deg, #10b981, #34d399)"></span>
+            <span>Çözülen</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Weekly Chart -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Son 7 Günlük Ticket Trend'i</h3>
+          <span class="chart-subtitle">Açılan vs Çözülen</span>
+        </div>
+        <div class="chart-container">
+          <svg class="bar-chart" viewBox="0 0 500 250" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <linearGradient id="openGradient2" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#60a5fa;stop-opacity:0.6" />
+              </linearGradient>
+              <linearGradient id="resolvedGradient2" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#34d399;stop-opacity:0.6" />
+              </linearGradient>
+            </defs>
+            
+            <!-- Background grid -->
+            @for (i of [0, 1, 2, 3, 4]; track i) {
+              <line x1="50" [attr.y1]="45 + i * 35" x2="480" [attr.y2]="45 + i * 35" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="2,2"/>
+              <text x="40" [attr.y]="50 + i * 35" font-size="11" fill="#9ca3af" text-anchor="end">{{ 28 - i * 7 }}</text>
+            }
+            
+            <!-- Y-axis -->
+            <line x1="50" y1="30" x2="50" y2="180" stroke="#d1d5db" stroke-width="2"/>
+            
+            <!-- X-axis -->
+            <line x1="50" y1="180" x2="480" y2="180" stroke="#d1d5db" stroke-width="2"/>
+            
+            <!-- Bars -->
+            @for (item of weeklyChartData; track item.label; let idx = $index) {
+              <g [attr.data-index]="idx">
+                <!-- Açılan bar -->
+                <rect 
+                  [attr.x]="50 + idx * 60 + 8" 
+                  [attr.y]="180 - (item.opened * 5.5)" 
+                  [attr.width]="14" 
+                  [attr.height]="item.opened * 5.5" 
+                  [attr.fill]="'url(#openGradient2)'" 
+                  [attr.rx]="2"
+                  class="bar-item">
+                </rect>
+                <!-- Çözülen bar -->
+                <rect 
+                  [attr.x]="50 + idx * 60 + 26" 
+                  [attr.y]="180 - (item.resolved * 5.5)" 
+                  [attr.width]="14" 
+                  [attr.height]="item.resolved * 5.5" 
+                  [attr.fill]="'url(#resolvedGradient2)'" 
+                  [attr.rx]="2"
+                  class="bar-item">
+                </rect>
+                <!-- Day label -->
+                <text [attr.x]="50 + idx * 60 + 25" y="205" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="500">{{ item.label }}</text>
+              </g>
+            }
+          </svg>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item">
+            <span class="legend-color" style="background: linear-gradient(135deg, #3b82f6, #60a5fa)"></span>
+            <span>Açılan</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color" style="background: linear-gradient(135deg, #10b981, #34d399)"></span>
+            <span>Çözülen</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Son Ticketlar</h2>
+        <a routerLink="/admin/tickets" class="btn btn-outline">
+          Tümünü Gör
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </a>
+      </div>
+      
+      <div class="table-wrapper">
+        @if (recentTickets.length === 0) {
+          <div class="empty-state">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            <p>Henüz ticket bulunmuyor.</p>
+          </div>
+        } @else {
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Konu</th>
+                <th>Müşteri</th>
+                <th>Durum</th>
+                <th>Öncelik</th>
+                <th>Tarih</th>
+                <th>İşlemler</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ticket of recentTickets; track ticket.id) {
+                <tr>
+                  <td><span class="ticket-id">#{{ ticket.id.substring(0, 8) }}</span></td>
+                  <td>{{ ticket.title }}</td>
+                  <td>{{ ticket.tenantName || 'Bilinmiyor' }}</td>
+                  <td>
+                    <span class="badge" [class]="'badge--' + getStatusClass(ticket.status)">
+                      {{ getStatusText(ticket.status) }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="priority" [class]="'priority--' + getPriorityClass(ticket.priority)">
+                      {{ getPriorityText(ticket.priority) }}
+                    </span>
+                  </td>
+                  <td>{{ formatDate(ticket.createdDate) }}</td>
+                  <td>
+                    <a [routerLink]="['/admin/tickets', ticket.id]" class="btn btn-sm btn-primary">
+                      Detay
+                    </a>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    </div>
+  }
+</div>

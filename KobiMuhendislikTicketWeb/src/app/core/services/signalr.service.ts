@@ -1,0 +1,231 @@
+import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import * as signalR from '@microsoft/signalr';
+import { Subject, Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
+
+export interface CommentMessage {
+  id: string;
+  ticketId: string;
+  message: string;
+  authorName: string;
+  isAdminReply: boolean;
+  createdDate: string;
+}
+
+export interface TicketUpdateMessage {
+  id: string;
+  title: string;
+  status: number;
+  priority: number;
+  companyName: string;
+  createdDate: string;
+  assignedToName?: string;
+}
+
+export interface DashboardStats {
+  totalTickets: number;
+  openTickets: number;
+  processingTickets: number;
+  resolvedTickets: number;
+  totalTenants: number;
+  totalAssets: number;
+  criticalTicketCount: number;
+  topFailingAssets: Array<{productName: string, ticketCount: number}>;
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class SignalRService {
+  private hubConnection: signalR.HubConnection | null = null;
+  private dashboardHubConnection: signalR.HubConnection | null = null;
+  private commentReceived = new Subject<CommentMessage>();
+  private ticketUpdated = new Subject<TicketUpdateMessage>();
+  private dashboardStatsUpdated = new Subject<DashboardStats>();
+  private connectionState = new Subject<string>();
+
+  public commentReceived$: Observable<CommentMessage> = this.commentReceived.asObservable();
+  public ticketUpdated$: Observable<TicketUpdateMessage> = this.ticketUpdated.asObservable();
+  public dashboardStatsUpdated$: Observable<DashboardStats> = this.dashboardStatsUpdated.asObservable();
+  public connectionState$: Observable<string> = this.connectionState.asObservable();
+
+  private hubUrl = environment.apiUrl.replace('/api', '/hubs/comments');
+  private dashboardHubUrl = environment.apiUrl.replace('/api', '/hubs/dashboard-stats');
+  private isBrowser: boolean;
+
+  constructor(@Inject(PLATFORM_ID) private platformId: Object) {
+    this.isBrowser = isPlatformBrowser(this.platformId);
+  }
+
+  public startConnection(token: string): Promise<void> {
+    if (!this.isBrowser) {
+      console.log('SignalR: Not in browser environment, skipping connection');
+      return Promise.resolve();
+    }
+
+    if (!token) {
+      console.error('SignalR: Token is required but was not provided');
+      return Promise.reject('No authentication token');
+    }
+
+    if (this.hubConnection) {
+      console.log('SignalR: Hub connection already exists');
+      return Promise.resolve();
+    }
+
+    this.hubConnection = new signalR.HubConnectionBuilder()
+      .withUrl(this.hubUrl, {
+        accessTokenFactory: () => token
+      })
+      .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
+      .configureLogging(signalR.LogLevel.Information)
+      .build();
+
+    this.registerHandlers();
+
+    return this.hubConnection.start()
+      .then(() => {
+        console.log('SignalR: Connected successfully to ' + this.hubUrl);
+        this.connectionState.next('Connected');
+      })
+      .catch(err => {
+        console.error('SignalR: Connection failed to ' + this.hubUrl, err);
+        console.error('SignalR: Error details:', {
+          message: err?.message,
+          statusCode: err?.statusCode,
+          source: err?.source
+        });
+        this.connectionState.next('Error');
+        throw err;
+      });
+  }
+
+  public startDashboardConnection(token: string): Promise<void> {
+    if (!this.isBrowser) {
+      console.log('SignalR: Dashboard - Not in browser environment');
+      return Promise.resolve();
+    }
+
+    if (!token) {
+      console.error('SignalR: Dashboard - Token is required');
+      return Promise.reject('No authentication token');
+    }
+
+    if (this.dashboardHubConnection) {
+      console.log('SignalR: Dashboard hub connection already exists');
+      return Promise.resolve();
+    }
+
+    this.dashboardHubConnection = new signalR.HubConnectionBuilder()
+      .withUrl(this.dashboardHubUrl, {
+        accessTokenFactory: () => token
+      })
+      .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
+      .configureLogging(signalR.LogLevel.Information)
+      .build();
+
+    this.registerDashboardHandlers();
+
+    return this.dashboardHubConnection.start()
+      .then(() => {
+        console.log('SignalR: Dashboard connected successfully to ' + this.dashboardHubUrl);
+      })
+      .catch(err => {
+        console.error('SignalR: Dashboard connection failed', err);
+        throw err;
+      });
+  }
+
+  private registerHandlers(): void {
+    if (!this.hubConnection) return;
+
+    this.hubConnection.on('ReceiveComment', (comment: CommentMessage) => {
+      console.log('New comment received:', comment);
+      this.commentReceived.next(comment);
+    });
+
+    this.hubConnection.on('TicketUpdated', (ticket: TicketUpdateMessage) => {
+      console.log('Ticket updated:', ticket);
+      this.ticketUpdated.next(ticket);
+    });
+
+    this.hubConnection.onreconnecting(() => {
+      console.log('SignalR Reconnecting...');
+      this.connectionState.next('Reconnecting');
+    });
+
+    this.hubConnection.onreconnected(() => {
+      console.log('SignalR Reconnected');
+      this.connectionState.next('Connected');
+    });
+
+    this.hubConnection.onclose(() => {
+      console.log('SignalR Disconnected');
+      this.connectionState.next('Disconnected');
+    });
+  }
+
+  private registerDashboardHandlers(): void {
+    if (!this.dashboardHubConnection) return;
+
+    this.dashboardHubConnection.on('DashboardStatsUpdated', (stats: DashboardStats) => {
+      console.log('Dashboard stats updated:', stats);
+      this.dashboardStatsUpdated.next(stats);
+    });
+
+    this.dashboardHubConnection.onreconnecting(() => {
+      console.log('SignalR Dashboard Reconnecting...');
+    });
+
+    this.dashboardHubConnection.onreconnected(() => {
+      console.log('SignalR Dashboard Reconnected');
+    });
+
+    this.dashboardHubConnection.onclose(() => {
+      console.log('SignalR Dashboard Disconnected');
+    });
+  }
+
+  public async joinTicketGroup(ticketId: string): Promise<void> {
+    if (this.hubConnection?.state === signalR.HubConnectionState.Connected) {
+      await this.hubConnection.invoke('JoinTicketGroup', ticketId);
+      console.log('Joined ticket group:', ticketId);
+    }
+  }
+
+  public async leaveTicketGroup(ticketId: string): Promise<void> {
+    if (this.hubConnection?.state === signalR.HubConnectionState.Connected) {
+      await this.hubConnection.invoke('LeaveTicketGroup', ticketId);
+      console.log('Left ticket group:', ticketId);
+    }
+  }
+
+  public stopConnection(): Promise<void> {
+    if (this.hubConnection) {
+      return this.hubConnection.stop().then(() => {
+        this.hubConnection = null;
+        console.log('SignalR Disconnected');
+      });
+    }
+    return Promise.resolve();
+  }
+
+  public stopDashboardConnection(): Promise<void> {
+    if (this.dashboardHubConnection) {
+      return this.dashboardHubConnection.stop().then(() => {
+        this.dashboardHubConnection = null;
+        console.log('SignalR Dashboard Disconnected');
+      });
+    }
+    return Promise.resolve();
+  }
+
+  public isConnected(): boolean {
+    return this.hubConnection?.state === signalR.HubConnectionState.Connected;
+  }
+
+  public isDashboardConnected(): boolean {
+    return this.dashboardHubConnection?.state === signalR.HubConnectionState.Connected;
+  }
+}

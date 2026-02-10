@@ -1,0 +1,91 @@
+<div class="profile-container">
+  <div class="page-header">
+    <h1>Profilim</h1>
+    <p>Hesap bilgilerinizi görüntüleyin</p>
+  </div>
+
+  <div *ngIf="isLoading" class="loading">
+    <div class="spinner"></div>
+    <p>Yükleniyor...</p>
+  </div>
+
+  <div *ngIf="!isLoading && profile" class="content-grid">
+    <!-- Profile Card -->
+    <div class="profile-card">
+      <div class="avatar">
+        {{ profile.fullName?.charAt(0).toUpperCase() }}
+      </div>
+      <h2>{{ profile.fullName }}</h2>
+      <p class="department">{{ profile.department || 'Departman belirtilmemiş' }}</p>
+      
+      <div class="info-list">
+        <div class="info-item">
+          <span class="label">E-posta</span>
+          <span class="value">{{ profile.email }}</span>
+        </div>
+        <div class="info-item" *ngIf="profile.phone">
+          <span class="label">Telefon</span>
+          <span class="value">{{ profile.phone }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Maksimum Ticket</span>
+          <span class="value">{{ profile.maxConcurrentTickets }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Durum</span>
+          <span class="value status" [class.active]="profile.isActive">
+            {{ profile.isActive ? 'Aktif' : 'Pasif' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Card -->
+    <div class="stats-card" *ngIf="workload">
+      <h3>İş Yükü Özeti</h3>
+      
+      <div class="stats-grid">
+        <div class="stat-item">
+          <span class="stat-value">{{ workload.assignedTickets }}</span>
+          <span class="stat-label">Aktif Ticket</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">{{ workload.maxConcurrentTickets }}</span>
+          <span class="stat-label">Maksimum Kapasite</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">{{ workload.maxConcurrentTickets - workload.assignedTickets }}</span>
+          <span class="stat-label">Boş Kapasite</span>
+        </div>
+      </div>
+
+      <div class="capacity-bar">
+        <div class="bar-label">
+          <span>Kapasite Kullanımı</span>
+          <span>{{ workload.workloadPercentage }}%</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill" [style.width.%]="workload.workloadPercentage"
+               [class.warning]="workload.workloadPercentage > 70"
+               [class.danger]="workload.workloadPercentage > 90">
+          </div>
+        </div>
+      </div>
+
+      <div class="ticket-summary">
+        <div class="summary-row">
+          <span>Bekleyen Ticketlar</span>
+          <span class="count open">{{ workload.openTickets }}</span>
+        </div>
+        <div class="summary-row">
+          <span>İşlemdeki Ticketlar</span>
+          <span class="count processing">{{ workload.processingTickets }}</span>
+        </div>
+        <div class="summary-row">
+          <span>Bugün Çözülen</span>
+          <span class="count resolved">{{ workload.resolvedToday }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

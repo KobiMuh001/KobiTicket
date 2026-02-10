@@ -1,0 +1,359 @@
+﻿<div class="ticket-edit-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <button class="back-btn" (click)="goBack()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Geri
+      </button>
+      @if (ticket) {
+        <div class="ticket-info">
+          <h1>Talep #{{ ticket.id.substring(0, 8) }}</h1>
+          <span class="status-badge {{ getStatusClass(ticket.status) }}">
+            {{ getStatusLabel(ticket.status) }}
+          </span>
+          <span class="priority-badge {{ getPriorityClass(ticket.priority) }}">
+            {{ getPriorityLabel(ticket.priority) }}
+          </span>
+        </div>
+      }
+    </div>
+    @if (saving) {
+      <div class="saving-indicator">
+        <span class="spinner"></span> Kaydediliyor...
+      </div>
+    }
+  </div>
+
+  @if (loading) {
+    <div class="loading-container">
+      <div class="loader"></div>
+      <p>Yükleniyor...</p>
+    </div>
+  } @else if (error) {
+    <div class="error-container">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 8v4M12 16h.01"/>
+      </svg>
+      <p>{{ error }}</p>
+      <button class="btn btn-primary" (click)="goBack()">Geri Dön</button>
+    </div>
+  } @else if (ticket) {
+    <!-- Tabs -->
+    <div class="tabs">
+      <button 
+        class="tab" 
+        [class.active]="activeTab === 'details'"
+        (click)="activeTab = 'details'">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+        Detaylar
+      </button>
+      <button 
+        class="tab" 
+        [class.active]="activeTab === 'comments'"
+        (click)="activeTab = 'comments'">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        Yorumlar
+        @if (comments.length > 0) {
+          <span class="badge">{{ comments.length }}</span>
+        }
+      </button>
+      <button 
+        class="tab" 
+        [class.active]="activeTab === 'history'"
+        (click)="activeTab = 'history'">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        Geçmiş
+        @if (history.length > 0) {
+          <span class="badge">{{ history.length }}</span>
+        }
+      </button>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+      @if (activeTab === 'details') {
+        <div class="details-tab">
+          <div class="main-content">
+            <!-- Ticket Details Card -->
+            <div class="card">
+              <div class="card-header">
+                <h2>Talep Bilgileri</h2>
+              </div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label>Başlık</label>
+                  <p class="value">{{ ticket.title }}</p>
+                </div>
+                <div class="form-group">
+                  <label>Açıklama</label>
+                  <p class="value description">{{ ticket.description }}</p>
+                </div>
+                @if (ticket.imagePath) {
+                  <div class="form-group">
+                    <label>Ek Görsel</label>
+                    <div class="image-container">
+                      <img [src]="baseUrl + ticket.imagePath" alt="Ticket Image">
+                    </div>
+                  </div>
+                }
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Oluşturulma</label>
+                    <p class="value">{{ formatDate(ticket.createdDate) }}</p>
+                  </div>
+                  <div class="form-group">
+                    <label>Son Güncelleme</label>
+                    <p class="value">{{ ticket.updatedDate ? formatDate(ticket.updatedDate) : 'Henüz güncellenmedi' }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Customer Info Card -->
+            <div class="card">
+              <div class="card-header">
+                <h2>Müşteri Bilgileri</h2>
+              </div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label>Firma</label>
+                  <p class="value">{{ ticket.tenantName || '-' }}</p>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>E-posta</label>
+                    <p class="value">{{ ticket.tenantEmail || '-' }}</p>
+                  </div>
+                  <div class="form-group">
+                    <label>Telefon</label>
+                    <p class="value">{{ ticket.tenantPhone || '-' }}</p>
+                  </div>
+                </div>
+                @if (ticket.assetName) {
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Ürün</label>
+                      <p class="value">{{ ticket.assetName }}</p>
+                    </div>
+                    <div class="form-group">
+                      <label>Seri No</label>
+                      <p class="value">{{ ticket.assetSerialNumber || '-' }}</p>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Sidebar -->
+          <div class="sidebar">
+            <!-- Status Card -->
+            <div class="card">
+              <div class="card-header">
+                <h2>Durum Değiştir</h2>
+              </div>
+              <div class="card-body">
+                <div class="status-options">
+                  @for (status of statusOptions; track status.value) {
+                    <button 
+                      class="status-btn {{ status.class }}"
+                      [class.active]="ticket.status === status.value"
+                      [disabled]="saving"
+                      (click)="updateStatus(status.value)">
+                      {{ status.label }}
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- Priority Card -->
+            <div class="card">
+              <div class="card-header">
+                <h2>Öncelik Değiştir</h2>
+              </div>
+              <div class="card-body">
+                <div class="priority-options">
+                  @for (priority of priorityOptions; track priority.value) {
+                    <button 
+                      class="priority-btn {{ priority.class }}"
+                      [class.active]="ticket.priority === priority.value"
+                      [disabled]="saving"
+                      (click)="updatePriority(priority.value)">
+                      {{ priority.label }}
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- Assign Card -->
+            <div class="card">
+              <div class="card-header">
+                <h2>Atama</h2>
+              </div>
+              <div class="card-body">
+                @if (ticket.assignedPerson) {
+                  <div class="current-assignee">
+                    <label>Şu an atanan</label>
+                    <div class="assignee-info">
+                      <div class="assignee-avatar">
+                        {{ ticket.assignedPerson.charAt(0).toUpperCase() }}
+                      </div>
+                      <span>{{ ticket.assignedPerson }}</span>
+                    </div>
+                  </div>
+                }
+                <div class="form-group">
+                  <label>Personel Seç</label>
+                  @if (loadingStaff) {
+                    <div class="loading-staff">
+                      <span class="spinner-sm"></span> Personeller yükleniyor...
+                    </div>
+                  } @else if (staffList.length === 0) {
+                    <p class="no-staff">Aktif personel bulunamadı</p>
+                  } @else {
+                    <select 
+                      [(ngModel)]="selectedStaffId" 
+                      class="form-control">
+                      <option value="">-- Personel Seçin --</option>
+                      @for (staff of staffList; track staff.id) {
+                        <option [value]="staff.id">
+                          {{ staff.fullName }} 
+                          @if (staff.department) {
+                            ({{ staff.department }})
+                          }
+                        </option>
+                      }
+                    </select>
+                  }
+                </div>
+                <button 
+                  class="btn btn-primary full-width" 
+                  [disabled]="assigning || !selectedStaffId || loadingStaff"
+                  (click)="assignTicket()">
+                  @if (assigning) {
+                    <span class="spinner-sm"></span>
+                  }
+                  Ata
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (activeTab === 'comments') {
+        <div class="comments-tab">
+          <div class="card">
+            <div class="card-header">
+              <h2>Yorumlar</h2>
+            </div>
+            <div class="card-body">
+              <!-- Comments List -->
+              <div class="comments-list" #commentsContainer>
+                @if (comments.length === 0) {
+                  <div class="empty-state">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <p>Henüz yorum yok</p>
+                  </div>
+                } @else {
+                  @for (comment of comments; track comment.id) {
+                    <div class="comment" [class.admin]="comment.isAdminReply">
+                      <div class="comment-header">
+                        <div class="author">
+                          <div class="avatar" [class.admin]="comment.isAdminReply">
+                            {{ comment.authorName.charAt(0).toUpperCase() }}
+                          </div>
+                          <span class="name">{{ comment.authorName }}</span>
+                          @if (comment.isAdminReply) {
+                            <span class="admin-badge">Admin</span>
+                          }
+                        </div>
+                        <span class="date">{{ formatDate(comment.createdDate) }}</span>
+                      </div>
+                      <div class="comment-body">
+                        {{ comment.message }}
+                      </div>
+                    </div>
+                  }
+                }
+              </div>
+
+              <!-- Add Comment -->
+              <div class="add-comment">
+                <textarea 
+                  [(ngModel)]="newComment" 
+                  placeholder="Yorum yazın..."
+                  rows="3"
+                  class="form-control"></textarea>
+                <button 
+                  class="btn btn-primary" 
+                  [disabled]="addingComment || !newComment.trim()"
+                  (click)="addComment()">
+                  @if (addingComment) {
+                    <span class="spinner-sm"></span>
+                  }
+                  Yorum Ekle
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (activeTab === 'history') {
+        <div class="history-tab">
+          <div class="card">
+            <div class="card-header">
+              <h2>İşlem Geçmişi</h2>
+            </div>
+            <div class="card-body">
+              @if (history.length === 0) {
+                <div class="empty-state">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  <p>Geçmiş kaydı yok</p>
+                </div>
+              } @else {
+                <div class="timeline">
+                  @for (item of history; track $index) {
+                    <div class="timeline-item">
+                      <div class="timeline-dot"></div>
+                      <div class="timeline-content">
+                        <p class="action">{{ item.description }}</p>
+                        <div class="meta">
+                          <span class="by">{{ item.actionBy }}</span>
+                          <span class="date">{{ formatDate(item.createdDate) }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
