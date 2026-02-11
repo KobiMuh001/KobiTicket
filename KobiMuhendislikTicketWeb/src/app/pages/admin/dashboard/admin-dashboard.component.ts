@@ -34,6 +34,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   recentTickets: TicketListItem[] = [];
   monthlyChartData: ChartData[] = [];
   weeklyChartData: ChartData[] = [];
+  monthlyMaxValue = 20;
+  weeklyMaxValue = 28;
   isLoading = true;
   errorMessage = '';
   private destroy$ = new Subject<void>();
@@ -134,7 +136,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   private handleTicketUpdate(updatedTicket: TicketUpdateMessage): void {
     console.log('Dashboard: Updating ticket in list:', updatedTicket.id);
     // Eğer bu ticket son 5'te ise güncelle
-    const index = this.recentTickets.findIndex(t => t.id === updatedTicket.id);
+    const updatedId = Number(updatedTicket.id);
+    const index = this.recentTickets.findIndex(t => Number(t.id) === updatedId);
     if (index !== -1) {
       console.log('Dashboard: Found ticket at index', index, 'updating...');
       this.recentTickets[index] = {
@@ -194,6 +197,15 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         this.isLoading = false;
       }
     });
+  }
+
+  formatTicketId(id: number | string | null | undefined, ticketCode?: string | null): string {
+    // Backend'den gelen TicketCode'u kullan (T00001 formatı)
+    if (ticketCode) return ticketCode;
+    // Fallback: ID'den formatlama
+    if (id === null || id === undefined) return '-';
+    const numericId = typeof id === 'number' ? id : Number(id);
+    return Number.isFinite(numericId) ? `T${numericId.toString().padStart(5, '0')}` : String(id);
   }
 
   updateStats(data: DashboardStats): void {
@@ -332,6 +344,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         // Son 7 günlük veri
         this.weeklyChartData = this.generateWeeklyDataFromTickets(allTickets);
         
+        // Dinamik ölçekleme için maksimum değerleri hesapla
+        this.calculateChartMaxValues();
+        
         console.log('Monthly chart data:', this.monthlyChartData);
         console.log('Weekly chart data:', this.weeklyChartData);
       },
@@ -340,6 +355,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         // Hata durumunda default veri göster
         this.monthlyChartData = this.generateMonthlyData();
         this.weeklyChartData = this.generateWeeklyData();
+        this.calculateChartMaxValues();
       }
     });
   }
@@ -349,41 +365,50 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dateTime = date.getTime();
+    // Son 8 hafta (2 ay) hafta hafta
+    for (let weekIndex = 7; weekIndex >= 0; weekIndex--) {
+      const weekStartDate = new Date(today);
+      weekStartDate.setDate(weekStartDate.getDate() - (weekIndex * 7));
       
-      // Bu gün açılan ticket'lar (oluşturma tarihine göre)
+      const weekEndDate = new Date(weekStartDate);
+      weekEndDate.setDate(weekEndDate.getDate() + 6);
+      
       let opened = 0;
       let resolved = 0;
       
-      for (const ticket of allTickets) {
-        try {
-          if (!ticket.createdDate) continue;
-          
-          const createdDate = new Date(ticket.createdDate);
-          createdDate.setHours(0, 0, 0, 0);
-          
-          if (createdDate.getTime() === dateTime) {
-            // Status 4 (çözüldü) ise resolved'a, değilse opened'a say
-            if (ticket.status === 4) {
-              resolved++;
-            } else {
+      // Haftanin 7 gunu icin ticket'lari cevapla
+      for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+        const checkDate = new Date(weekStartDate);
+        checkDate.setDate(checkDate.getDate() + dayOffset);
+        const checkDatetime = checkDate.getTime();
+        
+        for (const ticket of allTickets) {
+          try {
+            if (!ticket.createdDate) continue;
+            
+            const createdDate = new Date(ticket.createdDate);
+            createdDate.setHours(0, 0, 0, 0);
+            
+            if (createdDate.getTime() === checkDatetime) {
               opened++;
+              if (ticket.status === 4) {
+                resolved++;
+              }
             }
+          } catch (e) {
+            console.warn('Error parsing ticket date:', ticket.createdDate, e);
           }
-        } catch (e) {
-          console.warn('Error parsing ticket date:', ticket.createdDate, e);
         }
       }
       
-      // Tarih formatı: GG.AA (Örn: 10.02)
-      const dayStr = String(date.getDate()).padStart(2, '0');
-      const monthStr = String(date.getMonth() + 1).padStart(2, '0');
+      // Label format: 01.02 - 07.02
+      const startDay = String(weekStartDate.getDate()).padStart(2, '0');
+      const startMonth = String(weekStartDate.getMonth() + 1).padStart(2, '0');
+      const endDay = String(weekEndDate.getDate()).padStart(2, '0');
+      const endMonth = String(weekEndDate.getMonth() + 1).padStart(2, '0');
       
       data.push({
-        label: `${dayStr}.${monthStr}`,
+        label: `${startDay}.${startMonth} - ${endDay}.${endMonth}`,
         opened,
         resolved
       });
@@ -415,10 +440,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
           createdDate.setHours(0, 0, 0, 0);
           
           if (createdDate.getTime() === dateTime) {
+            opened++;
             if (ticket.status === 4) {
               resolved++;
-            } else {
-              opened++;
             }
           }
         } catch (e) {
@@ -439,20 +463,27 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   private generateMonthlyData(): ChartData[] {
     const data: ChartData[] = [];
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
+    // Son 8 hafta (2 ay) hafta hafta
+    for (let weekIndex = 7; weekIndex >= 0; weekIndex--) {
+      const opened = Math.floor(Math.random() * 20) + 5;
+      const resolved = Math.floor(Math.random() * 15) + 3;
       
-      const opened = Math.floor(Math.random() * 8) + 1;
-      const resolved = Math.floor(Math.random() * 6) + 1;
+      // Label format: 01.02 - 07.02
+      const weekStartDate = new Date(today);
+      weekStartDate.setDate(weekStartDate.getDate() - (weekIndex * 7));
       
-      // Tarih formatı: GG.AA (Örn: 10.02)
-      const dayStr = String(date.getDate()).padStart(2, '0');
-      const monthStr = String(date.getMonth() + 1).padStart(2, '0');
+      const weekEndDate = new Date(weekStartDate);
+      weekEndDate.setDate(weekEndDate.getDate() + 6);
+      
+      const startDay = String(weekStartDate.getDate()).padStart(2, '0');
+      const startMonth = String(weekStartDate.getMonth() + 1).padStart(2, '0');
+      const endDay = String(weekEndDate.getDate()).padStart(2, '0');
+      const endMonth = String(weekEndDate.getMonth() + 1).padStart(2, '0');
       
       data.push({
-        label: `${dayStr}.${monthStr}`,
+        label: `${startDay}.${startMonth} - ${endDay}.${endMonth}`,
         opened,
         resolved
       });
@@ -482,5 +513,59 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     }
     
     return data;
+  }
+
+  private calculateChartMaxValues(): void {
+    // 2 aylık grafik maksimum değerini hesapla
+    let monthlyMax = 0;
+    for (const item of this.monthlyChartData) {
+      const max = Math.max(item.opened, item.resolved);
+      monthlyMax = Math.max(monthlyMax, max);
+    }
+    // Rond up to nearest 5
+    this.monthlyMaxValue = Math.ceil(monthlyMax / 5) * 5;
+    if (this.monthlyMaxValue < 5) this.monthlyMaxValue = 5;
+
+    // 7 günlük grafik maksimum değerini hesapla
+    let weeklyMax = 0;
+    for (const item of this.weeklyChartData) {
+      const max = Math.max(item.opened, item.resolved);
+      weeklyMax = Math.max(weeklyMax, max);
+    }
+    // Rond up to nearest 7
+    this.weeklyMaxValue = Math.ceil(weeklyMax / 7) * 7;
+    if (this.weeklyMaxValue < 7) this.weeklyMaxValue = 7;
+  }
+
+  getMonthlyGridLines(): number[] {
+    const lines: number[] = [];
+    for (let i = 0; i <= 5; i++) {
+      lines.push(i);
+    }
+    return lines;
+  }
+
+  getWeeklyGridLines(): number[] {
+    const lines: number[] = [];
+    for (let i = 0; i <= 7; i++) {
+      lines.push(i);
+    }
+    return lines;
+  }
+
+  getMonthlyScaleValue(index: number): number {
+    return Math.round(index * this.monthlyMaxValue / 5);
+  }
+
+  getWeeklyScaleValue(index: number): number {
+    return Math.round(index * this.weeklyMaxValue / 7);
+  }
+
+  getMonthlyPixelPerUnit(): number {
+    return 150 / this.monthlyMaxValue;
+  }
+
+  getWeeklyPixelPerUnit(): number {
+    return 150 / this.weeklyMaxValue;
   }
 }

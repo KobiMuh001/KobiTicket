@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { StaffService } from '../../../core/services/staff.service';
 import { SignalRService, CommentMessage } from '../../../core/services/signalr.service';
 import { Subscription } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-ticket-detail',
@@ -16,6 +17,7 @@ import { Subscription } from 'rxjs';
 export class TicketDetailComponent implements OnInit, OnDestroy, AfterViewChecked {
   @ViewChild('commentsContainer') private commentsContainer!: ElementRef;
   
+  baseUrl = environment.baseUrl;
   ticketId: string = '';
   ticket: any = null;
   comments: any[] = [];
@@ -32,14 +34,16 @@ export class TicketDetailComponent implements OnInit, OnDestroy, AfterViewChecke
   newComment: string = '';
   solutionNote: string = '';
   showResolveModal = false;
+  showImagePreview = false;
   
   activeTab: 'comments' | 'history' = 'comments';
 
   // SignalR
   private commentSubscription?: Subscription;
   isSignalRConnected = false;
-  private shouldScrollToBottom = false;
+  public shouldScrollToBottom = false;
   private isBrowser: boolean;
+  private refreshInterval: any;
 
   constructor(
     private route: ActivatedRoute,
@@ -61,9 +65,18 @@ export class TicketDetailComponent implements OnInit, OnDestroy, AfterViewChecke
     if (this.isBrowser) {
       this.initSignalR();
     }
+    
+    // Commentsları 2 saniyede bir otomatik yenile (polling)
+    this.refreshInterval = setInterval(() => {
+      console.log('Staff Ticket-Detail: Periodic comments refresh triggered');
+      this.loadComments();
+    }, 2000);
   }
 
   ngOnDestroy(): void {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
     if (this.ticketId) {
       this.signalRService.leaveTicketGroup(this.ticketId);
     }
@@ -78,11 +91,14 @@ export class TicketDetailComponent implements OnInit, OnDestroy, AfterViewChecke
   }
 
   private scrollToBottom(): void {
-    try {
-      if (this.commentsContainer) {
-        this.commentsContainer.nativeElement.scrollTop = this.commentsContainer.nativeElement.scrollHeight;
-      }
-    } catch (err) {}
+    setTimeout(() => {
+      try {
+        if (this.commentsContainer) {
+          const element = this.commentsContainer.nativeElement;
+          element.scrollTop = element.scrollHeight;
+        }
+      } catch (err) {}
+    }, 100);
   }
 
   private async initSignalR(): Promise<void> {
@@ -211,7 +227,8 @@ export class TicketDetailComponent implements OnInit, OnDestroy, AfterViewChecke
       next: (res) => {
         if (res.success) {
           this.newComment = '';
-          // Only reload history to avoid scroll reset
+          // Yorumları hemen yükle
+          this.loadComments();
           this.loadHistory();
           this.successMessage = 'Yorum eklendi';
           setTimeout(() => this.successMessage = null, 3000);
@@ -327,5 +344,17 @@ export class TicketDetailComponent implements OnInit, OnDestroy, AfterViewChecke
       hour: '2-digit',
       minute: '2-digit'
     });
+  }
+
+  formatTime(dateString: string): string {
+    return new Date(dateString).toLocaleTimeString('tr-TR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  isMyComment(comment: any): boolean {
+    if (!this.staffProfile || !comment) return false;
+    return comment.authorName === this.staffProfile.fullName;
   }
 }

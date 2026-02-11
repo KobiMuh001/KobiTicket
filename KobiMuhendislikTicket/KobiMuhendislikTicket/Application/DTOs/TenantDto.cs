@@ -2,7 +2,7 @@
 {
     public class TenantDto
     {
-        public Guid Id { get; set; }
+        public int Id { get; set; }
         public required string CompanyName { get; set; }
         public required string TaxNumber { get; set; }
         public required string Email { get; set; }

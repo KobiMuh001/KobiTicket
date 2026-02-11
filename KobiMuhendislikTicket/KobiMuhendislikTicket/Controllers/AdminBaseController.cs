@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using KobiMuhendislikTicket.Application.Common;
 using System.Security.Claims;
 
 namespace KobiMuhendislikTicket.WebAPI.Controllers
@@ -28,7 +29,7 @@ namespace KobiMuhendislikTicket.WebAPI.Controllers
                 Success = true,
                 Message = message,
                 Data = data,
-                Timestamp = DateTime.Now
+                Timestamp = DateTimeHelper.GetLocalNow()
             });
         }
 
@@ -38,7 +39,7 @@ namespace KobiMuhendislikTicket.WebAPI.Controllers
             {
                 Success = false,
                 Message = message,
-                Timestamp = DateTime.Now
+                Timestamp = DateTimeHelper.GetLocalNow()
             });
         }
     }

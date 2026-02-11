@@ -18,13 +18,13 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence.Repositories
                 .ToListAsync();
         }
 
-        public async Task<List<Asset>> GetByTenantIdAsync(Guid tenantId) =>
+        public async Task<List<Asset>> GetByTenantIdAsync(int tenantId) =>
             await _context.Assets
                 .Include(a => a.Tenant)
                 .Where(a => a.TenantId == tenantId && !a.IsDeleted)
                 .ToListAsync();
 
-        public async Task<Asset?> GetByIdAsync(Guid id) =>
+        public async Task<Asset?> GetByIdAsync(int id) =>
             await _context.Assets
                 .Include(a => a.Tenant)
                 .FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
@@ -45,7 +45,7 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteAsync(int id)
         {
             var asset = await _context.Assets.FindAsync(id);
             if (asset != null)

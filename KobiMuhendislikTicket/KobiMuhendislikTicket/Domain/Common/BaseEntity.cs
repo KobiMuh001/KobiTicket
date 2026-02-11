@@ -1,9 +1,11 @@
-﻿namespace KobiMuhendislikTicket.Domain.Common
+﻿using KobiMuhendislikTicket.Application.Common;
+
+namespace KobiMuhendislikTicket.Domain.Common
 {
     public class BaseEntity
     {
-        public Guid Id { get; set; } = Guid.NewGuid();
-        public DateTime CreatedDate { get; set; } = DateTime.Now;
+        public int Id { get; set; }
+        public DateTime CreatedDate { get; set; } = DateTimeHelper.GetLocalNow();
         public DateTime? UpdatedDate { get; set; }
         public bool IsDeleted { get; set; } = false; 
     }

@@ -102,12 +102,12 @@ namespace KobiMuhendislikTicket.Controllers
 
         // ==================== YARDIMCI METODLAR ====================
 
-        private Guid? GetCurrentTenantId()
+        private int? GetCurrentTenantId()
         {
             var claim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (claim == null) return null;
 
-            if (Guid.TryParse(claim.Value, out var tenantId))
+            if (int.TryParse(claim.Value, out var tenantId))
                 return tenantId;
 
             return null;

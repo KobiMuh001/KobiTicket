@@ -43,7 +43,7 @@ namespace KobiMuhendislikTicket.Application.Services
 
         
 
-        public async Task<Result> UpdateTenantAsync(Guid tenantId, UpdateTenantDto dto)
+        public async Task<Result> UpdateTenantAsync(int tenantId, UpdateTenantDto dto)
         {
             var tenant = await _tenantRepository.GetByIdAsync(tenantId);
             if (tenant == null)
@@ -66,7 +66,7 @@ namespace KobiMuhendislikTicket.Application.Services
             if (IsValidValue(dto.PhoneNumber))
                 tenant.PhoneNumber = dto.PhoneNumber!;
 
-            tenant.UpdatedDate = DateTime.UtcNow;
+            tenant.UpdatedDate = DateTimeHelper.GetLocalNow();
 
             await _tenantRepository.UpdateAsync(tenant);
             return Result.Success();
@@ -87,7 +87,7 @@ namespace KobiMuhendislikTicket.Application.Services
 
         
 
-        public async Task<Result> ChangePasswordAsync(Guid tenantId, ChangePasswordDto dto)
+        public async Task<Result> ChangePasswordAsync(int tenantId, ChangePasswordDto dto)
         {
             
             if (string.IsNullOrWhiteSpace(dto.CurrentPassword))
@@ -112,7 +112,7 @@ namespace KobiMuhendislikTicket.Application.Services
 
             
             tenant.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
-            tenant.UpdatedDate = DateTime.UtcNow;
+            tenant.UpdatedDate = DateTimeHelper.GetLocalNow();
 
             await _tenantRepository.UpdateAsync(tenant);
             return Result.Success();
@@ -120,7 +120,7 @@ namespace KobiMuhendislikTicket.Application.Services
 
         
 
-        public async Task<Result> AdminResetPasswordAsync(Guid tenantId, string newPassword)
+        public async Task<Result> AdminResetPasswordAsync(int tenantId, string newPassword)
         {
             if (string.IsNullOrWhiteSpace(newPassword))
                 return Result.Failure("Yeni şifre gereklidir.");
@@ -133,7 +133,7 @@ namespace KobiMuhendislikTicket.Application.Services
                 return Result.Failure("Müşteri bulunamadı.");
 
             tenant.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
-            tenant.UpdatedDate = DateTime.UtcNow;
+            tenant.UpdatedDate = DateTimeHelper.GetLocalNow();
 
             await _tenantRepository.UpdateAsync(tenant);
             return Result.Success();
@@ -141,7 +141,7 @@ namespace KobiMuhendislikTicket.Application.Services
 
         
 
-        public async Task<Result<DeleteTenantResultDto>> DeleteTenantAsync(Guid tenantId, bool forceDelete = false)
+        public async Task<Result<DeleteTenantResultDto>> DeleteTenantAsync(int tenantId, bool forceDelete = false)
         {
             var tenant = await _tenantRepository.GetByIdAsync(tenantId);
             if (tenant == null)
@@ -191,7 +191,7 @@ namespace KobiMuhendislikTicket.Application.Services
         }
 
         
-        public async Task<Tenant?> GetByIdAsync(Guid tenantId)
+        public async Task<Tenant?> GetByIdAsync(int tenantId)
         {
             return await _tenantRepository.GetByIdAsync(tenantId);
         }

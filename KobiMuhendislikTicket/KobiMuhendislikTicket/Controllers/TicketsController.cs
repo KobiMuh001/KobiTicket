@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using KobiMuhendislikTicket.Application.Services;
 using KobiMuhendislikTicket.Application.DTOs;
+using KobiMuhendislikTicket.Application.Common;
 using KobiMuhendislikTicket.Domain.Entities;
 using KobiMuhendislikTicket.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -36,11 +37,11 @@ namespace KobiMuhendislikTicket.Controllers
             if (tenantIdClaim == null) 
                 return Unauthorized(new { message = "Kullanıcı kimliği bulunamadı." });
 
-            if (!Guid.TryParse(tenantIdClaim.Value, out var tenantId))
+            if (!int.TryParse(tenantIdClaim.Value, out var tenantId))
                 return Unauthorized(new { message = "Geçersiz kullanıcı kimliği." });
 
             // Rate limiting: Son 1 saatte maksimum 5 ticket kontrol
-            var oneHourAgo = DateTime.UtcNow.AddHours(-1);
+            var oneHourAgo = DateTimeHelper.GetLocalNow().AddHours(-1);
             var ticketCountInLastHour = await _context.Tickets
                 .Where(t => t.TenantId == tenantId && t.CreatedDate >= oneHourAgo && !t.IsDeleted)
                 .CountAsync();
@@ -77,7 +78,7 @@ namespace KobiMuhendislikTicket.Controllers
             if (userIdClaim == null) 
                 return Unauthorized(new { message = "Kullanıcı kimliği bulunamadı." });
             
-            if (!Guid.TryParse(userIdClaim.Value, out var tenantId))
+            if (!int.TryParse(userIdClaim.Value, out var tenantId))
                 return Unauthorized(new { message = "Geçersiz kullanıcı kimliği." });
 
             var tickets = await _ticketService.GetTenantTicketsAsync(tenantId);
@@ -97,7 +98,7 @@ namespace KobiMuhendislikTicket.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPatch("admin/update-status/{id}")]
-        public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] int newStatus)
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] int newStatus)
         {
             var result = await _ticketService.UpdateTicketStatusAsync(id, newStatus);
             if (!result.IsSuccess)
@@ -107,7 +108,7 @@ namespace KobiMuhendislikTicket.Controllers
         }
 
         [HttpPost("{id}/upload-image")]
-        public async Task<IActionResult> UploadImage(Guid id, IFormFile file)
+        public async Task<IActionResult> UploadImage(int id, IFormFile file)
         {
             if (file == null || file.Length == 0)
                 return BadRequest(new { message = "Dosya seçilmedi." });
@@ -168,7 +169,7 @@ namespace KobiMuhendislikTicket.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPatch("admin/assign/{id}")]
-        public async Task<IActionResult> AssignTicket(Guid id, [FromBody] string personName)
+        public async Task<IActionResult> AssignTicket(int id, [FromBody] string personName)
         {
             var result = await _ticketService.AssignTicketToPersonAsync(id, personName);
             if (!result.IsSuccess)
@@ -179,14 +180,14 @@ namespace KobiMuhendislikTicket.Controllers
 
         // Müşteri için yorum listesi
         [HttpGet("{ticketId}/comments")]
-        public async Task<IActionResult> GetComments(Guid ticketId)
+        public async Task<IActionResult> GetComments(int ticketId)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (userIdClaim == null) 
-                return Unauthorized(new { message = "Kullanıcı kimliği bulunamadı." });
-            
-            if (!Guid.TryParse(userIdClaim.Value, out var tenantId))
-                return Unauthorized(new { message = "Geçersiz kullanıcı kimliği." });
+                return Unauthorized();
+
+            if (!int.TryParse(userIdClaim.Value, out var tenantId))
+                return Unauthorized();
 
             // Ticket'ın bu müşteriye ait olduğunu kontrol et
             var ticket = await _ticketService.GetTicketByIdAsync(ticketId);
@@ -194,18 +195,20 @@ namespace KobiMuhendislikTicket.Controllers
                 return NotFound(new { success = false, message = "Ticket bulunamadı." });
 
             var comments = await _ticketService.GetCommentsAsync(ticketId);
+            
+            // Yorumlar zaten yerel saatte kaydedilmiş, dönüşüme gerek yok
             return Ok(new { success = true, data = comments });
         }
 
         // Müşteri için yorum ekleme
         [HttpPost("{ticketId}/comments")]
-        public async Task<IActionResult> AddComment(Guid ticketId, [FromBody] CustomerCommentDto dto)
+        public async Task<IActionResult> AddComment(int ticketId, [FromBody] CustomerCommentDto dto)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (userIdClaim == null) 
                 return Unauthorized(new { message = "Kullanıcı kimliği bulunamadı." });
             
-            if (!Guid.TryParse(userIdClaim.Value, out var tenantId))
+            if (!int.TryParse(userIdClaim.Value, out var tenantId))
                 return Unauthorized(new { message = "Geçersiz kullanıcı kimliği." });
 
             // Ticket'ın bu müşteriye ait olduğunu kontrol et
@@ -223,6 +226,25 @@ namespace KobiMuhendislikTicket.Controllers
 
             // Admin'e bildirim gönder
             await _notificationService.NotifyNewCommentAsync(ticketId, ticket.Data.Title, authorName, true);
+
+            // Ticket'a atanmış personel varsa personele de bildirim gönder
+            if (!string.IsNullOrWhiteSpace(ticket.Data.AssignedPerson))
+            {
+                var assignedStaff = await _context.Staff.FirstOrDefaultAsync(s => 
+                    s.FullName == ticket.Data.AssignedPerson || 
+                    s.Email == ticket.Data.AssignedPerson);
+                
+                if (assignedStaff != null)
+                {
+                    await _notificationService.NotifyStaffAboutCommentAsync(
+                        assignedStaff.Id, 
+                        ticketId, 
+                        ticket.Data.Title, 
+                        authorName, 
+                        dto.Message
+                    );
+                }
+            }
 
             return Ok(new { success = true, message = "Yorum eklendi." });
         }

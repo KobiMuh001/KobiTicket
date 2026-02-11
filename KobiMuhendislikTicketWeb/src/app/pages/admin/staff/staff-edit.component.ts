@@ -81,8 +81,11 @@ export class StaffEditComponent implements OnInit {
 
   loadWorkload(): void {
     this.staffService.getStaffWorkloads().subscribe({
-      next: (workloads: StaffWorkload[]) => {
-        this.workload = workloads.find(w => w.id === this.staffId) || null;
+      next: (response: any) => {
+        const data = response?.data?.items || response?.data?.$values || response?.data || response;
+        const workloads: StaffWorkload[] = Array.isArray(data) ? data : [];
+        const staffId = Number(this.staffId);
+        this.workload = workloads.find(w => Number(w.staffId ?? w.id) === staffId) || null;
       },
       error: () => {
         // Production'da hata detayları gizlenir
@@ -123,7 +126,8 @@ export class StaffEditComponent implements OnInit {
     );
   }
 
-  getInitials(name: string): string {
+  getInitials(name?: string | null): string {
+    if (!name) return '--';
     return name
       .split(' ')
       .map(n => n[0])

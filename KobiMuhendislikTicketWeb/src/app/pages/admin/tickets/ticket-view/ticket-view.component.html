@@ -10,7 +10,7 @@
       </button>
       @if (ticket) {
         <div class="ticket-info">
-          <h1>Talep #{{ ticket.id.substring(0, 8) }}</h1>
+          <h1>Talep {{ formatTicketId(ticket.id, ticket.ticketCode) }}</h1>
           <span class="status-badge {{ getStatusClass(ticket.status) }}">
             {{ getStatusLabel(ticket.status) }}
           </span>

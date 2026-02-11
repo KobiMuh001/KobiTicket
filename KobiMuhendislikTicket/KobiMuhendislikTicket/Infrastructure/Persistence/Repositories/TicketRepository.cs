@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using KobiMuhendislikTicket.Application.Common;
 using KobiMuhendislikTicket.Application.Interfaces;
 using KobiMuhendislikTicket.Domain.Entities;
 using KobiMuhendislikTicket.Domain.Enums;
@@ -12,13 +13,13 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence.Repositories
 
         // 1. Durum Güncelleme: ExecuteUpdateAsync EN GARANTİ YOLDUR. 
         // Eğer bu değişmiyorsa, ID yanlış gönderiliyor veya DB bağlantısı hatalıdır.
-        public async Task UpdateStatusDirectlyAsync(Guid id, TicketStatus newStatus)
+        public async Task UpdateStatusDirectlyAsync(int id, TicketStatus newStatus)
         {
             var affectedRows = await _context.Tickets
                 .Where(t => t.Id == id)
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(t => t.Status, newStatus)
-                    .SetProperty(t => t.UpdatedDate, DateTime.UtcNow));
+                    .SetProperty(t => t.UpdatedDate, DateTimeHelper.GetLocalNow()));
 
             // Kurumsal İpucu: Etkilenen satır sayısını kontrol et. 0 ise ID yanlıştır.
             if (affectedRows == 0)
@@ -28,7 +29,7 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence.Repositories
         }
 
         // 2. Tekil Bilet Getirme: Include'lar kurumsal raporlama için şarttır.
-        public async Task<Ticket?> GetByIdAsync(Guid id)
+        public async Task<Ticket?> GetByIdAsync(int id)
         {
             return await _context.Tickets
                 .Include(t => t.Asset)
@@ -45,7 +46,7 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence.Repositories
                 .ToListAsync();
 
         // 4. Firmaya Göre Listeleme: Müşteri paneli için.
-        public async Task<List<Ticket>> GetByTenantIdAsync(Guid tenantId) =>
+        public async Task<List<Ticket>> GetByTenantIdAsync(int tenantId) =>
             await _context.Tickets
                 .Include(t => t.Asset)
                 .Where(t => t.TenantId == tenantId)
@@ -75,21 +76,21 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence.Repositories
             await _context.TicketHistories.AddAsync(history);
             await _context.SaveChangesAsync();
         }
-        public async Task AssignToStaffAsync(Guid ticketId, string staffName)
+        public async Task AssignToStaffAsync(int ticketId, string staffName)
         {
             await _context.Tickets
                 .Where(t => t.Id == ticketId)
                 .ExecuteUpdateAsync(s => s.SetProperty(t => t.AssignedPerson, staffName)); 
         }
 
-        public async Task UpdatePriorityDirectlyAsync(Guid id, TicketPriority newPriority)
+        public async Task UpdatePriorityDirectlyAsync(int id, TicketPriority newPriority)
         {
             
             var affectedRows = await _context.Tickets
                 .Where(t => t.Id == id)
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(t => t.Priority, newPriority)
-                    .SetProperty(t => t.UpdatedDate, DateTime.UtcNow));
+                    .SetProperty(t => t.UpdatedDate, DateTimeHelper.GetLocalNow()));
 
             
             if (affectedRows == 0)
@@ -98,12 +99,12 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence.Repositories
             }
         }
 
-        public Task UpdatePriorityAsync(Guid ticketId, TicketPriority priority)
+        public Task UpdatePriorityAsync(int ticketId, TicketPriority priority)
         {
             throw new NotImplementedException();
         }
 
-        public Task<List<Ticket>> GetFilteredTicketsAsync(Guid? tenantId, TicketStatus? status, TicketPriority? priority, string? assignedPerson)
+        public Task<List<Ticket>> GetFilteredTicketsAsync(int? tenantId, TicketStatus? status, TicketPriority? priority, string? assignedPerson)
         {
             throw new NotImplementedException();
         }
@@ -118,7 +119,7 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence.Repositories
             return await _context.Assets.CountAsync();
         }
 
-        public async Task<List<TicketHistory>> GetHistoryAsync(Guid ticketId)
+        public async Task<List<TicketHistory>> GetHistoryAsync(int ticketId)
         {
             return await _context.TicketHistories
                 .Where(h => h.TicketId == ticketId)
@@ -126,12 +127,28 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence.Repositories
                 .ToListAsync();
         }
 
-        public async Task<List<TicketComment>> GetCommentsAsync(Guid ticketId)
+        public async Task<List<TicketComment>> GetCommentsAsync(int ticketId)
         {
             return await _context.TicketComments
                 .Where(c => c.TicketId == ticketId)
                 .OrderBy(c => c.CreatedDate)
                 .ToListAsync();
+        }
+
+        public async Task<(List<Ticket> tickets, int totalCount)> GetAllTicketsPagedAsync(int pageNumber, int pageSize)
+        {
+            var query = _context.Tickets
+                .Include(t => t.Tenant)
+                .Include(t => t.Asset)
+                .OrderByDescending(t => t.CreatedDate);
+
+            var totalCount = await query.CountAsync();
+            var tickets = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (tickets, totalCount);
         }
     }
 }

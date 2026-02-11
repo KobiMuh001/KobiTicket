@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { TicketService } from '../../../core/services/ticket.service';
 import { AssetService } from '../../../core/services/asset.service';
+import { AuthService, User } from '../../../core/services/auth.service';
 
 interface DashboardStats {
   totalTickets: number;
@@ -38,13 +39,16 @@ export class CustomerDashboardComponent implements OnInit {
   
   recentTickets: Ticket[] = [];
   isLoading = true;
+  currentUser: User | null = null;
 
   constructor(
     private ticketService: TicketService,
-    private assetService: AssetService
+    private assetService: AssetService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
+    this.currentUser = this.authService.getCurrentUser();
     this.loadDashboardData();
   }
 

@@ -1,3 +1,4 @@
+using KobiMuhendislikTicket.Application.Common;
 using KobiMuhendislikTicket.Application.DTOs;
 using KobiMuhendislikTicket.Domain.Entities;
 using KobiMuhendislikTicket.Domain.Enums;
@@ -22,7 +23,7 @@ namespace KobiMuhendislikTicket.Application.Services
 
         public async Task<AdminDashboardDto> GetDashboardAsync()
         {
-            var today = DateTime.UtcNow.Date;
+            var today = DateTimeHelper.GetLocalNow().Date;
             var weekAgo = today.AddDays(-7);
 
             var tickets = await _context.Tickets
@@ -169,7 +170,7 @@ namespace KobiMuhendislikTicket.Application.Services
             };
         }
 
-        public async Task<TenantDetailDto?> GetTenantDetailAsync(Guid tenantId)
+        public async Task<TenantDetailDto?> GetTenantDetailAsync(int tenantId)
         {
             var tenant = await _context.Tenants.FindAsync(tenantId);
             if (tenant == null) return null;
@@ -206,7 +207,7 @@ namespace KobiMuhendislikTicket.Application.Services
                     SerialNumber = a.SerialNumber,
                     Status = a.Status,
                     WarrantyEndDate = a.WarrantyEndDate,
-                    IsUnderWarranty = a.WarrantyEndDate > DateTime.UtcNow,
+                    IsUnderWarranty = a.WarrantyEndDate > DateTimeHelper.GetLocalNow(),
                     TicketCount = _context.Tickets.Count(t => t.AssetId == a.Id)
                 }).ToList(),
                 RecentTickets = tickets.Select(t => MapToTicketListItem(t)).ToList()
@@ -227,9 +228,9 @@ namespace KobiMuhendislikTicket.Application.Services
             if (underWarranty.HasValue)
             {
                 if (underWarranty.Value)
-                    query = query.Where(a => a.WarrantyEndDate > DateTime.UtcNow);
+                    query = query.Where(a => a.WarrantyEndDate > DateTimeHelper.GetLocalNow());
                 else
-                    query = query.Where(a => a.WarrantyEndDate <= DateTime.UtcNow);
+                    query = query.Where(a => a.WarrantyEndDate <= DateTimeHelper.GetLocalNow());
             }
 
             var totalCount = await query.CountAsync();
@@ -247,7 +248,7 @@ namespace KobiMuhendislikTicket.Application.Services
                     TenantId = a.TenantId,
                     Status = a.Status,
                     WarrantyEndDate = a.WarrantyEndDate,
-                    IsUnderWarranty = a.WarrantyEndDate > DateTime.UtcNow,
+                    IsUnderWarranty = a.WarrantyEndDate > DateTimeHelper.GetLocalNow(),
                     TicketCount = _context.Tickets.Count(t => t.AssetId == a.Id)
                 })
                 .ToListAsync();
@@ -261,7 +262,7 @@ namespace KobiMuhendislikTicket.Application.Services
             };
         }
 
-        public async Task<AssetDetailDto?> GetAssetDetailAsync(Guid assetId)
+        public async Task<AssetDetailDto?> GetAssetDetailAsync(int assetId)
         {
             var asset = await _context.Assets
                 .Include(a => a.Tenant)
@@ -283,8 +284,8 @@ namespace KobiMuhendislikTicket.Application.Services
                 SerialNumber = asset.SerialNumber,
                 Status = asset.Status,
                 WarrantyEndDate = asset.WarrantyEndDate,
-                IsUnderWarranty = asset.WarrantyEndDate > DateTime.UtcNow,
-                DaysUntilWarrantyExpires = (int)(asset.WarrantyEndDate - DateTime.UtcNow).TotalDays,
+                IsUnderWarranty = asset.WarrantyEndDate > DateTimeHelper.GetLocalNow(),
+                DaysUntilWarrantyExpires = (int)(asset.WarrantyEndDate - DateTimeHelper.GetLocalNow()).TotalDays,
                 TenantId = asset.TenantId,
                 TenantName = asset.Tenant?.CompanyName ?? "Bilinmeyen",
                 TenantEmail = asset.Tenant?.Email ?? "",
@@ -351,7 +352,7 @@ namespace KobiMuhendislikTicket.Application.Services
             };
         }
 
-        public async Task<TicketDetailDto?> GetTicketDetailAsync(Guid ticketId)
+        public async Task<TicketDetailDto?> GetTicketDetailAsync(int ticketId)
         {
             var ticket = await _context.Tickets
                 .Include(t => t.Tenant)
@@ -373,6 +374,7 @@ namespace KobiMuhendislikTicket.Application.Services
             return new TicketDetailDto
             {
                 Id = ticket.Id,
+                TicketCode = ticket.TicketCode,
                 Title = ticket.Title,
                 Description = ticket.Description,
                 Status = GetStatusName(ticket.Status),
@@ -388,7 +390,7 @@ namespace KobiMuhendislikTicket.Application.Services
                 AssetId = ticket.AssetId,
                 AssetName = ticket.Asset?.ProductName,
                 AssetSerialNumber = ticket.Asset?.SerialNumber,
-                AssetUnderWarranty = ticket.Asset != null ? ticket.Asset.WarrantyEndDate > DateTime.UtcNow : null,
+                AssetUnderWarranty = ticket.Asset != null ? ticket.Asset.WarrantyEndDate > DateTimeHelper.GetLocalNow() : null,
                 Comments = comments.Select(c => new TicketCommentDto
                 {
                     Id = c.Id,
@@ -411,7 +413,7 @@ namespace KobiMuhendislikTicket.Application.Services
         public async Task<WarrantyReportDto> GetWarrantyReportAsync()
         {
             var assets = await _context.Assets.Include(a => a.Tenant).ToListAsync();
-            var now = DateTime.UtcNow;
+            var now = DateTimeHelper.GetLocalNow();
             var thirtyDaysLater = now.AddDays(30);
 
             return new WarrantyReportDto
@@ -438,8 +440,8 @@ namespace KobiMuhendislikTicket.Application.Services
 
         public async Task<PerformanceReportDto> GetPerformanceReportAsync(DateTime? fromDate = null, DateTime? toDate = null)
         {
-            var from = fromDate ?? DateTime.UtcNow.AddDays(-30);
-            var to = toDate ?? DateTime.UtcNow;
+            var from = fromDate ?? DateTimeHelper.GetLocalNow().AddDays(-30);
+            var to = toDate ?? DateTimeHelper.GetLocalNow();
 
             var tickets = await _context.Tickets
                 .Where(t => t.CreatedDate >= from && t.CreatedDate <= to)
@@ -498,7 +500,7 @@ namespace KobiMuhendislikTicket.Application.Services
                 CreatedDate = ticket.CreatedDate,
                 UpdatedDate = ticket.UpdatedDate,
                 CommentCount = _context.TicketComments.Count(c => c.TicketId == ticket.Id),
-                IsOverdue = ticket.Status != TicketStatus.Resolved && (DateTime.UtcNow - ticket.CreatedDate).TotalHours > 48
+                IsOverdue = ticket.Status != TicketStatus.Resolved && (DateTimeHelper.GetLocalNow() - ticket.CreatedDate).TotalHours > 48
             };
         }
 

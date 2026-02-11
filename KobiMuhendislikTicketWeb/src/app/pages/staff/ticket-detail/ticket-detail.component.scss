@@ -145,8 +145,8 @@
 }
 
 .status-resolved {
-  background: #d1fae5;
-  color: #059669;
+  background: #dbeafe;
+  color: #1e40af;
 }
 
 .priority-low {
@@ -185,22 +185,22 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #065f46, #059669);
+  background: linear-gradient(135deg, #1e40af, #3b82f6);
   color: white;
   
   &:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
   }
 }
 
 .btn-success {
-  background: linear-gradient(135deg, #059669, #10b981);
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
   color: white;
   
   &:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
   }
 }
 
@@ -272,13 +272,120 @@
   }
   
   .solution-note {
-    background: #f0fdf4;
+    background: #eff6ff;
     padding: 12px;
     border-radius: 8px;
-    border-left: 3px solid #059669;
+    border-left: 3px solid #3b82f6;
     font-size: 14px;
     line-height: 1.6;
     color: #1f2937;
+  }
+}
+
+.ticket-image-container {
+  margin-top: 10px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  position: relative;
+  cursor: zoom-in;
+  
+  .ticket-image {
+    width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+    display: block;
+    transition: transform 0.2s;
+  }
+
+  .image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+    
+    span {
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 16px;
+      border-radius: 20px;
+    }
+  }
+
+  &:hover {
+    .image-overlay {
+      opacity: 1;
+    }
+    .ticket-image {
+      transform: scale(1.02);
+    }
+  }
+}
+
+// Image Preview Modal Styles
+.image-preview-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 40px;
+  cursor: zoom-out;
+
+  .preview-content {
+    position: relative;
+    max-width: 95%;
+    max-height: 95%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+
+    img {
+      max-width: 100%;
+      max-height: 90vh;
+      border-radius: 8px;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .btn-close-preview {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid #fff;
+      color: #fff;
+      font-size: 30px;
+      cursor: pointer;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      padding: 0;
+      line-height: 1;
+      
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.1);
+      }
+    }
   }
 }
 
@@ -287,6 +394,9 @@
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  align-self: start;
+  position: sticky;
+  top: 20px;
 }
 
 .tabs {
@@ -306,13 +416,13 @@
     transition: all 0.2s;
     
     &:hover {
-      color: #059669;
-      background: #f0fdf4;
+      color: #3b82f6;
+      background: #eff6ff;
     }
     
     &.active {
-      color: #059669;
-      border-bottom-color: #059669;
+      color: #3b82f6;
+      border-bottom-color: #3b82f6;
     }
   }
 }
@@ -321,23 +431,151 @@
   padding: 16px;
 }
 
-.add-comment {
-  margin-bottom: 16px;
-  
-  textarea {
+.comments-list-v2 {
+  max-height: 500px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 15px;
+  background: #fff;
+
+  .comment-item-v3 {
+    display: flex;
     width: 100%;
-    padding: 12px;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    font-size: 14px;
-    resize: vertical;
-    margin-bottom: 12px;
-    font-family: inherit;
     
-    &:focus {
-      outline: none;
-      border-color: #059669;
-      box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+    &.my-message-row {
+      justify-content: flex-end;
+      
+      .comment-bubble-v2 {
+        background: #eff6ff;
+        border: 1px solid #dbeafe;
+        border-right: 4px solid #3b82f6;
+        border-radius: 16px 16px 0 16px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      }
+    }
+    
+    &.other-message-row {
+      justify-content: flex-start;
+      
+      .comment-bubble-v2 {
+        background: #f9fafb;
+        border: 1px solid #f3f4f6;
+        border-left: 4px solid #9ca3af;
+        border-radius: 16px 16px 16px 0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+
+        &.admin-bubble {
+          background: #f3f4f6;
+          border-left: 4px solid #3b82f6;
+        }
+      }
+    }
+  }
+
+  .comment-bubble-v2 {
+    max-width: 80%;
+    padding: 12px 16px;
+    position: relative;
+
+    .bubble-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      
+      .sender-name {
+        font-weight: 700;
+        font-size: 13px;
+        color: #1f2937;
+      }
+      
+      .support-badge {
+        background: #3b82f6;
+        color: #fff;
+        font-size: 9px;
+        font-weight: 800;
+        padding: 2px 6px;
+        border-radius: 4px;
+        text-transform: uppercase;
+      }
+      
+      .message-time {
+        font-size: 11px;
+        color: #9ca3af;
+        margin-left: auto;
+      }
+    }
+
+    .message-content-v2 {
+      margin: 0;
+      font-size: 14px;
+      color: #4b5563;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+  }
+}
+
+.add-comment-v2 {
+  margin-top: 15px;
+  padding: 15px;
+  background: #fff;
+  border-top: 1px solid #f3f4f6;
+
+  .input-wrapper {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+
+    textarea {
+      flex: 1;
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 14px;
+      resize: none;
+      font-family: inherit;
+      background: #f9fafb;
+      transition: all 0.2s;
+      
+      &:focus {
+        outline: none;
+        border-color: #3b82f6;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+    }
+
+    .btn-send-v2 {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      
+      &:hover:not(:disabled) {
+        background: #2563eb;
+        transform: translateY(-2px);
+      }
+      
+      &:disabled {
+        background: #d1d5db;
+        cursor: not-allowed;
+      }
+
+      svg {
+        transform: rotate(45deg);
+        margin-left: -4px;
+        margin-top: 4px;
+      }
     }
   }
 }
@@ -346,46 +584,6 @@
   text-align: center;
   padding: 40px 20px;
   color: #9ca3af;
-}
-
-.comments-list {
-  max-height: 350px;
-  overflow-y: auto;
-  
-  .comment-item {
-    padding: 16px;
-    background: #f9fafb;
-    border-radius: 8px;
-    margin-bottom: 12px;
-    
-    &:last-child {
-      margin-bottom: 0;
-    }
-    
-    .comment-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-      
-      .comment-author {
-        font-weight: 600;
-        color: #1f2937;
-      }
-      
-      .comment-date {
-        font-size: 12px;
-        color: #9ca3af;
-      }
-    }
-    
-    .comment-content {
-      color: #4b5563;
-      font-size: 14px;
-      line-height: 1.5;
-      margin: 0;
-    }
-  }
 }
 
 .history-list {

@@ -9,7 +9,7 @@ namespace KobiMuhendislikTicket.Domain.Entities
         public DateTime WarrantyEndDate { get; set; } // Garanti bitişi
 
         // Foreign Key (Hangi firmaya ait?)
-        public Guid TenantId { get; set; }
+        public int TenantId { get; set; }
         public Tenant? Tenant { get; set; }
         public string Status { get; set; } = "Aktif";
     }

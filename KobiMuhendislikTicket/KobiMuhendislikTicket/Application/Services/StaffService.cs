@@ -14,12 +14,14 @@ namespace KobiMuhendislikTicket.Application.Services
         private readonly ApplicationDbContext _context;
         private readonly ITicketRepository _ticketRepository;
         private readonly ILogger<StaffService> _logger;
+        private readonly NotificationService _notificationService;
 
-        public StaffService(ApplicationDbContext context, ITicketRepository ticketRepository, ILogger<StaffService> logger)
+        public StaffService(ApplicationDbContext context, ITicketRepository ticketRepository, ILogger<StaffService> logger, NotificationService notificationService)
         {
             _context = context;
             _ticketRepository = ticketRepository;
             _logger = logger;
+            _notificationService = notificationService;
         }
 
         
@@ -41,7 +43,7 @@ namespace KobiMuhendislikTicket.Application.Services
                     return Result<Staff>.Failure("Şifre en az 6 karakter olmalıdır.");
 
                
-                var existingEmail = await _context.Staffs.AnyAsync(s => s.Email == dto.Email);
+                var existingEmail = await _context.Staff.AnyAsync(s => s.Email == dto.Email);
                 if (existingEmail)
                     return Result<Staff>.Failure("Bu email adresi zaten kullanılıyor.");
 
@@ -56,7 +58,7 @@ namespace KobiMuhendislikTicket.Application.Services
                     IsActive = true
                 };
 
-                await _context.Staffs.AddAsync(staff);
+                await _context.Staff.AddAsync(staff);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Yeni çalışan oluşturuldu: {StaffName}", staff.FullName);
@@ -69,11 +71,11 @@ namespace KobiMuhendislikTicket.Application.Services
             }
         }
 
-        public async Task<Result> UpdateStaffAsync(Guid staffId, UpdateStaffDto dto)
+        public async Task<Result> UpdateStaffAsync(int staffId, UpdateStaffDto dto)
         {
             try
             {
-                var staff = await _context.Staffs.FindAsync(staffId);
+                var staff = await _context.Staff.FindAsync(staffId);
                 if (staff == null)
                     return Result.Failure("Çalışan bulunamadı.");
 
@@ -82,7 +84,7 @@ namespace KobiMuhendislikTicket.Application.Services
 
                 if (!string.IsNullOrWhiteSpace(dto.Email) && dto.Email != "string")
                 {
-                    var emailExists = await _context.Staffs.AnyAsync(s => s.Email == dto.Email && s.Id != staffId);
+                    var emailExists = await _context.Staff.AnyAsync(s => s.Email == dto.Email && s.Id != staffId);
                     if (emailExists)
                         return Result.Failure("Bu email adresi başka bir çalışan tarafından kullanılıyor.");
                     staff.Email = dto.Email;
@@ -117,11 +119,11 @@ namespace KobiMuhendislikTicket.Application.Services
             }
         }
 
-        public async Task<Result> DeleteStaffAsync(Guid staffId)
+        public async Task<Result> DeleteStaffAsync(int staffId)
         {
             try
             {
-                var staff = await _context.Staffs.FindAsync(staffId);
+                var staff = await _context.Staff.FindAsync(staffId);
                 if (staff == null)
                     return Result.Failure("�al��an bulunamad�.");
 
@@ -132,7 +134,7 @@ namespace KobiMuhendislikTicket.Application.Services
                 if (assignedTickets > 0)
                     return Result.Failure($"Bu �al��an�n {assignedTickets} adet a��k ticket'� var. �nce ticket'lar� ba�ka birine atay�n.");
 
-                _context.Staffs.Remove(staff);
+                _context.Staff.Remove(staff);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("�al��an silindi: {StaffName}", staff.FullName);
@@ -149,7 +151,7 @@ namespace KobiMuhendislikTicket.Application.Services
 
         public async Task<List<StaffDto>> GetAllStaffAsync(bool? activeOnly = null)
         {
-            var query = _context.Staffs.AsQueryable();
+            var query = _context.Staff.AsQueryable();
 
             if (activeOnly.HasValue)
                 query = query.Where(s => s.IsActive == activeOnly.Value);
@@ -170,9 +172,9 @@ namespace KobiMuhendislikTicket.Application.Services
                 .ToListAsync();
         }
 
-        public async Task<StaffDto?> GetStaffByIdAsync(Guid staffId)
+        public async Task<StaffDto?> GetStaffByIdAsync(int staffId)
         {
-            return await _context.Staffs
+            return await _context.Staff
                 .Where(s => s.Id == staffId)
                 .Select(s => new StaffDto
                 {
@@ -192,9 +194,9 @@ namespace KobiMuhendislikTicket.Application.Services
 
         public async Task<List<StaffWorkloadDto>> GetStaffWorkloadsAsync()
         {
-            var staffList = await _context.Staffs.Where(s => s.IsActive).ToListAsync();
+            var staffList = await _context.Staff.Where(s => s.IsActive).ToListAsync();
             var tickets = await _context.Tickets.ToListAsync();
-            var today = DateTime.UtcNow.Date;
+            var today = DateTimeHelper.GetLocalNow().Date;
             var weekAgo = today.AddDays(-7);
 
             var workloads = staffList.Select(staff =>
@@ -230,11 +232,11 @@ namespace KobiMuhendislikTicket.Application.Services
 
         
 
-        public async Task<Result> AssignTicketToStaffAsync(Guid ticketId, Guid staffId, string? note = null)
+        public async Task<Result> AssignTicketToStaffAsync(int ticketId, int staffId, string? note = null)
         {
             try
             {
-                var staff = await _context.Staffs.FindAsync(staffId);
+                var staff = await _context.Staff.FindAsync(staffId);
                 if (staff == null)
                     return Result.Failure("�al��an bulunamad�.");
 
@@ -256,7 +258,7 @@ namespace KobiMuhendislikTicket.Application.Services
                 var oldAssignee = ticket.AssignedPerson;
                 ticket.AssignedPerson = staff.FullName;
                 ticket.Status = TicketStatus.Processing;
-                ticket.UpdatedDate = DateTime.UtcNow;
+                ticket.UpdatedDate = DateTimeHelper.GetLocalNow();
 
                 await _ticketRepository.UpdateAsync(ticket);
 
@@ -273,9 +275,16 @@ namespace KobiMuhendislikTicket.Application.Services
                     TicketId = ticketId,
                     ActionBy = "Admin",
                     Description = description,
-                    CreatedDate = DateTime.UtcNow
+                    CreatedDate = DateTimeHelper.GetLocalNow()
                 });
-
+                // Staff'a email bildirimi gönder
+                var tenant = await _context.Tenants.FindAsync(ticket.TenantId);
+                await _notificationService.NotifyTicketAssignedToStaffAsync(
+                    staffId,
+                    ticket.Title,
+                    tenant?.CompanyName ?? "Müşteri",
+                    ticketId
+                );
                 _logger.LogInformation("Ticket atand�: {TicketId} ? {StaffName}", ticketId, staff.FullName);
                 return Result.Success();
             }
@@ -286,11 +295,11 @@ namespace KobiMuhendislikTicket.Application.Services
             }
         }
 
-        public async Task<Result<int>> BulkAssignTicketsAsync(List<Guid> ticketIds, Guid staffId)
+        public async Task<Result<int>> BulkAssignTicketsAsync(List<int> ticketIds, int staffId)
         {
             try
             {
-                var staff = await _context.Staffs.FindAsync(staffId);
+                var staff = await _context.Staff.FindAsync(staffId);
                 if (staff == null)
                     return Result<int>.Failure("�al��an bulunamad�.");
 
@@ -314,13 +323,13 @@ namespace KobiMuhendislikTicket.Application.Services
             }
         }
 
-        public async Task<Result<AutoAssignResultDto>> AutoAssignTicketAsync(Guid ticketId)
+        public async Task<Result<AutoAssignResultDto>> AutoAssignTicketAsync(int ticketId)
         {
             try
             {
                 var ticket = await _ticketRepository.GetByIdAsync(ticketId);
                 if (ticket == null)
-                    return Result<AutoAssignResultDto>.Failure("Ticket bulunamad�.");
+                    return Result<AutoAssignResultDto>.Failure("Ticket bulunamad.");
 
                 if (!string.IsNullOrEmpty(ticket.AssignedPerson))
                     return Result<AutoAssignResultDto>.Failure("Bu ticket zaten birine atanm��.");
@@ -356,13 +365,13 @@ namespace KobiMuhendislikTicket.Application.Services
 
         
 
-        public async Task<Result> UnassignTicketAsync(Guid ticketId)
+        public async Task<Result> UnassignTicketAsync(int ticketId)
         {
             try
             {
                 var ticket = await _ticketRepository.GetByIdAsync(ticketId);
                 if (ticket == null)
-                    return Result.Failure("Ticket bulunamad�.");
+                    return Result.Failure("Ticket bulunamad.");
 
                 var oldAssignee = ticket.AssignedPerson;
                 if (string.IsNullOrEmpty(oldAssignee))
@@ -370,7 +379,7 @@ namespace KobiMuhendislikTicket.Application.Services
 
                 ticket.AssignedPerson = null;
                 ticket.Status = TicketStatus.Open;
-                ticket.UpdatedDate = DateTime.UtcNow;
+                ticket.UpdatedDate = DateTimeHelper.GetLocalNow();
 
                 await _ticketRepository.UpdateAsync(ticket);
 
@@ -379,7 +388,7 @@ namespace KobiMuhendislikTicket.Application.Services
                     TicketId = ticketId,
                     ActionBy = "Admin",
                     Description = $"Ticket '{oldAssignee}' personelinden geri alındı",
-                    CreatedDate = DateTime.UtcNow
+                    CreatedDate = DateTimeHelper.GetLocalNow()
                 });
 
                 _logger.LogInformation("Ticket ataması kaldırıldı: {TicketId}", ticketId);
@@ -395,7 +404,7 @@ namespace KobiMuhendislikTicket.Application.Services
         // Staff Login Validation
         public async Task<Staff?> ValidateStaffLoginAsync(string email, string password)
         {
-            var staff = await _context.Staffs.FirstOrDefaultAsync(s => s.Email == email);
+            var staff = await _context.Staff.FirstOrDefaultAsync(s => s.Email == email);
             if (staff == null || !staff.IsActive)
                 return null;
 
@@ -406,11 +415,11 @@ namespace KobiMuhendislikTicket.Application.Services
         }
 
         // Admin şifre sıfırlama
-        public async Task<Result> ResetStaffPasswordAsync(Guid staffId, string newPassword)
+        public async Task<Result> ResetStaffPasswordAsync(int staffId, string newPassword)
         {
             try
             {
-                var staff = await _context.Staffs.FindAsync(staffId);
+                var staff = await _context.Staff.FindAsync(staffId);
                 if (staff == null)
                     return Result.Failure("Çalışan bulunamadı.");
 
@@ -431,9 +440,9 @@ namespace KobiMuhendislikTicket.Application.Services
         }
 
         // Staff'ın kendisine atanmış ticketları getir
-        public async Task<List<TicketDto>> GetMyTicketsAsync(Guid staffId)
+        public async Task<List<TicketDto>> GetMyTicketsAsync(int staffId)
         {
-            var staff = await _context.Staffs.FindAsync(staffId);
+            var staff = await _context.Staff.FindAsync(staffId);
             if (staff == null)
                 return new List<TicketDto>();
 
@@ -494,11 +503,11 @@ namespace KobiMuhendislikTicket.Application.Services
         }
 
         // Staff ticket'ı kendine atasın
-        public async Task<Result> ClaimTicketAsync(Guid ticketId, Guid staffId)
+        public async Task<Result> ClaimTicketAsync(int ticketId, int staffId)
         {
             try
             {
-                var staff = await _context.Staffs.FindAsync(staffId);
+                var staff = await _context.Staff.FindAsync(staffId);
                 if (staff == null)
                     return Result.Failure("Çalışan bulunamadı.");
 
@@ -522,7 +531,7 @@ namespace KobiMuhendislikTicket.Application.Services
 
                 ticket.AssignedPerson = staff.FullName;
                 ticket.Status = TicketStatus.Processing;
-                ticket.UpdatedDate = DateTime.UtcNow;
+                ticket.UpdatedDate = DateTimeHelper.GetLocalNow();
 
                 await _ticketRepository.UpdateAsync(ticket);
 
@@ -531,7 +540,7 @@ namespace KobiMuhendislikTicket.Application.Services
                     TicketId = ticketId,
                     ActionBy = staff.FullName,
                     Description = $"Ticket '{staff.FullName}' tarafından alındı",
-                    CreatedDate = DateTime.UtcNow
+                    CreatedDate = DateTimeHelper.GetLocalNow()
                 });
 
                 _logger.LogInformation("Ticket alındı: {TicketId} -> {StaffName}", ticketId, staff.FullName);
@@ -545,11 +554,11 @@ namespace KobiMuhendislikTicket.Application.Services
         }
 
         // Staff ticket'ı bıraksın (unassign from self)
-        public async Task<Result> ReleaseTicketAsync(Guid ticketId, Guid staffId)
+        public async Task<Result> ReleaseTicketAsync(int ticketId, int staffId)
         {
             try
             {
-                var staff = await _context.Staffs.FindAsync(staffId);
+                var staff = await _context.Staff.FindAsync(staffId);
                 if (staff == null)
                     return Result.Failure("Çalışan bulunamadı.");
 
@@ -562,7 +571,7 @@ namespace KobiMuhendislikTicket.Application.Services
 
                 ticket.AssignedPerson = null;
                 ticket.Status = TicketStatus.Open;
-                ticket.UpdatedDate = DateTime.UtcNow;
+                ticket.UpdatedDate = DateTimeHelper.GetLocalNow();
 
                 await _ticketRepository.UpdateAsync(ticket);
 
@@ -571,7 +580,7 @@ namespace KobiMuhendislikTicket.Application.Services
                     TicketId = ticketId,
                     ActionBy = staff.FullName,
                     Description = $"Ticket '{staff.FullName}' tarafından bırakıldı",
-                    CreatedDate = DateTime.UtcNow
+                    CreatedDate = DateTimeHelper.GetLocalNow()
                 });
 
                 _logger.LogInformation("Ticket bırakıldı: {TicketId} <- {StaffName}", ticketId, staff.FullName);
@@ -585,9 +594,9 @@ namespace KobiMuhendislikTicket.Application.Services
         }
 
         // Staff profilini getir
-        public async Task<StaffDto?> GetStaffProfileAsync(Guid staffId)
+        public async Task<StaffDto?> GetStaffProfileAsync(int staffId)
         {
-            return await _context.Staffs
+            return await _context.Staff
                 .Where(s => s.Id == staffId)
                 .Select(s => new StaffDto
                 {
@@ -604,13 +613,13 @@ namespace KobiMuhendislikTicket.Application.Services
         }
 
         // Staff workload özeti
-        public async Task<StaffWorkloadDto?> GetMyWorkloadAsync(Guid staffId)
+        public async Task<StaffWorkloadDto?> GetMyWorkloadAsync(int staffId)
         {
-            var staff = await _context.Staffs.FindAsync(staffId);
+            var staff = await _context.Staff.FindAsync(staffId);
             if (staff == null)
                 return null;
 
-            var today = DateTime.UtcNow.Date;
+            var today = DateTimeHelper.GetLocalNow().Date;
             var weekAgo = today.AddDays(-7);
 
             var staffTickets = await _context.Tickets

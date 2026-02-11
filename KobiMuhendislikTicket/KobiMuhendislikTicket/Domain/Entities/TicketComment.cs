@@ -5,7 +5,7 @@ namespace KobiMuhendislikTicket.Domain.Entities
     public class TicketComment : BaseEntity
     {
         public required string Message { get; set; }
-        public Guid TicketId { get; set; }
+        public int TicketId { get; set; }
         public Ticket? Ticket { get; set; }
 
         // Mesajı kim yazdı? (Firma mı yoksa Kobi Mühendislik personeli mi?)

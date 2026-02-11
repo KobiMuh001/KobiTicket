@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { StaffService, StaffWorkload, StaffTicket } from '../../../core/services/staff.service';
 import { NotificationService, Notification } from '../../../core/services/notification.service';
+import { SignalRService, StaffNotification, TicketUpdateMessage } from '../../../core/services/signalr.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -21,19 +23,39 @@ export class StaffDashboardComponent implements OnInit, OnDestroy {
   isLoading = true;
   error: string | null = null;
   showNotificationsDropdown = false;
+  toastNotification: { message: string; type: string } | null = null;
   private destroy$ = new Subject<void>();
+  private refreshInterval: any;
 
   constructor(
     private staffService: StaffService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private signalRService: SignalRService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
     this.loadDashboardData();
     this.subscribeToNotifications();
+    this.initializeSignalR();
+    
+    // Dashboard'ı 30 saniyede bir yenile (polling)
+    this.refreshInterval = setInterval(() => {
+      console.log('Staff Dashboard: Periodic refresh triggered');
+      this.loadDashboardData();
+    }, 30000);
   }
 
   ngOnDestroy(): void {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
+    this.signalRService.stopNotificationConnection().catch(err => {
+      console.log('Error stopping SignalR notification connection:', err);
+    });
+    this.signalRService.stopConnection().catch(err => {
+      console.log('Error stopping SignalR main connection:', err);
+    });
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -44,6 +66,74 @@ export class StaffDashboardComponent implements OnInit, OnDestroy {
       .subscribe(notifications => {
         this.notifications = notifications;
       });
+  }
+
+  private initializeSignalR(): void {
+    const token = this.authService.getToken();
+    if (!token) {
+      console.log('No token available for SignalR connection');
+      return;
+    }
+
+    // Notification hub'ı bağla
+    this.signalRService.startNotificationConnection(token)
+      .then(() => {
+        console.log('SignalR notification connection established for staff');
+        this.subscribeToRealtimeNotifications();
+      })
+      .catch(err => {
+        console.error('Failed to establish SignalR notification connection:', err);
+      });
+
+    // Main connection hub'ı bağla (TicketUpdated event'leri için)
+    this.signalRService.startConnection(token)
+      .then(() => {
+        console.log('SignalR main connection established for staff');
+        this.subscribeToTicketUpdates();
+      })
+      .catch(err => {
+        console.error('Failed to establish SignalR main connection:', err);
+      });
+  }
+
+  private subscribeToRealtimeNotifications(): void {
+    this.signalRService.staffNotificationReceived$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((notification: StaffNotification) => {
+        console.log('Real-time notification received:', notification);
+        // Yeni bildirimi service üzerinden ekle (BehaviorSubject otomatik günceller)
+        const newNotification: Notification = {
+          id: notification.id,
+          title: notification.title,
+          message: notification.message,
+          type: notification.type,
+          isRead: notification.isRead,
+          ticketId: notification.ticketId,
+          createdDate: notification.createdDate
+        };
+        this.notificationService.addStaffNotificationDirectly(newNotification);
+        
+        // Toast göster
+        this.showToast(notification.title, 'info');
+      });
+  }
+
+  private subscribeToTicketUpdates(): void {
+    // Ticket güncellemelerini dinle (yeni ticket oluşturuldu, status değişti vs.)
+    this.signalRService.ticketUpdated$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((updatedTicket: TicketUpdateMessage) => {
+        console.log('Ticket update received:', updatedTicket);
+        // Anlık olarak paneli yenile
+        this.loadDashboardData();
+      });
+  }
+
+  private showToast(message: string, type: string = 'info'): void {
+    this.toastNotification = { message, type };
+    setTimeout(() => {
+      this.toastNotification = null;
+    }, 4000); // 4 saniye sonra kaybolsun
   }
 
   loadDashboardData(): void {
@@ -100,7 +190,7 @@ export class StaffDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  claimTicket(ticketId: string): void {
+  claimTicket(ticketId: number | string): void {
     this.staffService.claimTicket(ticketId).subscribe({
       next: (res) => {
         if (res.success) {

@@ -27,13 +27,14 @@ export interface DashboardResponse {
 }
 
 export interface Ticket {
-  id: string;
+  id: number;
+  ticketCode?: string;
   title: string;
   description: string;
   status: number;
   priority: number;
   createdDate: string;
-  tenantId: string;
+  tenantId: number;
   tenant?: {
     companyName: string;
   };
@@ -43,17 +44,18 @@ export interface Ticket {
 }
 
 export interface TicketListItem {
-  id: string;
+  id: number;
+  ticketCode?: string;
   title: string;
   status: number;
   priority: number;
   tenantName: string;
-  tenantId: string;
+  tenantId: number;
   createdDate: string;
   updatedDate?: string;
   assignedPerson?: string;
   assetName?: string;
-  assetId?: string;
+  assetId?: number;
   commentCount?: number;
   isOverdue?: boolean;
 }

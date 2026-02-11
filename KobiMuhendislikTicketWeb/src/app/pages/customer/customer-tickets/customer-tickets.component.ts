@@ -53,7 +53,9 @@ export class CustomerTicketsComponent implements OnInit {
           createdAt: t.createdDate || t.createdAt,
           updatedAt: t.updatedDate || t.updatedAt,
           assetName: t.asset?.name || t.asset?.productName || t.assetName
-        }));
+        })).sort((a: any, b: any) => {
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
         this.applyFilters();
         this.isLoading = false;
       },

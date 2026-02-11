@@ -1,19 +1,19 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
-import { AuthService, LoginRequest } from '../../core/services/auth.service';
+import { AuthService, StaffLoginRequest } from '../../core/services/auth.service';
 
 @Component({
-  selector: 'app-login',
+  selector: 'app-staff-login',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './login.component.html',
-  styleUrls: ['./login.component.scss']
+  templateUrl: './staff-login.component.html',
+  styleUrls: ['./staff-login.component.scss']
 })
-export class LoginComponent implements OnInit {
-  loginData: LoginRequest = {
-    identifier: '',
+export class StaffLoginComponent implements OnInit {
+  staffLoginData: StaffLoginRequest = {
+    email: '',
     password: ''
   };
   
@@ -22,7 +22,7 @@ export class LoginComponent implements OnInit {
   infoMessage = '';
   showPassword = false;
   rememberMe = false;
-  returnUrl = '/customer';
+  returnUrl = '/staff/dashboard';
 
   // Rate Limiting - Brute Force koruması
   private failedAttempts = 0;
@@ -30,8 +30,8 @@ export class LoginComponent implements OnInit {
   private readonly MAX_ATTEMPTS = 5;
   private readonly LOCKOUT_DURATION_MS = 60000; // 1 dakika
 
-  // Güvenli yönlendirme için izin verilen rotalar (sadece customer)
-  private allowedRoutes = ['/customer'];
+  // Güvenli yönlendirme için izin verilen rotalar
+  private allowedRoutes = ['/staff/dashboard', '/staff', '/admin/dashboard', '/admin'];
 
   constructor(
     private authService: AuthService,
@@ -82,28 +82,28 @@ export class LoginComponent implements OnInit {
 
   // Open Redirect açığını önlemek için URL doğrulama
   private sanitizeReturnUrl(url: string | undefined): string {
-    if (!url) return '/customer';
+    if (!url) return '/staff/dashboard';
     
     // Sadece iç rotaları kabul et (/ ile başlamalı, // ile başlamamalı)
     if (!url.startsWith('/') || url.startsWith('//')) {
-      return '/customer';
+      return '/staff/dashboard';
     }
     
     // Protokol içeren URL'leri reddet (javascript:, http:, https: vb.)
     if (url.includes(':')) {
-      return '/customer';
+      return '/staff/dashboard';
     }
     
     // İzin verilen rota önekleriyle başlayıp başlamadığını kontrol et
     const isAllowed = this.allowedRoutes.some(route => url.startsWith(route));
-    return isAllowed ? url : '/customer';
+    return isAllowed ? url : '/staff/dashboard';
   }
 
   onSubmit(): void {
     // Rate limiting kontrolü
     if (this.isLockedOut()) return;
 
-    if (!this.loginData.identifier || !this.loginData.password) {
+    if (!this.staffLoginData.email || !this.staffLoginData.password) {
       this.errorMessage = 'Lütfen tüm alanları doldurunuz.';
       return;
     }
@@ -111,20 +111,22 @@ export class LoginComponent implements OnInit {
     this.isLoading = true;
     this.errorMessage = '';
 
-    this.authService.login(this.loginData, this.rememberMe).subscribe({
+    this.authService.staffLogin(this.staffLoginData, this.rememberMe).subscribe({
       next: () => {
-        // Sadece customer giriş yapabilir, admin/staff için hata göster
-        const user = this.authService.getCurrentUser();
-        if (user?.role === 'Admin' || user?.role === 'Staff') {
-          this.isLoading = false;
-          this.errorMessage = 'Admin ve personel giriş yapmak için personel giriş sayfasını kullanınız.';
-          this.authService.logout(); // Giriş iptal et
-          return;
-        }
-        
         this.isLoading = false;
         this.resetFailedAttempts(); // Başarılı giriş - sayacı sıfırla
-        this.router.navigate(['/customer']);
+        
+        // Hem admin hem staff giriş yapabilir
+        const user = this.authService.getCurrentUser();
+        if (user?.role === 'Admin') {
+          this.router.navigate(['/admin/dashboard']);
+        } else if (user?.role === 'Staff') {
+          this.router.navigate(['/staff/dashboard']);
+        } else {
+          // Geçersiz role
+          this.errorMessage = 'Geçersiz kullanıcı rolü';
+          this.authService.logout();
+        }
       },
       error: (error) => {
         this.isLoading = false;
@@ -140,7 +142,7 @@ export class LoginComponent implements OnInit {
     this.showPassword = !this.showPassword;
   }
 
-  goToStaffLogin(): void {
-    this.router.navigate(['/staff-login']);
+  goToCustomerLogin(): void {
+    this.router.navigate(['/login']);
   }
 }

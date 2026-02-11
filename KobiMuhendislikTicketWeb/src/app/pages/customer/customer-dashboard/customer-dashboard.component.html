@@ -1,6 +1,11 @@
 <div class="customer-dashboard">
   <div class="page-header">
-    <h1>Hoş Geldiniz</h1>
+    <h1>
+      <span class="welcome-text">Hoş Geldiniz</span>
+      @if (currentUser?.companyName) {
+        <span class="company-name">, {{ currentUser?.companyName }}</span>
+      }
+    </h1>
     <p>Destek taleplerinizi buradan takip edebilirsiniz.</p>
   </div>
 

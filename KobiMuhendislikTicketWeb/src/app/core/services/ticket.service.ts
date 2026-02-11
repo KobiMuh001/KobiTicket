@@ -4,7 +4,8 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface Ticket {
-  id: string;
+  id: number;
+  ticketCode?: string;
   title: string;
   description: string;
   status: number;
@@ -13,8 +14,8 @@ export interface Ticket {
   updatedDate?: string;
   assignedPerson?: string;
   imagePath?: string;
-  tenantId: string;
-  assetId?: string;
+  tenantId: number;
+  assetId?: number;
   tenant?: {
     companyName: string;
     email?: string;
@@ -27,7 +28,7 @@ export interface Ticket {
 }
 
 export interface TicketComment {
-  id: string;
+  id: number;
   message: string;
   author: string;
   isAdmin: boolean;
@@ -35,7 +36,7 @@ export interface TicketComment {
 }
 
 export interface TicketHistory {
-  id: string;
+  id: number;
   action: string;
   performedBy: string;
   createdDate: string;
@@ -53,23 +54,23 @@ export class TicketService {
     return this.http.get(`${this.apiUrl}/tickets/admin/all-tickets`);
   }
 
-  getTicketById(id: string): Observable<any> {
+  getTicketById(id: number | string): Observable<any> {
     return this.http.get(`${this.apiUrl}/admin/tickets/${id}`);
   }
 
-  updateTicketStatus(id: string, status: number): Observable<any> {
+  updateTicketStatus(id: number | string, status: number): Observable<any> {
     return this.http.patch(`${this.apiUrl}/admin/tickets/${id}/status`, { newStatus: status });
   }
 
-  updateTicketPriority(id: string, priority: number): Observable<any> {
+  updateTicketPriority(id: number | string, priority: number): Observable<any> {
     return this.http.patch(`${this.apiUrl}/admin/tickets/${id}/priority`, { newPriority: priority });
   }
 
-  assignTicket(id: string, personName: string): Observable<any> {
+  assignTicket(id: number | string, personName: string): Observable<any> {
     return this.http.patch(`${this.apiUrl}/admin/tickets/${id}/assign`, { personName });
   }
 
-  addAdminComment(ticketId: string, message: string, author: string, isAdmin: boolean): Observable<any> {
+  addAdminComment(ticketId: number | string, message: string, author: string, isAdmin: boolean): Observable<any> {
     return this.http.post(`${this.apiUrl}/admin/tickets/${ticketId}/comments`, {
       message,
       author,
@@ -77,11 +78,11 @@ export class TicketService {
     });
   }
 
-  getComments(ticketId: string): Observable<any> {
+  getComments(ticketId: number | string): Observable<any> {
     return this.http.get(`${this.apiUrl}/tickets/${ticketId}/comments`);
   }
 
-  getHistory(ticketId: string): Observable<any> {
+  getHistory(ticketId: number | string): Observable<any> {
     return this.http.get(`${this.apiUrl}/tickets/${ticketId}/history`);
   }
 
@@ -94,11 +95,11 @@ export class TicketService {
     return this.http.post(`${this.apiUrl}/tickets/create-ticket`, ticket);
   }
 
-  addComment(ticketId: string, message: string): Observable<any> {
+  addComment(ticketId: number | string, message: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/tickets/${ticketId}/comments`, { message });
   }
 
-  uploadTicketImage(ticketId: string, formData: FormData): Observable<any> {
+  uploadTicketImage(ticketId: number | string, formData: FormData): Observable<any> {
     return this.http.post(`${this.apiUrl}/tickets/${ticketId}/upload-image`, formData);
   }
 }

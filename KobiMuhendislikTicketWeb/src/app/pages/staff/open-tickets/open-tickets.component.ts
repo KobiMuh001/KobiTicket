@@ -53,7 +53,7 @@ export class OpenTicketsComponent implements OnInit {
     this.applyFilters();
   }
 
-  claimTicket(ticketId: string): void {
+  claimTicket(ticketId: number | string): void {
     this.staffService.claimTicket(ticketId).subscribe({
       next: (res) => {
         if (res.success) {

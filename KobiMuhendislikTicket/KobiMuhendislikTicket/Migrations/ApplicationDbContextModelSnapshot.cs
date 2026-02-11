@@ -24,9 +24,11 @@ namespace KobiMuhendislikTicket.Migrations
 
             modelBuilder.Entity("KobiMuhendislikTicket.Domain.Entities.Asset", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
@@ -46,8 +48,8 @@ namespace KobiMuhendislikTicket.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("datetime2");
@@ -64,9 +66,11 @@ namespace KobiMuhendislikTicket.Migrations
 
             modelBuilder.Entity("KobiMuhendislikTicket.Domain.Entities.Notification", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
@@ -84,11 +88,11 @@ namespace KobiMuhendislikTicket.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("TargetUserId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int?>("TargetUserId")
+                        .HasColumnType("int");
 
-                    b.Property<Guid?>("TicketId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int?>("TicketId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -109,9 +113,11 @@ namespace KobiMuhendislikTicket.Migrations
 
             modelBuilder.Entity("KobiMuhendislikTicket.Domain.Entities.Staff", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
@@ -152,12 +158,12 @@ namespace KobiMuhendislikTicket.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Staffs");
+                    b.ToTable("Staffs", (string)null);
 
                     b.HasData(
                         new
                         {
-                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
+                            Id = 1,
                             CreatedDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Department = "Teknik Destek",
                             Email = "ahmet.yilmaz@kobi.com",
@@ -165,12 +171,12 @@ namespace KobiMuhendislikTicket.Migrations
                             IsActive = true,
                             IsDeleted = false,
                             MaxConcurrentTickets = 10,
-                            PasswordHash = "$2a$11$xvgkP7pc5NGGjgGCT3EKIus8Sd3uT/ZEoPAaYEjMibijPYed6P8mK",
+                            PasswordHash = "$2a$11$ri..v503qVGhylO06aF4duP0n6oMRrvZ0gnOog68epSHInV4syVrS",
                             Phone = "(532) 111 2233"
                         },
                         new
                         {
-                            Id = new Guid("22222222-2222-2222-2222-222222222222"),
+                            Id = 2,
                             CreatedDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Department = "Teknik Destek",
                             Email = "mehmet.kaya@kobi.com",
@@ -178,12 +184,12 @@ namespace KobiMuhendislikTicket.Migrations
                             IsActive = true,
                             IsDeleted = false,
                             MaxConcurrentTickets = 8,
-                            PasswordHash = "$2a$11$TDvyNoKaAH.L6dq8s0yYF.8cJHju8zlR468aO3jejkGf7YdVPziNq",
+                            PasswordHash = "$2a$11$LuSLkOBkVxPPFFC2kO8WMOAlHQiV9xmhge91PXirOg/9ElCrQfAyW",
                             Phone = "(533) 222 3344"
                         },
                         new
                         {
-                            Id = new Guid("33333333-3333-3333-3333-333333333333"),
+                            Id = 3,
                             CreatedDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Department = "Satış",
                             Email = "ayse.demir@kobi.com",
@@ -191,16 +197,18 @@ namespace KobiMuhendislikTicket.Migrations
                             IsActive = true,
                             IsDeleted = false,
                             MaxConcurrentTickets = 5,
-                            PasswordHash = "$2a$11$m3jFMiCWUByBlh.KbiCBSO65MiWXJaBhgWvnx2d9K039o8jKUz4OK",
+                            PasswordHash = "$2a$11$QIsWAO7g2AxhTX4emwZI2eeEaiSJnXlRxPR4C/DXT7NgxvhF8Pkhq",
                             Phone = "(534) 333 4455"
                         });
                 });
 
             modelBuilder.Entity("KobiMuhendislikTicket.Domain.Entities.Tenant", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("CompanyName")
                         .IsRequired()
@@ -248,12 +256,14 @@ namespace KobiMuhendislikTicket.Migrations
 
             modelBuilder.Entity("KobiMuhendislikTicket.Domain.Entities.Ticket", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
 
-                    b.Property<Guid?>("AssetId")
-                        .HasColumnType("uniqueidentifier");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AssetId")
+                        .HasColumnType("int");
 
                     b.Property<string>("AssignedPerson")
                         .HasColumnType("nvarchar(max)");
@@ -277,8 +287,11 @@ namespace KobiMuhendislikTicket.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TicketCode")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -298,9 +311,11 @@ namespace KobiMuhendislikTicket.Migrations
 
             modelBuilder.Entity("KobiMuhendislikTicket.Domain.Entities.TicketComment", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AuthorName")
                         .IsRequired()
@@ -319,8 +334,8 @@ namespace KobiMuhendislikTicket.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("TicketId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("TicketId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("datetime2");
@@ -334,9 +349,11 @@ namespace KobiMuhendislikTicket.Migrations
 
             modelBuilder.Entity("KobiMuhendislikTicket.Domain.Entities.TicketHistory", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ActionBy")
                         .IsRequired()
@@ -352,8 +369,8 @@ namespace KobiMuhendislikTicket.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<Guid>("TicketId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("TicketId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("datetime2");

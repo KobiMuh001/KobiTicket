@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using KobiMuhendislikTicket.Application.Services;
+using KobiMuhendislikTicket.Application.Common;
 using System.Security.Claims;
 using KobiMuhendislikTicket.Domain.Entities;
 using KobiMuhendislikTicket.Application.DTOs;
@@ -34,7 +35,7 @@ namespace KobiMuhendislikTicket.Controllers
             if (userIdClaim == null) 
                 return Unauthorized(new { message = "Kullanıcı kimliği bulunamadı." });
 
-            if (!Guid.TryParse(userIdClaim.Value, out var tenantId))
+            if (!int.TryParse(userIdClaim.Value, out var tenantId))
                 return Unauthorized(new { message = "Geçersiz kullanıcı kimliği." });
 
             var assets = await _assetService.GetMyAssetsAsync(tenantId);
@@ -53,7 +54,7 @@ namespace KobiMuhendislikTicket.Controllers
         // Admin: Tek varlık detayı
         [Authorize(Roles = "Admin")]
         [HttpGet("admin/{id}")]
-        public async Task<IActionResult> GetAssetById(Guid id)
+        public async Task<IActionResult> GetAssetById(int id)
         {
             var asset = await _assetService.GetAssetByIdAsync(id);
             if (asset == null)
@@ -71,7 +72,7 @@ namespace KobiMuhendislikTicket.Controllers
                 ProductName = dto.ProductName,
                 SerialNumber = dto.SerialNumber,
                 TenantId = dto.TenantId,
-                WarrantyEndDate = dto.WarrantyEndDate ?? DateTime.Now.AddYears(2), 
+                WarrantyEndDate = dto.WarrantyEndDate ?? DateTimeHelper.GetLocalNow().AddYears(2), 
                 Status = "Aktif"
             };
 
@@ -85,7 +86,7 @@ namespace KobiMuhendislikTicket.Controllers
         // Admin: Varlık güncelle
         [Authorize(Roles = "Admin")]
         [HttpPut("admin/{id}")]
-        public async Task<IActionResult> UpdateAsset(Guid id, UpdateAssetDto dto)
+        public async Task<IActionResult> UpdateAsset(int id, UpdateAssetDto dto)
         {
             var (success, message) = await _assetService.UpdateAssetAsync(id, dto);
             if (!success)
@@ -97,7 +98,7 @@ namespace KobiMuhendislikTicket.Controllers
         // Admin: Varlık sil
         [Authorize(Roles = "Admin")]
         [HttpDelete("admin/{id}")]
-        public async Task<IActionResult> DeleteAsset(Guid id)
+        public async Task<IActionResult> DeleteAsset(int id)
         {
             var result = await _assetService.DeleteAssetAsync(id);
             if (!result)

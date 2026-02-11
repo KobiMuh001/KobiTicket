@@ -65,7 +65,7 @@ namespace KobiMuhendislikTicket.Controllers
         }
 
         [HttpGet("staff/{id}")]
-        public async Task<IActionResult> GetStaffById(Guid id)
+        public async Task<IActionResult> GetStaffById(int id)
         {
             var staff = await _staffService.GetStaffByIdAsync(id);
             if (staff == null)
@@ -85,7 +85,7 @@ namespace KobiMuhendislikTicket.Controllers
         }
 
         [HttpPut("staff/{id}")]
-        public async Task<IActionResult> UpdateStaff(Guid id, [FromBody] UpdateStaffDto dto)
+        public async Task<IActionResult> UpdateStaff(int id, [FromBody] UpdateStaffDto dto)
         {
             var result = await _staffService.UpdateStaffAsync(id, dto);
             if (!result.IsSuccess)
@@ -95,7 +95,7 @@ namespace KobiMuhendislikTicket.Controllers
         }
 
         [HttpDelete("staff/{id}")]
-        public async Task<IActionResult> DeleteStaff(Guid id)
+        public async Task<IActionResult> DeleteStaff(int id)
         {
             var result = await _staffService.DeleteStaffAsync(id);
             if (!result.IsSuccess)
@@ -112,7 +112,7 @@ namespace KobiMuhendislikTicket.Controllers
         }
 
         [HttpPost("staff/{id}/reset-password")]
-        public async Task<IActionResult> ResetStaffPassword(Guid id, [FromBody] ResetStaffPasswordDto dto)
+        public async Task<IActionResult> ResetStaffPassword(int id, [FromBody] ResetStaffPasswordDto dto)
         {
             var result = await _staffService.ResetStaffPasswordAsync(id, dto.NewPassword);
             if (!result.IsSuccess)
@@ -122,7 +122,7 @@ namespace KobiMuhendislikTicket.Controllers
         }
 
         [HttpPost("tickets/{ticketId}/assign-to-staff")]
-        public async Task<IActionResult> AssignTicketToStaff(Guid ticketId, [FromBody] AssignTicketToStaffDto dto)
+        public async Task<IActionResult> AssignTicketToStaff(int ticketId, [FromBody] AssignTicketToStaffDto dto)
         {
             var result = await _staffService.AssignTicketToStaffAsync(ticketId, dto.StaffId, dto.Note);
             if (!result.IsSuccess)
@@ -142,7 +142,7 @@ namespace KobiMuhendislikTicket.Controllers
         }
 
         [HttpPost("tickets/{ticketId}/auto-assign")]
-        public async Task<IActionResult> AutoAssignTicket(Guid ticketId)
+        public async Task<IActionResult> AutoAssignTicket(int ticketId)
         {
             var result = await _staffService.AutoAssignTicketAsync(ticketId);
             if (!result.IsSuccess)
@@ -152,7 +152,7 @@ namespace KobiMuhendislikTicket.Controllers
         }
 
         [HttpPost("tickets/{ticketId}/unassign")]
-        public async Task<IActionResult> UnassignTicket(Guid ticketId)
+        public async Task<IActionResult> UnassignTicket(int ticketId)
         {
             var result = await _staffService.UnassignTicketAsync(ticketId);
             if (!result.IsSuccess)
@@ -169,7 +169,7 @@ namespace KobiMuhendislikTicket.Controllers
         }
 
         [HttpGet("tenants/{id}")]
-        public async Task<IActionResult> GetTenantDetail(Guid id)
+        public async Task<IActionResult> GetTenantDetail(int id)
         {
             var tenant = await _adminService.GetTenantDetailAsync(id);
             if (tenant == null)
@@ -179,7 +179,7 @@ namespace KobiMuhendislikTicket.Controllers
         }
 
         [HttpPut("tenants/{id}")]
-        public async Task<IActionResult> UpdateTenant(Guid id, [FromBody] UpdateTenantDto dto)
+        public async Task<IActionResult> UpdateTenant(int id, [FromBody] UpdateTenantDto dto)
         {
             var result = await _tenantService.UpdateTenantAsync(id, dto);
             if (!result.IsSuccess)
@@ -189,7 +189,7 @@ namespace KobiMuhendislikTicket.Controllers
         }
 
         [HttpPost("tenants/{id}/reset-password")]
-        public async Task<IActionResult> ResetTenantPassword(Guid id, [FromBody] AdminResetPasswordDto dto)
+        public async Task<IActionResult> ResetTenantPassword(int id, [FromBody] AdminResetPasswordDto dto)
         {
             var result = await _tenantService.AdminResetPasswordAsync(id, dto.NewPassword);
             if (!result.IsSuccess)
@@ -199,7 +199,7 @@ namespace KobiMuhendislikTicket.Controllers
         }
 
         [HttpDelete("tenants/{id}")]
-        public async Task<IActionResult> DeleteTenant(Guid id, [FromQuery] bool forceDelete = false)
+        public async Task<IActionResult> DeleteTenant(int id, [FromQuery] bool forceDelete = false)
         {
             var result = await _tenantService.DeleteTenantAsync(id, forceDelete);
             if (!result.IsSuccess)
@@ -216,7 +216,7 @@ namespace KobiMuhendislikTicket.Controllers
         }
 
         [HttpGet("assets/{id}")]
-        public async Task<IActionResult> GetAssetDetail(Guid id)
+        public async Task<IActionResult> GetAssetDetail(int id)
         {
             var asset = await _adminService.GetAssetDetailAsync(id);
             if (asset == null)
@@ -233,7 +233,7 @@ namespace KobiMuhendislikTicket.Controllers
         }
 
         [HttpGet("tickets/{id}")]
-        public async Task<IActionResult> GetTicketDetail(Guid id)
+        public async Task<IActionResult> GetTicketDetail(int id)
         {
             var ticket = await _adminService.GetTicketDetailAsync(id);
             if (ticket == null)
@@ -243,7 +243,7 @@ namespace KobiMuhendislikTicket.Controllers
         }
 
         [HttpPatch("tickets/{id}/status")]
-        public async Task<IActionResult> UpdateTicketStatus(Guid id, [FromBody] UpdateTicketStatusDto dto)
+        public async Task<IActionResult> UpdateTicketStatus(int id, [FromBody] UpdateTicketStatusDto dto)
         {
             var result = await _ticketService.UpdateTicketStatusAsync(id, dto.NewStatus);
             if (!result.IsSuccess)
@@ -253,7 +253,7 @@ namespace KobiMuhendislikTicket.Controllers
         }
 
         [HttpPatch("tickets/{id}/priority")]
-        public async Task<IActionResult> UpdateTicketPriority(Guid id, [FromBody] UpdateTicketPriorityDto dto)
+        public async Task<IActionResult> UpdateTicketPriority(int id, [FromBody] UpdateTicketPriorityDto dto)
         {
             var result = await _ticketService.UpdateTicketPriorityAsync(id, dto.NewPriority);
             if (!result.IsSuccess)
@@ -263,7 +263,7 @@ namespace KobiMuhendislikTicket.Controllers
         }
 
         [HttpPatch("tickets/{id}/assign")]
-        public async Task<IActionResult> AssignTicket(Guid id, [FromBody] AssignTicketDto dto)
+        public async Task<IActionResult> AssignTicket(int id, [FromBody] AssignTicketDto dto)
         {
             var result = await _ticketService.AssignTicketToPersonAsync(id, dto.PersonName);
             if (!result.IsSuccess)
@@ -273,7 +273,7 @@ namespace KobiMuhendislikTicket.Controllers
         }
 
         [HttpPatch("tickets/{id}/resolve")]
-        public async Task<IActionResult> ResolveTicket(Guid id, [FromBody] ResolveTicketDto dto)
+        public async Task<IActionResult> ResolveTicket(int id, [FromBody] ResolveTicketDto dto)
         {
             var result = await _ticketService.ResolveTicketAsync(id, dto.SolutionNote, dto.ResolvedBy);
             if (!result.IsSuccess)
@@ -283,7 +283,7 @@ namespace KobiMuhendislikTicket.Controllers
         }
 
         [HttpPost("tickets/{id}/comments")]
-        public async Task<IActionResult> AddComment(Guid id, [FromBody] AddCommentDto dto)
+        public async Task<IActionResult> AddComment(int id, [FromBody] AddCommentDto dto)
         {
             var result = await _ticketService.AddCommentAsync(id, dto.Message, dto.Author, dto.IsAdmin, "Admin");
             if (!result.IsSuccess)
@@ -334,7 +334,7 @@ namespace KobiMuhendislikTicket.Controllers
         }
 
         [HttpPatch("notifications/{id}/read")]
-        public async Task<IActionResult> MarkAsRead(Guid id)
+        public async Task<IActionResult> MarkAsRead(int id)
         {
             await _notificationService.MarkAsReadAsync(id);
             return Ok(new { success = true, message = "Bildirim okundu olarak işaretlendi." });
@@ -348,7 +348,7 @@ namespace KobiMuhendislikTicket.Controllers
         }
 
         [HttpDelete("notifications/{id}")]
-        public async Task<IActionResult> DeleteNotification(Guid id)
+        public async Task<IActionResult> DeleteNotification(int id)
         {
             await _notificationService.DeleteNotificationAsync(id);
             return Ok(new { success = true, message = "Bildirim silindi." });

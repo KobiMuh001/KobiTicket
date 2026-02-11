@@ -77,8 +77,9 @@ export class StaffComponent implements OnInit {
     });
   }
 
-  getWorkload(staffId: string): StaffWorkload | undefined {
-    return this.workloads.find(w => w.id === staffId);
+  getWorkload(staffId: number | string): StaffWorkload | undefined {
+    const id = typeof staffId === 'number' ? staffId : Number(staffId);
+    return this.workloads.find(w => Number(w.id ?? 0) === id);
   }
 
   applyFilter(): void {

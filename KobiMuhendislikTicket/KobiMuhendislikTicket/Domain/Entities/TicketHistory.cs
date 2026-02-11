@@ -4,7 +4,7 @@ namespace KobiMuhendislikTicket.Domain.Entities
 {
     public class TicketHistory : BaseEntity
     {
-        public Guid TicketId { get; set; }
+        public int TicketId { get; set; }
         public Ticket? Ticket { get; set; } // Navigation Property
 
         public required string ActionBy { get; set; } // İşlemi yapan kişi

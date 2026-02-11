@@ -81,7 +81,8 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe((comment: CommentMessage) => {
         // Bu yorum bana ait bir tickete mi ait?
-        const ticket = this.tickets.find(t => t.id === comment.ticketId);
+        const commentTicketId = Number(comment.ticketId);
+        const ticket = this.tickets.find(t => t.id === commentTicketId);
         if (ticket) {
           const notification: Notification = {
             id: `notif-${Date.now()}-${Math.random()}`,
@@ -132,7 +133,7 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
     this.applyFilters();
   }
 
-  releaseTicket(ticketId: string, event: Event): void {
+  releaseTicket(ticketId: number | string, event: Event): void {
     event.stopPropagation();
     if (confirm('Bu ticketı bırakmak istediğinize emin misiniz?')) {
       this.staffService.releaseTicket(ticketId).subscribe({

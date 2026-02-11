@@ -23,7 +23,8 @@ interface TicketHistoryItem {
 }
 
 interface TicketDetail {
-  id: string;
+  id: number;
+  ticketCode?: string;
   title: string;
   description: string;
   status: string | number;
@@ -32,11 +33,11 @@ interface TicketDetail {
   imagePath?: string;
   createdDate: string;
   updatedDate?: string;
-  tenantId: string;
+  tenantId: number;
   tenantName: string;
   tenantEmail?: string;
   tenantPhone?: string;
-  assetId?: string;
+  assetId?: number;
   assetName?: string;
   assetSerialNumber?: string;
   assetUnderWarranty?: boolean;
@@ -222,7 +223,7 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
     });
   }
 
-  loadTicket(id: string): void {
+  loadTicket(id: number | string): void {
     this.loading = true;
     this.ticketService.getTicketById(id).subscribe({
       next: (response: any) => {
@@ -251,6 +252,15 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
         this.loading = false;
       }
     });
+  }
+
+  formatTicketId(id: number | string | null | undefined, ticketCode?: string | null): string {
+    // Backend'den gelen TicketCode'u kullan (T00001 formatı)
+    if (ticketCode) return ticketCode;
+    // Fallback: ID'den formatlama
+    if (id === null || id === undefined) return '-';
+    const numericId = typeof id === 'number' ? id : Number(id);
+    return Number.isFinite(numericId) ? `T${numericId.toString().padStart(5, '0')}` : String(id);
   }
 
   updateStatus(statusValue: number): void {
@@ -292,7 +302,8 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
   assignTicket(): void {
     if (!this.ticket || !this.selectedStaffId) return;
     
-    const selectedStaff = this.staffList.find(s => s.id === this.selectedStaffId);
+    const selectedId = typeof this.selectedStaffId === 'number' ? this.selectedStaffId : Number(this.selectedStaffId);
+    const selectedStaff = this.staffList.find(s => Number(s.id) === selectedId);
     if (!selectedStaff) return;
 
     this.assigning = true;

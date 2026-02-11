@@ -10,11 +10,11 @@ namespace KobiMuhendislikTicket.Domain.Entities
         public bool IsRead { get; set; } = false;
         
         // İlgili ticket varsa
-        public Guid? TicketId { get; set; }
+        public int? TicketId { get; set; }
         public Ticket? Ticket { get; set; }
         
         // Bildirimin hedef kitlesi (Admin için null)
-        public Guid? TargetUserId { get; set; }
+        public int? TargetUserId { get; set; }
         public bool IsForAdmin { get; set; } = true;
     }
 

@@ -4,7 +4,7 @@
     {
         public required string ProductName { get; set; } 
         public required string SerialNumber { get; set; } 
-        public Guid TenantId { get; set; } 
+        public int TenantId { get; set; } 
         public DateTime? WarrantyEndDate { get; set; } 
     }
 
@@ -13,7 +13,7 @@
         public required string ProductName { get; set; }
         public required string SerialNumber { get; set; }
         public required string Status { get; set; }
-        public Guid TenantId { get; set; }
+        public int TenantId { get; set; }
         public DateTime WarrantyEndDate { get; set; }
     }
 }

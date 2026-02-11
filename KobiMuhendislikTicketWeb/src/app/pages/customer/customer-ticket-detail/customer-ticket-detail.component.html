@@ -26,25 +26,67 @@
     </div>
   } @else {
     <div class="ticket-content">
-      <!-- Left Column -->
+      <!-- Left Column: Main Detail -->
       <div class="ticket-left-column">
-        <!-- Ticket Header -->
+        <!-- Ticket Header Card -->
         <div class="ticket-header-card">
           <div class="ticket-title-section">
             <span class="ticket-id">#{{ ticket.id }}</span>
             <h1>{{ ticket.title }}</h1>
           </div>
-          <div class="ticket-badges">
-            <span class="badge" [ngClass]="getStatusClass(ticket.status)">{{ ticket.statusText }}</span>
-            <span class="badge" [ngClass]="getPriorityClass(ticket.priority)">{{ ticket.priorityText }}</span>
+          <div class="header-actions">
+            <div class="ticket-badges">
+              <span class="badge" [ngClass]="getStatusClass(ticket.status)">{{ ticket.statusText }}</span>
+              <span class="badge" [ngClass]="getPriorityClass(ticket.priority)">{{ ticket.priorityText }}</span>
+            </div>
+            <button class="btn-toggle-chat-header" (click)="toggleChat()" [class.active]="showChat">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              {{ showChat ? 'Sohbeti Gizle' : 'Mesaj Gönder' }}
+            </button>
           </div>
         </div>
 
-        <!-- Ticket Info -->
-        <div class="info-grid">
-          <div class="info-card">
+        <!-- Description Area -->
+        <div class="description-section">
+          <div class="description-card">
+            <div class="card-header">
+              <h3>Talep Açıklaması</h3>
+              <span class="created-at">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
+                {{ ticket.createdDate | date:'dd MMM yyyy, HH:mm' }}
+              </span>
+            </div>
+            <div class="card-body">
+              <p>{{ ticket.description }}</p>
+            </div>
+          </div>
+
+          @if (ticket.imagePath) {
+            <div class="attachment-card">
+              <div class="card-header">
+                <h3>Eklenen Görsel</h3>
+              </div>
+              <div class="image-container">
+                <a [href]="baseUrl + '/' + ticket.imagePath" target="_blank" title="Tam boyutta görüntüle">
+                  <img [src]="baseUrl + '/' + ticket.imagePath" [alt]="ticket.title" class="ticket-image">
+                </a>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Right Column: Sidebar -->
+      <div class="ticket-right-column">
+        <!-- Ticket Info Grid -->
+        <div class="info-sidebar-grid">
+          <div class="info-card-compact">
             <div class="info-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
                 <line x1="16" y1="2" x2="16" y2="6"/>
                 <line x1="8" y1="2" x2="8" y2="6"/>
@@ -52,15 +94,15 @@
               </svg>
             </div>
             <div class="info-content">
-              <span class="info-label">Oluşturulma Tarihi</span>
+              <span class="info-label">Oluşturulma</span>
               <span class="info-value">{{ ticket.createdDate | date:'dd.MM.yyyy HH:mm' }}</span>
             </div>
           </div>
 
           @if (ticket.updatedDate) {
-            <div class="info-card">
+            <div class="info-card-compact">
               <div class="info-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"/>
                   <polyline points="12 6 12 12 16 14"/>
                 </svg>
@@ -73,24 +115,24 @@
           }
 
           @if (ticket.assetName) {
-            <div class="info-card">
+            <div class="info-card-compact">
               <div class="info-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
                   <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
                 </svg>
               </div>
               <div class="info-content">
-                <span class="info-label">İlgili Varlık</span>
+                <span class="info-label">ilgili Varlık</span>
                 <span class="info-value">{{ ticket.assetName }}</span>
               </div>
             </div>
           }
 
           @if (ticket.assignedPerson) {
-            <div class="info-card">
+            <div class="info-card-compact">
               <div class="info-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                   <circle cx="12" cy="7" r="4"/>
                 </svg>
@@ -103,77 +145,66 @@
           }
         </div>
 
-        <!-- Description -->
-        <div class="description-card">
-          <h3>Açıklama</h3>
-          <p>{{ ticket.description }}</p>
-        </div>
-      </div>
+        <!-- Chat Content -->
+        @if (showChat) {
+          <div class="comments-sidebar-section">
+            <div class="comments-header">
+              <h3>Mesajlar ({{ comments.length }})</h3>
+              <button class="btn-close-chat-sidebar" (click)="toggleChat()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
 
-      <!-- Right Column - Comments -->
-      <div class="ticket-right-column">
-      <div class="comments-section">
-        <h3>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-          Mesajlar ({{ comments.length }})
-        </h3>
+            <div class="comments-list-sidebar" #commentsContainer>
+              @if (comments.length === 0) {
+                <div class="no-comments-v2">
+                  <p>Henüz mesaj bulunmuyor.</p>
+                </div>
+              } @else {
+                @for (comment of comments; track comment.id) {
+                  <div class="comment-v2" [class.admin-comment]="comment.isAdminReply">
+                    <div class="comment-header-v2">
+                      <span class="author-name-v2">{{ comment.authorName }}</span>
+                      <span class="author-role-v2" *ngIf="comment.isAdminReply">Destek</span>
+                      <span class="comment-date-v2">{{ comment.createdDate | date:'HH:mm' }}</span>
+                    </div>
+                    <p class="comment-message-v2">{{ comment.message }}</p>
+                  </div>
+                }
+              }
+            </div>
 
-        @if (comments.length === 0) {
-          <div class="no-comments">
-            <p>Henüz mesaj bulunmuyor.</p>
+            <!-- Add Comment Inline -->
+            <div class="add-comment-sidebar">
+              <div class="textarea-container">
+                <textarea 
+                  [(ngModel)]="newComment" 
+                  placeholder="Mesajınızı yazın..."
+                  rows="2"></textarea>
+                <button 
+                  class="btn-send-mini" 
+                  (click)="addComment()" 
+                  [disabled]="!newComment.trim() || isSubmittingComment">
+                  <svg *ngIf="!isSubmittingComment" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="2" x2="11" y2="13"/>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                  </svg>
+                  <span *ngIf="isSubmittingComment" class="spinner-mini"></span>
+                </button>
+              </div>
+            </div>
           </div>
         } @else {
-          <div class="comments-list" #commentsContainer>
-            @for (comment of comments; track comment.id) {
-              <div class="comment" [class.admin-comment]="comment.isAdminReply">
-                <div class="comment-header">
-                  <div class="comment-author">
-                    <div class="author-avatar" [class.admin]="comment.isAdminReply">
-                      {{ comment.authorName?.charAt(0) || '?' }}
-                    </div>
-                    <div class="author-info">
-                      <span class="author-name">
-                        {{ comment.authorName }}
-                        @if (comment.isAdminReply) {
-                          <span class="admin-badge">Destek</span>
-                        }
-                      </span>
-                      <span class="comment-date">{{ comment.createdDate | date:'dd.MM.yyyy HH:mm' }}</span>
-                    </div>
-                  </div>
-                </div>
-                <p class="comment-message">{{ comment.message }}</p>
-              </div>
-            }
-          </div>
+           <div class="chat-placeholder-card">
+             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+             </svg>
+             <p>Destek ekibiyle iletişime geçmek için yukarıdaki butonu kullanın.</p>
+           </div>
         }
-
-        <!-- Add Comment -->
-        <div class="add-comment">
-          <h4>Mesaj Gönder</h4>
-          <textarea 
-            [(ngModel)]="newComment" 
-            placeholder="Mesajınızı yazın..."
-            rows="3"></textarea>
-          <button 
-            class="btn-send" 
-            (click)="addComment()" 
-            [disabled]="!newComment.trim() || isSubmittingComment">
-            @if (isSubmittingComment) {
-              <span class="spinner"></span>
-              Gönderiliyor...
-            } @else {
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="22" y1="2" x2="11" y2="13"/>
-                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-              </svg>
-              Gönder
-            }
-          </button>
-        </div>
-      </div>
       </div>
     </div>
   }

@@ -51,7 +51,6 @@ namespace KobiMuhendislikTicket.Application.Validators
         {
             RuleFor(x => x.Message)
                 .NotEmpty().WithMessage("Yorum metni zorunludur")
-                .MinimumLength(5).WithMessage("Yorum en az 5 karakter olmalıdır")
                 .MaximumLength(1000).WithMessage("Yorum en fazla 1000 karakter olabilir");
 
             RuleFor(x => x.Author)
@@ -65,7 +64,6 @@ namespace KobiMuhendislikTicket.Application.Validators
         {
             RuleFor(x => x.Message)
                 .NotEmpty().WithMessage("Yorum metni zorunludur")
-                .MinimumLength(5).WithMessage("Yorum en az 5 karakter olmalıdır")
                 .MaximumLength(1000).WithMessage("Yorum en fazla 1000 karakter olabilir");
         }
     }

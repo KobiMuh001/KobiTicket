@@ -30,7 +30,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
 
     public class RecentActivityDto
     {
-        public Guid TicketId { get; set; }
+        public int TicketId { get; set; }
         public string TicketTitle { get; set; } = string.Empty;
         public string Action { get; set; } = string.Empty;
         public string ActionBy { get; set; } = string.Empty;
@@ -71,7 +71,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
 
     public class TenantListItemDto
     {
-        public Guid Id { get; set; }
+        public int Id { get; set; }
         public string CompanyName { get; set; } = string.Empty;
         public string TaxNumber { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
@@ -84,7 +84,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
 
     public class TenantDetailDto
     {
-        public Guid Id { get; set; }
+        public int Id { get; set; }
         public string CompanyName { get; set; } = string.Empty;
         public string TaxNumber { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
@@ -105,7 +105,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
 
     public class TenantAssetDto
     {
-        public Guid Id { get; set; }
+        public int Id { get; set; }
         public string ProductName { get; set; } = string.Empty;
         public string SerialNumber { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
@@ -118,11 +118,11 @@ namespace KobiMuhendislikTicket.Application.DTOs
 
     public class AssetListItemDto
     {
-        public Guid Id { get; set; }
+        public int Id { get; set; }
         public string ProductName { get; set; } = string.Empty;
         public string SerialNumber { get; set; } = string.Empty;
         public string TenantName { get; set; } = string.Empty;
-        public Guid TenantId { get; set; }
+        public int TenantId { get; set; }
         public string Status { get; set; } = string.Empty;
         public DateTime? WarrantyEndDate { get; set; }
         public bool IsUnderWarranty { get; set; }
@@ -132,7 +132,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
 
     public class AssetDetailDto
     {
-        public Guid Id { get; set; }
+        public int Id { get; set; }
         public string ProductName { get; set; } = string.Empty;
         public string SerialNumber { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
@@ -143,7 +143,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
         public DateTime? UpdatedDate { get; set; }
 
         
-        public Guid TenantId { get; set; }
+        public int TenantId { get; set; }
         public string TenantName { get; set; } = string.Empty;
         public string TenantEmail { get; set; } = string.Empty;
 
@@ -159,15 +159,16 @@ namespace KobiMuhendislikTicket.Application.DTOs
 
     public class TicketListItemDto
     {
-        public Guid Id { get; set; }
+        public int Id { get; set; }
+        public string? TicketCode { get; set; }
         public string Title { get; set; } = string.Empty;
         public int Status { get; set; }
         public int Priority { get; set; }
         public string? AssignedPerson { get; set; }
         public string TenantName { get; set; } = string.Empty;
-        public Guid TenantId { get; set; }
+        public int TenantId { get; set; }
         public string? AssetName { get; set; }
-        public Guid? AssetId { get; set; }
+        public int? AssetId { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }
         public int CommentCount { get; set; }
@@ -176,7 +177,8 @@ namespace KobiMuhendislikTicket.Application.DTOs
 
     public class TicketDetailDto
     {
-        public Guid Id { get; set; }
+        public int Id { get; set; }
+        public string? TicketCode { get; set; }
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
@@ -187,13 +189,13 @@ namespace KobiMuhendislikTicket.Application.DTOs
         public DateTime? UpdatedDate { get; set; }
 
         
-        public Guid TenantId { get; set; }
+        public int TenantId { get; set; }
         public string TenantName { get; set; } = string.Empty;
         public string TenantEmail { get; set; } = string.Empty;
         public string? TenantPhone { get; set; }
 
         
-        public Guid? AssetId { get; set; }
+        public int? AssetId { get; set; }
         public string? AssetName { get; set; }
         public string? AssetSerialNumber { get; set; }
         public bool? AssetUnderWarranty { get; set; }
@@ -204,7 +206,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
 
     public class TicketCommentDto
     {
-        public Guid Id { get; set; }
+        public int Id { get; set; }
         public string Message { get; set; } = string.Empty;
         public string AuthorName { get; set; } = string.Empty;
         public bool IsAdminReply { get; set; }
@@ -220,7 +222,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
 
     public class TicketFilterDto
     {
-        public Guid? TenantId { get; set; }
+        public int? TenantId { get; set; }
         public int? Status { get; set; }
         public int? Priority { get; set; }
         public string? AssignedPerson { get; set; }
@@ -275,7 +277,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
 
     public class AssetWarrantyAlertDto
     {
-        public Guid Id { get; set; }
+        public int Id { get; set; }
         public string ProductName { get; set; } = string.Empty;
         public string SerialNumber { get; set; } = string.Empty;
         public string TenantName { get; set; } = string.Empty;
@@ -293,7 +295,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
 
     public class TenantActivityDto
     {
-        public Guid Id { get; set; }
+        public int Id { get; set; }
         public string CompanyName { get; set; } = string.Empty;
         public int TicketCount { get; set; }
         public DateTime? LastTicketDate { get; set; }

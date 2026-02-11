@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, interval } from 'rxjs';
 import { tap, switchMap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+import { AuthService } from './auth.service';
 
 export interface Notification {
   id: string;
@@ -33,7 +34,10 @@ export class NotificationService {
   public notifications$ = this.notificationsSubject.asObservable();
   public notificationsList$ = this.notificationsSubject.asObservable();
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) {}
 
   // Bildirimleri yükle
   getNotifications(take: number = 20): Observable<NotificationResponse> {
@@ -72,7 +76,12 @@ export class NotificationService {
 
   // Bildirimi okundu olarak işaretle
   markAsRead(notificationId: string): Observable<any> {
-    return this.http.patch(`${this.apiUrl}/admin/notifications/${notificationId}/read`, {}).pipe(
+    const user = this.authService.getCurrentUser();
+    const endpoint = user?.role === 'Staff' 
+      ? `${this.apiUrl}/staff/notifications/${notificationId}/read`
+      : `${this.apiUrl}/admin/notifications/${notificationId}/read`;
+    
+    return this.http.patch(endpoint, {}).pipe(
       tap(() => {
         const notifications = this.notificationsSubject.value;
         const updated = notifications.map(n => 
@@ -98,7 +107,12 @@ export class NotificationService {
 
   // Bildirimi sil
   deleteNotification(notificationId: string): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/admin/notifications/${notificationId}`).pipe(
+    const user = this.authService.getCurrentUser();
+    const endpoint = user?.role === 'Staff' 
+      ? `${this.apiUrl}/staff/notifications/${notificationId}`
+      : `${this.apiUrl}/admin/notifications/${notificationId}`;
+    
+    return this.http.delete(endpoint).pipe(
       tap(() => {
         const notifications = this.notificationsSubject.value;
         const deleted = notifications.find(n => n.id === notificationId);
@@ -145,5 +159,10 @@ export class NotificationService {
     const updated = [notification, ...current].slice(0, 20); // Son 20 bildirimi tut
     this.notificationsSubject.next(updated);
     this.unreadCountSubject.next(this.unreadCountSubject.value + 1);
+  }
+
+  // Yeni bildirimi ekle ve sayıyı güncelle
+  addStaffNotificationDirectly(notification: Notification): void {
+    this.addNotificationDirectly(notification);
   }
 }

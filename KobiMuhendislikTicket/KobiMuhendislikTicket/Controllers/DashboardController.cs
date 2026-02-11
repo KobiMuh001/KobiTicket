@@ -1,4 +1,5 @@
 ﻿using KobiMuhendislikTicket.Application.Services;
+using KobiMuhendislikTicket.Application.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,7 +22,7 @@ namespace KobiMuhendislikTicket.Controllers
                 Success = true,
                 Message = "İstatistikler başarıyla getirildi.",
                 Data = stats,
-                Timestamp = DateTime.Now
+                Timestamp = DateTimeHelper.GetLocalNow()
             });
         }
     }

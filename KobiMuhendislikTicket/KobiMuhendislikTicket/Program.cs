@@ -84,6 +84,7 @@ builder.Services.AddScoped<ITicketService, TicketService>();
 builder.Services.AddScoped<TicketService>();
 builder.Services.AddScoped<AdminService>();
 builder.Services.AddScoped<StaffService>(); 
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<NotificationService>();
 
 // Token Blacklist - Logout desteği
@@ -245,5 +246,6 @@ app.MapControllers();
 // SignalR Hub endpoints
 app.MapHub<CommentHub>("/hubs/comments");
 app.MapHub<DashboardStatsHub>("/hubs/dashboard-stats");
+app.MapHub<NotificationHub>("/hubs/notifications");
 
 app.Run();

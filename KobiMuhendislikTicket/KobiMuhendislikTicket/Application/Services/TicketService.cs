@@ -6,6 +6,8 @@ using KobiMuhendislikTicket.Domain.Enums;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.SignalR;
 using KobiMuhendislikTicket.Hubs;
+using KobiMuhendislikTicket.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 namespace KobiMuhendislikTicket.Application.Services
 {
@@ -15,20 +17,26 @@ namespace KobiMuhendislikTicket.Application.Services
         private readonly ILogger<TicketService> _logger;
         private readonly IHubContext<CommentHub> _hubContext;
         private readonly IHubContext<DashboardStatsHub> _dashboardHubContext;
+        private readonly ApplicationDbContext _context;
+        private readonly NotificationService _notificationService;
 
         public TicketService(
             ITicketRepository ticketRepository, 
             ILogger<TicketService> logger, 
             IHubContext<CommentHub> hubContext,
-            IHubContext<DashboardStatsHub> dashboardHubContext)
+            IHubContext<DashboardStatsHub> dashboardHubContext,
+            ApplicationDbContext context,
+            NotificationService notificationService)
         {
             _ticketRepository = ticketRepository;
             _logger = logger;
             _hubContext = hubContext;
             _dashboardHubContext = dashboardHubContext;
+            _context = context;
+            _notificationService = notificationService;
         }
 
-        public async Task<Result<Ticket>> GetTicketByIdAsync(Guid id)
+        public async Task<Result<Ticket>> GetTicketByIdAsync(int id)
         {
             try
             {
@@ -67,19 +75,13 @@ namespace KobiMuhendislikTicket.Application.Services
                 if (pageSize < 1) pageSize = 20;
                 if (pageSize > 100) pageSize = 100;
 
-                var tickets = await _ticketRepository.GetAllAsync();
-                var totalCount = tickets.Count;
+                var (tickets, totalCount) = await _ticketRepository.GetAllTicketsPagedAsync(pageNumber, pageSize);
                 var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
-                var pagedTickets = tickets
-                    .OrderByDescending(t => t.CreatedDate)
-                    .Skip((pageNumber - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToList();
-
-                var items = pagedTickets.Select(t => new TicketListItemDto
+                var items = tickets.Select(t => new TicketListItemDto
                 {
                     Id = t.Id,
+                    TicketCode = t.TicketCode,
                     Title = t.Title,
                     Status = (int)t.Status,
                     Priority = (int)t.Priority,
@@ -110,7 +112,7 @@ namespace KobiMuhendislikTicket.Application.Services
             }
         }
 
-        public async Task<Result<List<Ticket>>> GetTenantTicketsAsync(Guid tenantId)
+        public async Task<Result<List<Ticket>>> GetTenantTicketsAsync(int tenantId)
         {
             try
             {
@@ -129,12 +131,19 @@ namespace KobiMuhendislikTicket.Application.Services
             try
             {
                 ticket.Status = TicketStatus.Open;
-                ticket.CreatedDate = DateTime.UtcNow;
+                ticket.CreatedDate = DateTimeHelper.GetLocalNow();
 
                 await _ticketRepository.AddAsync(ticket);
+                await _context.SaveChangesAsync(); // İlk SaveChanges - ID'yi al
+                
+                // TicketCode'ı oluştur (T00001 formatı)
+                ticket.TicketCode = $"T{ticket.Id:D5}";
+                await _ticketRepository.UpdateAsync(ticket);
+                await _context.SaveChangesAsync(); // İkinci SaveChanges - TicketCode'ı kaydet
+                
                 await LogHistoryAsync(ticket.Id, "System", "Yeni ticket oluşturuldu");
                 
-                _logger.LogInformation("Yeni ticket oluşturuldu: {TicketId}", ticket.Id);
+                _logger.LogInformation("Yeni ticket oluşturuldu: {TicketId}/{TicketCode}", ticket.Id, ticket.TicketCode);
                 
                 // Dashboard istatistiklerini anlık olarak güncelle
                 await BroadcastDashboardStatsAsync();
@@ -148,7 +157,7 @@ namespace KobiMuhendislikTicket.Application.Services
             }
         }
 
-        public async Task<Result> UpdateTicketStatusAsync(Guid ticketId, int newStatus)
+        public async Task<Result> UpdateTicketStatusAsync(int ticketId, int newStatus)
         {
             try
             {
@@ -181,7 +190,7 @@ namespace KobiMuhendislikTicket.Application.Services
             }
         }
 
-        public async Task<Result> UpdateTicketPriorityAsync(Guid ticketId, int newPriority)
+        public async Task<Result> UpdateTicketPriorityAsync(int ticketId, int newPriority)
         {
             try
             {
@@ -214,7 +223,7 @@ namespace KobiMuhendislikTicket.Application.Services
             }
         }
 
-        public async Task<Result> AssignTicketToPersonAsync(Guid ticketId, string personName)
+        public async Task<Result> AssignTicketToPersonAsync(int ticketId, string personName)
         {
             try
             {
@@ -227,12 +236,24 @@ namespace KobiMuhendislikTicket.Application.Services
 
                 ticket.AssignedPerson = personName;
                 ticket.Status = TicketStatus.Processing;
-                ticket.UpdatedDate = DateTime.UtcNow;
+                ticket.UpdatedDate = DateTimeHelper.GetLocalNow();
 
                 await _ticketRepository.UpdateAsync(ticket);
                 await LogHistoryAsync(ticketId, "Admin", $"Ticket '{personName}' personeline atandı");
 
                 _logger.LogInformation("Ticket atandı: {TicketId} → {PersonName}", ticketId, personName);
+                
+                // Personel bilgisini bul
+                var staff = await _context.Staff.FirstOrDefaultAsync(s => s.FullName == personName || s.Email == personName);
+                if (staff != null)
+                {
+                    // Tenant adını al
+                    var tenant = await _context.Tenants.FindAsync(ticket.TenantId);
+                    var tenantName = tenant?.CompanyName ?? "Müşteri";
+                    
+                    // Staff'a bildirim gönder
+                    await _notificationService.NotifyTicketAssignedToStaffAsync(staff.Id, ticket.Title, tenantName, ticketId);
+                }
                 
                 // Dashboard istatistiklerini anlık olarak güncelle
                 await BroadcastDashboardStatsAsync();
@@ -246,7 +267,7 @@ namespace KobiMuhendislikTicket.Application.Services
             }
         }
 
-        public async Task<Result> ResolveTicketAsync(Guid ticketId, string solutionNote, string resolvedBy)
+        public async Task<Result> ResolveTicketAsync(int ticketId, string solutionNote, string resolvedBy)
         {
             try
             {
@@ -261,7 +282,7 @@ namespace KobiMuhendislikTicket.Application.Services
                     return Result.Failure("Ticket zaten çözülmüş durumda");
 
                 ticket.Status = TicketStatus.Resolved;
-                ticket.UpdatedDate = DateTime.UtcNow;
+                ticket.UpdatedDate = DateTimeHelper.GetLocalNow();
 
                 await _ticketRepository.UpdateAsync(ticket);
                 await LogHistoryAsync(ticketId, resolvedBy, $"✅ TICKET ÇÖZÜLDÜ | Not: {solutionNote}");
@@ -333,7 +354,7 @@ namespace KobiMuhendislikTicket.Application.Services
             }
         }
 
-        public async Task<Result<List<Ticket>>> GetFilteredTicketsAsync(Guid? tenantId = null, TicketStatus? status = null, TicketPriority? priority = null, string? assignedPerson = null)
+        public async Task<Result<List<Ticket>>> GetFilteredTicketsAsync(int? tenantId = null, TicketStatus? status = null, TicketPriority? priority = null, string? assignedPerson = null)
         {
             try
             {
@@ -347,7 +368,7 @@ namespace KobiMuhendislikTicket.Application.Services
             }
         }
 
-        public async Task<Result> AddCommentAsync(Guid ticketId, string message, string author, bool isAdmin, string source = "Customer")
+        public async Task<Result> AddCommentAsync(int ticketId, string message, string author, bool isAdmin, string source = "Customer")
         {
             try
             {
@@ -364,7 +385,7 @@ namespace KobiMuhendislikTicket.Application.Services
                     Message = message,
                     AuthorName = author,
                     IsAdminReply = isAdmin,
-                    CreatedDate = DateTime.UtcNow
+                    CreatedDate = DateTimeHelper.GetLocalNow()
                 };
 
                 await _ticketRepository.AddCommentAsync(comment);
@@ -411,7 +432,7 @@ namespace KobiMuhendislikTicket.Application.Services
             }
         }
 
-        private async Task LogHistoryAsync(Guid ticketId, string actionBy, string description)
+        private async Task LogHistoryAsync(int ticketId, string actionBy, string description)
         {
             try
             {
@@ -420,7 +441,7 @@ namespace KobiMuhendislikTicket.Application.Services
                     TicketId = ticketId,
                     ActionBy = actionBy,
                     Description = description,
-                    CreatedDate = DateTime.UtcNow
+                    CreatedDate = DateTimeHelper.GetLocalNow()
                 };
 
                 await _ticketRepository.AddHistoryAsync(history);
@@ -432,17 +453,17 @@ namespace KobiMuhendislikTicket.Application.Services
         }
 
         // Staff için overload metodlar
-        public async Task<Result> AddCommentAsync(Guid ticketId, AddCommentDto dto)
+        public async Task<Result> AddCommentAsync(int ticketId, AddCommentDto dto)
         {
             return await AddCommentAsync(ticketId, dto.Message, dto.Author, dto.IsAdmin, "Admin");
         }
 
-        public async Task<Result> ResolveTicketAsync(Guid ticketId, ResolveTicketDto dto)
+        public async Task<Result> ResolveTicketAsync(int ticketId, ResolveTicketDto dto)
         {
             return await ResolveTicketAsync(ticketId, dto.SolutionNote, dto.ResolvedBy);
         }
 
-        public async Task<Result> UpdateStatusAsync(Guid ticketId, UpdateTicketStatusDto dto, string actionBy)
+        public async Task<Result> UpdateStatusAsync(int ticketId, UpdateTicketStatusDto dto, string actionBy)
         {
             try
             {
@@ -472,7 +493,7 @@ namespace KobiMuhendislikTicket.Application.Services
             }
         }
 
-        public async Task<List<TicketHistory>> GetTicketHistoryAsync(Guid ticketId)
+        public async Task<List<TicketHistory>> GetTicketHistoryAsync(int ticketId)
         {
             try
             {
@@ -485,7 +506,7 @@ namespace KobiMuhendislikTicket.Application.Services
             }
         }
 
-        public async Task<List<TicketComment>> GetCommentsAsync(Guid ticketId)
+        public async Task<List<TicketComment>> GetCommentsAsync(int ticketId)
         {
             try
             {
@@ -498,7 +519,7 @@ namespace KobiMuhendislikTicket.Application.Services
             }
         }
 
-        public async Task<Result> SaveTicketImageAsync(Guid ticketId, string imagePath)
+        public async Task<Result> SaveTicketImageAsync(int ticketId, string imagePath)
         {
             try
             {
@@ -507,7 +528,7 @@ namespace KobiMuhendislikTicket.Application.Services
                     return Result.Failure("Ticket bulunamadı");
 
                 ticket.ImagePath = imagePath;
-                ticket.UpdatedDate = DateTime.UtcNow;
+                ticket.UpdatedDate = DateTimeHelper.GetLocalNow();
                 
                 await _ticketRepository.UpdateAsync(ticket);
                 await LogHistoryAsync(ticketId, "System", "Ticket'a resim eklendi");

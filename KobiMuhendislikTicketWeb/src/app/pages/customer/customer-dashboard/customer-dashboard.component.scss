@@ -7,10 +7,25 @@
   margin-bottom: 30px;
 
   h1 {
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 600;
     color: #1a1a2e;
     margin: 0 0 8px 0;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+
+    .welcome-text {
+      font-size: 18px;
+      color: #1a1a2e;
+      font-weight: 500;
+    }
+
+    .company-name {
+      font-size: 32px;
+      color: #1a1a2e;
+      font-weight: 800;
+    }
   }
 
   p {

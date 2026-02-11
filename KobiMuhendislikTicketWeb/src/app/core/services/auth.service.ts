@@ -59,12 +59,18 @@ export class AuthService {
     
     // Once localStorage'a bak, yoksa sessionStorage'a bak
     let token = localStorage.getItem('token');
+    let companyName = localStorage.getItem('companyName');
+    
     if (!token) {
       token = sessionStorage.getItem('token');
+      companyName = sessionStorage.getItem('companyName');
     }
     
     if (token) {
       const user = this.decodeToken(token);
+      if (companyName) {
+        user.companyName = companyName;
+      }
       this.currentUserSubject.next(user);
     }
   }
@@ -108,6 +114,10 @@ export class AuthService {
   }
 
   logout(): void {
+    // Çıkış yapmadan önce kullanıcının rolünü kontrol et
+    const currentUser = this.currentUserSubject.value;
+    const isAdminOrStaff = currentUser?.role === 'Admin' || currentUser?.role === 'Staff';
+    
     if (this.isBrowser) {
       localStorage.removeItem('token');
       localStorage.removeItem('companyName');
@@ -122,7 +132,9 @@ export class AuthService {
       sessionStorage.removeItem('department');
     }
     this.currentUserSubject.next(null);
-    this.router.navigate(['/login']);
+    
+    // Admin veya Staff ise staff-login'e, customer ise login'e yönlendir
+    this.router.navigate([isAdminOrStaff ? '/staff-login' : '/login']);
   }
 
   getToken(): string | null {

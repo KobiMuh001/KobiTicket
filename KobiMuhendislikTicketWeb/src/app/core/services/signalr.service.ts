@@ -34,24 +34,39 @@ export interface DashboardStats {
   topFailingAssets: Array<{productName: string, ticketCount: number}>;
 }
 
+export interface StaffNotification {
+  id: string;
+  staffId: string;
+  title: string;
+  message: string;
+  type: string;
+  isRead: boolean;
+  ticketId?: string;
+  createdDate: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class SignalRService {
   private hubConnection: signalR.HubConnection | null = null;
   private dashboardHubConnection: signalR.HubConnection | null = null;
+  private notificationHubConnection: signalR.HubConnection | null = null;
   private commentReceived = new Subject<CommentMessage>();
   private ticketUpdated = new Subject<TicketUpdateMessage>();
   private dashboardStatsUpdated = new Subject<DashboardStats>();
+  private staffNotificationReceived = new Subject<StaffNotification>();
   private connectionState = new Subject<string>();
 
   public commentReceived$: Observable<CommentMessage> = this.commentReceived.asObservable();
   public ticketUpdated$: Observable<TicketUpdateMessage> = this.ticketUpdated.asObservable();
   public dashboardStatsUpdated$: Observable<DashboardStats> = this.dashboardStatsUpdated.asObservable();
+  public staffNotificationReceived$: Observable<StaffNotification> = this.staffNotificationReceived.asObservable();
   public connectionState$: Observable<string> = this.connectionState.asObservable();
 
   private hubUrl = environment.apiUrl.replace('/api', '/hubs/comments');
   private dashboardHubUrl = environment.apiUrl.replace('/api', '/hubs/dashboard-stats');
+  private notificationHubUrl = environment.apiUrl.replace('/api', '/hubs/notifications');
   private isBrowser: boolean;
 
   constructor(@Inject(PLATFORM_ID) private platformId: Object) {
@@ -140,6 +155,10 @@ export class SignalRService {
   private registerHandlers(): void {
     if (!this.hubConnection) return;
 
+    // Önceki handler'ları temizle (duplicate önlemek için)
+    this.hubConnection.off('ReceiveComment');
+    this.hubConnection.off('TicketUpdated');
+
     this.hubConnection.on('ReceiveComment', (comment: CommentMessage) => {
       console.log('New comment received:', comment);
       this.commentReceived.next(comment);
@@ -169,6 +188,9 @@ export class SignalRService {
   private registerDashboardHandlers(): void {
     if (!this.dashboardHubConnection) return;
 
+    // Önceki handler'ları temizle (duplicate önlemek için)
+    this.dashboardHubConnection.off('DashboardStatsUpdated');
+
     this.dashboardHubConnection.on('DashboardStatsUpdated', (stats: DashboardStats) => {
       console.log('Dashboard stats updated:', stats);
       this.dashboardStatsUpdated.next(stats);
@@ -184,6 +206,66 @@ export class SignalRService {
 
     this.dashboardHubConnection.onclose(() => {
       console.log('SignalR Dashboard Disconnected');
+    });
+  }
+
+  public startNotificationConnection(token: string): Promise<void> {
+    if (!this.isBrowser) {
+      console.log('SignalR: Notification - Not in browser environment');
+      return Promise.resolve();
+    }
+
+    if (!token) {
+      console.error('SignalR: Notification - Token is required');
+      return Promise.reject('No authentication token');
+    }
+
+    if (this.notificationHubConnection) {
+      console.log('SignalR: Notification hub connection already exists');
+      return Promise.resolve();
+    }
+
+    this.notificationHubConnection = new signalR.HubConnectionBuilder()
+      .withUrl(this.notificationHubUrl, {
+        accessTokenFactory: () => token
+      })
+      .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
+      .configureLogging(signalR.LogLevel.Information)
+      .build();
+
+    this.registerNotificationHandlers();
+
+    return this.notificationHubConnection.start()
+      .then(() => {
+        console.log('SignalR: Notification connected successfully to ' + this.notificationHubUrl);
+      })
+      .catch(err => {
+        console.error('SignalR: Notification connection failed', err);
+        throw err;
+      });
+  }
+
+  private registerNotificationHandlers(): void {
+    if (!this.notificationHubConnection) return;
+
+    // Önceki handler'ları temizle (duplicate önlemek için)
+    this.notificationHubConnection.off('StaffNotificationReceived');
+
+    this.notificationHubConnection.on('StaffNotificationReceived', (notification: StaffNotification) => {
+      console.log('Staff notification received:', notification);
+      this.staffNotificationReceived.next(notification);
+    });
+
+    this.notificationHubConnection.onreconnecting(() => {
+      console.log('SignalR Notification Reconnecting...');
+    });
+
+    this.notificationHubConnection.onreconnected(() => {
+      console.log('SignalR Notification Reconnected');
+    });
+
+    this.notificationHubConnection.onclose(() => {
+      console.log('SignalR Notification Disconnected');
     });
   }
 
@@ -221,11 +303,25 @@ export class SignalRService {
     return Promise.resolve();
   }
 
+  public stopNotificationConnection(): Promise<void> {
+    if (this.notificationHubConnection) {
+      return this.notificationHubConnection.stop().then(() => {
+        this.notificationHubConnection = null;
+        console.log('SignalR Notification Disconnected');
+      });
+    }
+    return Promise.resolve();
+  }
+
   public isConnected(): boolean {
     return this.hubConnection?.state === signalR.HubConnectionState.Connected;
   }
 
   public isDashboardConnected(): boolean {
     return this.dashboardHubConnection?.state === signalR.HubConnectionState.Connected;
+  }
+
+  public isNotificationConnected(): boolean {
+    return this.notificationHubConnection?.state === signalR.HubConnectionState.Connected;
   }
 }

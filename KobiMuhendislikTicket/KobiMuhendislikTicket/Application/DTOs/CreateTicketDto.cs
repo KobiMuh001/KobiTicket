@@ -4,7 +4,8 @@ namespace KobiMuhendislikTicket.Application.DTOs
 {
     public class TicketDto
     {
-        public Guid Id { get; set; }
+        public int Id { get; set; }
+        public string? TicketCode { get; set; }
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public TicketStatus Status { get; set; }
@@ -12,9 +13,9 @@ namespace KobiMuhendislikTicket.Application.DTOs
         public string? AssignedPerson { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }
-        public Guid TenantId { get; set; }
+        public int TenantId { get; set; }
         public string? CompanyName { get; set; }
-        public Guid? AssetId { get; set; }
+        public int? AssetId { get; set; }
         public string? AssetName { get; set; }
         public string? ImagePath { get; set; }
     }
@@ -24,7 +25,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public int Priority { get; set; } = 2; 
-        public Guid AssetId { get; set; } 
+        public int AssetId { get; set; } 
         public string? ImagePath { get; set; }
     }
 

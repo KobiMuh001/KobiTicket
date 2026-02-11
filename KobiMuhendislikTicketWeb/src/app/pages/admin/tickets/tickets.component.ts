@@ -79,10 +79,11 @@ export class TicketsComponent implements OnInit {
 
   applyFilters(): void {
     this.filteredTickets = this.tickets.filter(ticket => {
+      const ticketIdText = String(ticket.id ?? '');
       const matchesSearch = !this.searchTerm || 
         ticket.title.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         ticket.tenantName?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        ticket.id.toLowerCase().includes(this.searchTerm.toLowerCase());
+        ticketIdText.toLowerCase().includes(this.searchTerm.toLowerCase());
       
       const matchesStatus = !this.statusFilter || ticket.status.toString() === this.statusFilter;
       const matchesPriority = !this.priorityFilter || ticket.priority.toString() === this.priorityFilter;
@@ -155,5 +156,14 @@ export class TicketsComponent implements OnInit {
     } catch {
       return '-';
     }
+  }
+
+  formatTicketId(id: number | string | null | undefined, ticketCode?: string | null): string {
+    // Backend'den gelen TicketCode'u kullan (T00001 formatı)
+    if (ticketCode) return ticketCode;
+    // Fallback: ID'den formatlama
+    if (id === null || id === undefined) return '-';
+    const numericId = typeof id === 'number' ? id : Number(id);
+    return Number.isFinite(numericId) ? `T${numericId.toString().padStart(5, '0')}` : String(id);
   }
 }

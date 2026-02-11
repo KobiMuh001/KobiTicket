@@ -31,7 +31,7 @@
       <div class="header-left">
         <h1>{{ ticket.title }}</h1>
         <div class="ticket-meta">
-          <span class="ticket-id">#{{ ticket.id }}</span>
+          <span class="ticket-id">{{ ticket.ticketCode || '#' + ticket.id }}</span>
           <span class="badge" [ngClass]="getStatusClass(ticket.status)">{{ getStatusText(ticket.status) }}</span>
           <span class="badge" [ngClass]="getPriorityClass(ticket.priority)">{{ getPriorityText(ticket.priority) }}</span>
         </div>
@@ -82,7 +82,7 @@
             <label>Oluşturma Tarihi:</label>
             <span>{{ formatDate(ticket.createdDate) }}</span>
           </div>
-          <div class="detail-row" *ngIf="ticket.resolvedAt">
+          <div class="detail-row" *ngIf="ticket.resolvedDate && (ticket.status === 4 || ticket.status === 5)">
             <label>Çözülme Tarihi:</label>
             <span>{{ formatDate(ticket.resolvedDate) }}</span>
           </div>
@@ -104,6 +104,17 @@
           </div>
         </div>
 
+        <!-- Ticket Image Section -->
+        <div class="detail-card" *ngIf="ticket.imagePath">
+          <h3>Eklenen Görsel</h3>
+          <div class="ticket-image-container" (click)="showImagePreview = true">
+            <img [src]="baseUrl + '/' + ticket.imagePath" [alt]="ticket.title" class="ticket-image">
+            <div class="image-overlay">
+              <span>Büyütmek için tıkla</span>
+            </div>
+          </div>
+        </div>
+
         <div class="detail-card" *ngIf="ticket.solutionNote">
           <h3>Çözüm Notu</h3>
           <p class="solution-note">{{ ticket.solutionNote }}</p>
@@ -116,8 +127,8 @@
           <button 
             class="tab" 
             [class.active]="activeTab === 'comments'"
-            (click)="activeTab = 'comments'">
-            Yorumlar ({{ comments.length }})
+            (click)="activeTab = 'comments'; shouldScrollToBottom = true">
+            Mesajlar ({{ comments.length }})
           </button>
           <button 
             class="tab" 
@@ -129,28 +140,37 @@
 
         <!-- Comments Tab -->
         <div *ngIf="activeTab === 'comments'" class="tab-content">
-          <!-- Add comment -->
-          <div class="add-comment" *ngIf="ticket.status !== 4 && ticket.status !== 5">
-            <textarea 
-              [(ngModel)]="newComment" 
-              placeholder="Mesajınızı yazın..."
-              rows="3"></textarea>
-            <button (click)="addComment()" class="btn btn-primary" [disabled]="!newComment.trim()">
-              Mesaj Gönder
-            </button>
+          <!-- Comments list -->
+          <div class="comments-list-v2" #commentsContainer>
+            <div *ngIf="comments.length === 0" class="empty-state">
+              Henüz mesaj yok
+            </div>
+            <div *ngFor="let comment of comments" class="comment-item-v3" 
+                 [ngClass]="isMyComment(comment) ? 'my-message-row' : 'other-message-row'">
+              <div class="comment-bubble-v2" [ngClass]="{'admin-bubble': comment.isAdminReply}">
+                <div class="bubble-header">
+                  <span class="sender-name">{{ comment.authorName }}</span>
+                  <span class="support-badge" *ngIf="comment.isAdminReply">DESTEK</span>
+                  <span class="message-time">{{ formatTime(comment.createdDate) }}</span>
+                </div>
+                <p class="message-content-v2">{{ comment.message }}</p>
+              </div>
+            </div>
           </div>
 
-          <!-- Comments list -->
-          <div class="comments-list" #commentsContainer>
-            <div *ngIf="comments.length === 0" class="empty-state">
-              Henüz yorum yok
-            </div>
-            <div *ngFor="let comment of comments" class="comment-item">
-              <div class="comment-header">
-                <span class="comment-author">{{ comment.authorName }}</span>
-                <span class="comment-date">{{ formatDate(comment.createdDate) }}</span>
-              </div>
-              <p class="comment-content">{{ comment.message }}</p>
+          <!-- Add comment -->
+          <div class="add-comment-v2" *ngIf="ticket.status !== 4 && ticket.status !== 5">
+            <div class="input-wrapper">
+              <textarea 
+                [(ngModel)]="newComment" 
+                placeholder="Mesajınızı yazın..."
+                rows="2"></textarea>
+              <button (click)="addComment()" class="btn-send-v2" [disabled]="!newComment.trim()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="22" y1="2" x2="11" y2="13"/>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+              </button>
             </div>
           </div>
         </div>
@@ -198,5 +218,13 @@
       <button (click)="showResolveModal = false" class="btn btn-secondary">İptal</button>
       <button (click)="resolveTicket()" class="btn btn-success">Çöz ve Kapat</button>
     </div>
+  </div>
+</div>
+
+<!-- Image Preview Modal -->
+<div *ngIf="showImagePreview" class="image-preview-overlay" (click)="showImagePreview = false">
+  <div class="preview-content" (click)="$event.stopPropagation()">
+    <button class="btn-close-preview" (click)="showImagePreview = false">×</button>
+    <img [src]="baseUrl + '/' + ticket.imagePath" alt="Büyük Görsel">
   </div>
 </div>

@@ -4,7 +4,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
 
     public class StaffDto
     {
-        public Guid Id { get; set; }
+        public int Id { get; set; }
         public string FullName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string? Phone { get; set; }
@@ -48,7 +48,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
 
     public class StaffWorkloadDto
     {
-        public Guid Id { get; set; }
+        public int Id { get; set; }
         public string FullName { get; set; } = string.Empty;
         public string Department { get; set; } = string.Empty;
         public bool IsActive { get; set; }
@@ -66,14 +66,14 @@ namespace KobiMuhendislikTicket.Application.DTOs
 
     public class AssignTicketToStaffDto
     {
-        public Guid StaffId { get; set; }
+        public int StaffId { get; set; }
         public string? Note { get; set; } 
     }
 
     public class BulkAssignDto
     {
-        public List<Guid> TicketIds { get; set; } = new();
-        public Guid StaffId { get; set; }
+        public List<int> TicketIds { get; set; } = new();
+        public int StaffId { get; set; }
     }
 
     public class AutoAssignResultDto
@@ -81,6 +81,6 @@ namespace KobiMuhendislikTicket.Application.DTOs
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
         public string AssignedTo { get; set; } = string.Empty;
-        public Guid StaffId { get; set; }
+        public int StaffId { get; set; }
     }
 }

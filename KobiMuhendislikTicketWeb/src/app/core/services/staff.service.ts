@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface Staff {
-  id: string;
+  id: number;
   fullName: string;
   email: string;
   phone?: string;
@@ -16,7 +16,7 @@ export interface Staff {
 
 export interface StaffWorkload {
   staffId: number;
-  id: string;
+  id: number;
   fullName: string;
   department: string;
   isActive: boolean;
@@ -49,7 +49,7 @@ export interface UpdateStaffDto {
 }
 
 export interface StaffTicket {
-  id: string;
+  id: number;
   title: string;
   description: string;
   status: number;
@@ -57,9 +57,9 @@ export interface StaffTicket {
   assignedPerson?: string;
   createdDate: string;
   updatedDate?: string;
-  tenantId: string;
+  tenantId: number;
   companyName?: string;
-  assetId?: string;
+  assetId?: number;
   assetName?: string;
   imagePath?: string;
 }
@@ -80,7 +80,7 @@ export class StaffService {
     return this.http.get(`${this.apiUrl}/admin/staff`, { params });
   }
 
-  getStaffById(id: string): Observable<any> {
+  getStaffById(id: number | string): Observable<any> {
     return this.http.get(`${this.apiUrl}/admin/staff/${id}`);
   }
 
@@ -88,11 +88,11 @@ export class StaffService {
     return this.http.post(`${this.apiUrl}/admin/staff`, staff);
   }
 
-  updateStaff(id: string, staff: UpdateStaffDto): Observable<any> {
+  updateStaff(id: number | string, staff: UpdateStaffDto): Observable<any> {
     return this.http.put(`${this.apiUrl}/admin/staff/${id}`, staff);
   }
 
-  deleteStaff(id: string): Observable<any> {
+  deleteStaff(id: number | string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/admin/staff/${id}`);
   }
 
@@ -100,7 +100,7 @@ export class StaffService {
     return this.http.get(`${this.apiUrl}/admin/staff/workloads`);
   }
 
-  resetStaffPassword(id: string, newPassword: string): Observable<any> {
+  resetStaffPassword(id: number | string, newPassword: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/admin/staff/${id}/reset-password`, { newPassword });
   }
 
@@ -129,12 +129,12 @@ export class StaffService {
   }
 
   // Claim a ticket
-  claimTicket(ticketId: string): Observable<any> {
+  claimTicket(ticketId: number | string): Observable<any> {
     return this.http.post(`${this.apiUrl}/staff/tickets/${ticketId}/claim`, {});
   }
 
   // Release a ticket
-  releaseTicket(ticketId: string): Observable<any> {
+  releaseTicket(ticketId: number | string): Observable<any> {
     return this.http.post(`${this.apiUrl}/staff/tickets/${ticketId}/release`, {});
   }
 

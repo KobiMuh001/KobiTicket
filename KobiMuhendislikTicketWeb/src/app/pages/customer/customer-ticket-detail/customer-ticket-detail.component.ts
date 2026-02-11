@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { TicketService } from '../../../core/services/ticket.service';
 import { SignalRService, CommentMessage } from '../../../core/services/signalr.service';
 import { Subscription } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 
 interface TicketComment {
   id: string;
@@ -28,8 +29,10 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
   comments: TicketComment[] = [];
   isLoading = true;
   isSubmittingComment = false;
+  showChat = false;
   newComment = '';
   errorMessage = '';
+  baseUrl = environment.baseUrl;
   
   // SignalR
   private ticketId: string = '';
@@ -37,6 +40,7 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
   private isSignalRConnected = false;
   private shouldScrollToBottom = false;
   private isBrowser: boolean;
+  private refreshInterval: any;
 
   constructor(
     private ticketService: TicketService,
@@ -56,10 +60,19 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
       if (this.isBrowser) {
         this.initSignalR();
       }
+      
+      // Commentsları 2 saniyede bir otomatik yenile (polling)
+      this.refreshInterval = setInterval(() => {
+        console.log('Customer-Detail: Periodic comments refresh triggered');
+        this.loadComments(id);
+      }, 2000);
     }
   }
 
   ngOnDestroy(): void {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
     if (this.ticketId) {
       this.signalRService.leaveTicketGroup(this.ticketId);
     }
@@ -175,12 +188,22 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
       next: () => {
         this.newComment = '';
         this.isSubmittingComment = false;
+        this.shouldScrollToBottom = true;
+        // Yorumu hemen yükle ve scroll et
+        this.loadComments(this.ticketId);
       },
       error: () => {
         this.errorMessage = 'Yorum eklenirken bir hata oluştu.';
         this.isSubmittingComment = false;
       }
     });
+  }
+
+  toggleChat(): void {
+    this.showChat = !this.showChat;
+    if (this.showChat) {
+      this.shouldScrollToBottom = true;
+    }
   }
 
   getStatusText(status: string | number): string {

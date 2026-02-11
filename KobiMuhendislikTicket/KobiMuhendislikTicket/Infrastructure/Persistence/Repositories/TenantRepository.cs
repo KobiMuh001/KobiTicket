@@ -14,7 +14,7 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence.Repositories
             _context = context;
         }
 
-        public async Task<Tenant?> GetByIdAsync(Guid id) => await _context.Tenants.FindAsync(id);
+        public async Task<Tenant?> GetByIdAsync(int id) => await _context.Tenants.FindAsync(id);
 
         public async Task<Tenant?> GetByTaxNumberAsync(string taxNumber) =>
             await _context.Tenants.FirstOrDefaultAsync(t => t.TaxNumber == taxNumber);
@@ -33,7 +33,7 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteAsync(int id)
         {
             var tenant = await GetByIdAsync(id);
             if (tenant != null)

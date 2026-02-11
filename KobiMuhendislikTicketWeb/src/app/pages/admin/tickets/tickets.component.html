@@ -110,7 +110,7 @@
             @for (ticket of filteredTickets; track ticket.id) {
               <tr>
                 <td>
-                  <span class="ticket-id">#{{ ticket.id.substring(0, 8) }}</span>
+                  <span class="ticket-id">{{ formatTicketId(ticket.id, ticket.ticketCode) }}</span>
                 </td>
                 <td>
                   <div class="ticket-title">

@@ -92,11 +92,11 @@
       <!-- Monthly Chart -->
       <div class="chart-card">
         <div class="chart-header">
-          <h3>Son 30 Günlük Ticket Trend'i</h3>
-          <span class="chart-subtitle">Açılan vs Çözülen</span>
+          <h3>Son 2 Aylık Haftalık Ticket Trend'i</h3>
+          <span class="chart-subtitle">Açılan vs Çözülen (8 hafta)</span>
         </div>
         <div class="chart-container">
-          <svg class="bar-chart" viewBox="0 0 900 250" preserveAspectRatio="xMidYMid meet">
+          <svg class="bar-chart" viewBox="0 0 500 250" preserveAspectRatio="xMidYMid meet">
             <defs>
               <linearGradient id="openGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                 <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
@@ -109,42 +109,77 @@
             </defs>
             
             <!-- Background grid -->
-            @for (i of [0, 1, 2, 3, 4]; track i) {
-              <line x1="50" [attr.y1]="45 + i * 35" x2="880" [attr.y2]="45 + i * 35" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="2,2"/>
-              <text x="40" [attr.y]="50 + i * 35" font-size="11" fill="#9ca3af" text-anchor="end">{{ 16 - i * 4 }}</text>
+            @for (i of getMonthlyGridLines(); track i) {
+              <line x1="50" [attr.y1]="180 - (i * 150 / 5)" x2="480" [attr.y2]="180 - (i * 150 / 5)" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="2,2"/>
+              <text x="40" [attr.y]="185 - (i * 150 / 5)" font-size="11" fill="#9ca3af" text-anchor="end">{{ getMonthlyScaleValue(i) }}</text>
             }
             
             <!-- Y-axis -->
             <line x1="50" y1="30" x2="50" y2="180" stroke="#d1d5db" stroke-width="2"/>
             
             <!-- X-axis -->
-            <line x1="50" y1="180" x2="880" y2="180" stroke="#d1d5db" stroke-width="2"/>
+            <line x1="50" y1="180" x2="480" y2="180" stroke="#d1d5db" stroke-width="2"/>
             
             <!-- Bars -->
             @for (item of monthlyChartData; track item.label; let idx = $index) {
               <g [attr.data-index]="idx">
                 <!-- Açılan bar -->
                 <rect 
-                  [attr.x]="50 + idx * 27 + 3" 
-                  [attr.y]="180 - (item.opened * 10)" 
-                  [attr.width]="11" 
-                  [attr.height]="item.opened * 10" 
+                  [attr.x]="50 + idx * 52 + 8" 
+                  [attr.y]="180 - (item.opened * getMonthlyPixelPerUnit())" 
+                  [attr.width]="10" 
+                  [attr.height]="item.opened * getMonthlyPixelPerUnit()" 
                   [attr.fill]="'url(#openGradient)'" 
                   [attr.rx]="2"
                   class="bar-item">
                 </rect>
+                <!-- Açılan sayı -->
+                @if (item.opened > 0) {
+                  <text 
+                    [attr.x]="50 + idx * 52 + 13" 
+                    [attr.y]="180 - (item.opened * getMonthlyPixelPerUnit()) - 5" 
+                    font-size="8" 
+                    fill="#3b82f6" 
+                    text-anchor="middle"
+                    font-weight="600"
+                  >
+                    {{ item.opened }}
+                  </text>
+                }
                 <!-- Çözülen bar -->
                 <rect 
-                  [attr.x]="50 + idx * 27 + 15" 
-                  [attr.y]="180 - (item.resolved * 10)" 
-                  [attr.width]="11" 
-                  [attr.height]="item.resolved * 10" 
+                  [attr.x]="50 + idx * 52 + 21" 
+                  [attr.y]="180 - (item.resolved * getMonthlyPixelPerUnit())" 
+                  [attr.width]="10" 
+                  [attr.height]="item.resolved * getMonthlyPixelPerUnit()" 
                   [attr.fill]="'url(#resolvedGradient)'" 
                   [attr.rx]="2"
                   class="bar-item">
                 </rect>
-                <!-- Tarih label -->
-                <text [attr.x]="50 + idx * 27 + 11" y="205" font-size="10" fill="#6b7280" text-anchor="middle" font-weight="500">{{ item.label }}</text>
+                <!-- Çözülen sayı -->
+                @if (item.resolved > 0) {
+                  <text 
+                    [attr.x]="50 + idx * 52 + 26" 
+                    [attr.y]="180 - (item.resolved * getMonthlyPixelPerUnit()) - 5" 
+                    font-size="8" 
+                    fill="#10b981" 
+                    text-anchor="middle"
+                    font-weight="600"
+                  >
+                    {{ item.resolved }}
+                  </text>
+                }
+                <!-- Tarih label (yatay) -->
+                <text 
+                  [attr.x]="50 + idx * 52 + 15" 
+                  y="210" 
+                  font-size="7" 
+                  fill="#6b7280" 
+                  text-anchor="middle"
+                  font-weight="500"
+                >
+                  {{ item.label }}
+                </text>
               </g>
             }
           </svg>
@@ -181,9 +216,9 @@
             </defs>
             
             <!-- Background grid -->
-            @for (i of [0, 1, 2, 3, 4]; track i) {
-              <line x1="50" [attr.y1]="45 + i * 35" x2="480" [attr.y2]="45 + i * 35" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="2,2"/>
-              <text x="40" [attr.y]="50 + i * 35" font-size="11" fill="#9ca3af" text-anchor="end">{{ 28 - i * 7 }}</text>
+            @for (i of getWeeklyGridLines(); track i) {
+              <line x1="50" [attr.y1]="180 - (i * 150 / 7)" x2="480" [attr.y2]="180 - (i * 150 / 7)" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="2,2"/>
+              <text x="40" [attr.y]="185 - (i * 150 / 7)" font-size="11" fill="#9ca3af" text-anchor="end">{{ getWeeklyScaleValue(i) }}</text>
             }
             
             <!-- Y-axis -->
@@ -198,23 +233,49 @@
                 <!-- Açılan bar -->
                 <rect 
                   [attr.x]="50 + idx * 60 + 8" 
-                  [attr.y]="180 - (item.opened * 5.5)" 
+                  [attr.y]="180 - (item.opened * getWeeklyPixelPerUnit())" 
                   [attr.width]="14" 
-                  [attr.height]="item.opened * 5.5" 
+                  [attr.height]="item.opened * getWeeklyPixelPerUnit()" 
                   [attr.fill]="'url(#openGradient2)'" 
                   [attr.rx]="2"
                   class="bar-item">
                 </rect>
+                <!-- Açılan sayı -->
+                @if (item.opened > 0) {
+                  <text 
+                    [attr.x]="50 + idx * 60 + 15" 
+                    [attr.y]="180 - (item.opened * getWeeklyPixelPerUnit()) - 5" 
+                    font-size="9" 
+                    fill="#3b82f6" 
+                    text-anchor="middle"
+                    font-weight="600"
+                  >
+                    {{ item.opened }}
+                  </text>
+                }
                 <!-- Çözülen bar -->
                 <rect 
                   [attr.x]="50 + idx * 60 + 26" 
-                  [attr.y]="180 - (item.resolved * 5.5)" 
+                  [attr.y]="180 - (item.resolved * getWeeklyPixelPerUnit())" 
                   [attr.width]="14" 
-                  [attr.height]="item.resolved * 5.5" 
+                  [attr.height]="item.resolved * getWeeklyPixelPerUnit()" 
                   [attr.fill]="'url(#resolvedGradient2)'" 
                   [attr.rx]="2"
                   class="bar-item">
                 </rect>
+                <!-- Çözülen sayı -->
+                @if (item.resolved > 0) {
+                  <text 
+                    [attr.x]="50 + idx * 60 + 33" 
+                    [attr.y]="180 - (item.resolved * getWeeklyPixelPerUnit()) - 5" 
+                    font-size="9" 
+                    fill="#10b981" 
+                    text-anchor="middle"
+                    font-weight="600"
+                  >
+                    {{ item.resolved }}
+                  </text>
+                }
                 <!-- Day label -->
                 <text [attr.x]="50 + idx * 60 + 25" y="205" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="500">{{ item.label }}</text>
               </g>
@@ -270,7 +331,7 @@
             <tbody>
               @for (ticket of recentTickets; track ticket.id) {
                 <tr>
-                  <td><span class="ticket-id">#{{ ticket.id.substring(0, 8) }}</span></td>
+                  <td><span class="ticket-id">{{ formatTicketId(ticket.id, ticket.ticketCode) }}</span></td>
                   <td>{{ ticket.title }}</td>
                   <td>{{ ticket.tenantName || 'Bilinmiyor' }}</td>
                   <td>

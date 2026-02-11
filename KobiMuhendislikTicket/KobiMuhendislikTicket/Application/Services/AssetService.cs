@@ -1,5 +1,6 @@
 ﻿using KobiMuhendislikTicket.Application.Interfaces;
 using KobiMuhendislikTicket.Application.DTOs;
+using KobiMuhendislikTicket.Application.Common;
 using KobiMuhendislikTicket.Domain.Entities;
 
 namespace KobiMuhendislikTicket.Application.Services
@@ -9,7 +10,7 @@ namespace KobiMuhendislikTicket.Application.Services
         private readonly IAssetRepository _assetRepository;
         public AssetService(IAssetRepository assetRepository) => _assetRepository = assetRepository;
 
-        public async Task<List<Asset>> GetMyAssetsAsync(Guid tenantId)
+        public async Task<List<Asset>> GetMyAssetsAsync(int tenantId)
         {
             return await _assetRepository.GetByTenantIdAsync(tenantId);
         }
@@ -17,7 +18,7 @@ namespace KobiMuhendislikTicket.Application.Services
         public async Task<List<AssetListItemDto>> GetAllAssetsAsync()
         {
             var assets = await _assetRepository.GetAllAsync();
-            var now = DateTime.Now;
+            var now = DateTimeHelper.GetLocalNow();
             return assets.Select(a => new AssetListItemDto
             {
                 Id = a.Id,
@@ -33,12 +34,12 @@ namespace KobiMuhendislikTicket.Application.Services
             }).ToList();
         }
 
-        public async Task<AssetDetailDto?> GetAssetByIdAsync(Guid id)
+        public async Task<AssetDetailDto?> GetAssetByIdAsync(int id)
         {
             var asset = await _assetRepository.GetByIdAsync(id);
             if (asset == null) return null;
 
-            var now = DateTime.Now;
+            var now = DateTimeHelper.GetLocalNow();
             var daysUntilExpiry = (asset.WarrantyEndDate - now).Days;
 
             return new AssetDetailDto
@@ -75,7 +76,7 @@ namespace KobiMuhendislikTicket.Application.Services
             return (true, "Varlık başarıyla eklendi.");
         }
 
-        public async Task<(bool Success, string Message)> UpdateAssetAsync(Guid id, UpdateAssetDto dto)
+        public async Task<(bool Success, string Message)> UpdateAssetAsync(int id, UpdateAssetDto dto)
         {
             var asset = await _assetRepository.GetByIdAsync(id);
             if (asset == null) 
@@ -97,13 +98,13 @@ namespace KobiMuhendislikTicket.Application.Services
             asset.Status = dto.Status;
             asset.WarrantyEndDate = dto.WarrantyEndDate;
             asset.TenantId = dto.TenantId;
-            asset.UpdatedDate = DateTime.UtcNow;
+            asset.UpdatedDate = DateTimeHelper.GetLocalNow();
 
             await _assetRepository.UpdateAsync(asset);
             return (true, "Varlık başarıyla güncellendi.");
         }
 
-        public async Task<bool> DeleteAssetAsync(Guid id)
+        public async Task<bool> DeleteAssetAsync(int id)
         {
             var asset = await _assetRepository.GetByIdAsync(id);
             if (asset == null) return false;

@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using KobiMuhendislikTicket.Domain.Entities;
 using KobiMuhendislikTicket.Domain.Common;
+using KobiMuhendislikTicket.Application.Common;
 
 namespace KobiMuhendislikTicket.Infrastructure.Persistence
 {
@@ -16,7 +17,7 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence
         public DbSet<Ticket> Tickets { get; set; }
         public DbSet<TicketComment> TicketComments { get; set; }
         public DbSet<TicketHistory> TicketHistories { get; set; }
-        public DbSet<Staff> Staffs { get; set; }
+        public DbSet<Staff> Staff { get; set; }
         public DbSet<Notification> Notifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -33,6 +34,7 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence
 
             // Staff (Çalışan) Ayarları
             modelBuilder.Entity<Staff>()
+                .ToTable("Staffs")
                 .HasIndex(s => s.Email)
                 .IsUnique();
 
@@ -52,7 +54,7 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence
             modelBuilder.Entity<Staff>().HasData(
                 new Staff
                 {
-                    Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+                    Id = 1,
                     FullName = "Ahmet Yılmaz",
                     Email = "ahmet.yilmaz@kobi.com",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("Staff123!"),
@@ -64,7 +66,7 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence
                 },
                 new Staff
                 {
-                    Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+                    Id = 2,
                     FullName = "Mehmet Kaya",
                     Email = "mehmet.kaya@kobi.com",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("Staff123!"),
@@ -76,7 +78,7 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence
                 },
                 new Staff
                 {
-                    Id = Guid.Parse("33333333-3333-3333-3333-333333333333"),
+                    Id = 3,
                     FullName = "Ayşe Demir",
                     Email = "ayse.demir@kobi.com",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("Staff123!"),
@@ -99,10 +101,10 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence
                 switch (entry.State)
                 {
                     case EntityState.Added:
-                        entry.Entity.CreatedDate = DateTime.UtcNow;
+                        entry.Entity.CreatedDate = DateTimeHelper.GetLocalNow();
                         break;
                     case EntityState.Modified:
-                        entry.Entity.UpdatedDate = DateTime.UtcNow;
+                        entry.Entity.UpdatedDate = DateTimeHelper.GetLocalNow();
                         break;
                 }
             }

@@ -13,6 +13,11 @@ export const routes: Routes = [
     canActivate: [guestGuard]
   },
   {
+    path: 'staff-login',
+    loadComponent: () => import('./pages/staff-login/staff-login.component').then(m => m.StaffLoginComponent),
+    canActivate: [guestGuard]
+  },
+  {
     path: 'unauthorized',
     loadComponent: () => import('./pages/unauthorized.component').then(m => m.UnauthorizedComponent)
   },
