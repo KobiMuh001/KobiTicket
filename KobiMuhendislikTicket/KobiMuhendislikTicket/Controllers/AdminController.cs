@@ -1,7 +1,9 @@
 using KobiMuhendislikTicket.Application.DTOs;
 using KobiMuhendislikTicket.Application.Services;
+using KobiMuhendislikTicket.Hubs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
 
 namespace KobiMuhendislikTicket.Controllers
@@ -16,19 +18,22 @@ namespace KobiMuhendislikTicket.Controllers
         private readonly TenantService _tenantService;
         private readonly StaffService _staffService;
         private readonly NotificationService _notificationService;
+        private readonly IHubContext<CommentHub> _hubContext;
 
         public AdminController(
             AdminService adminService, 
             TicketService ticketService, 
             TenantService tenantService, 
             StaffService staffService,
-            NotificationService notificationService)
+            NotificationService notificationService,
+            IHubContext<CommentHub> hubContext)
         {
             _adminService = adminService;
             _ticketService = ticketService;
             _tenantService = tenantService;
             _staffService = staffService;
             _notificationService = notificationService;
+            _hubContext = hubContext;
         }
 
 #if DEBUG
@@ -288,6 +293,27 @@ namespace KobiMuhendislikTicket.Controllers
             var result = await _ticketService.AddCommentAsync(id, dto.Message, dto.Author, dto.IsAdmin, "Admin");
             if (!result.IsSuccess)
                 return BadRequest(new { success = false, message = result.ErrorMessage });
+
+            // Get the added comment with full details
+            var commentsResult = await _ticketService.GetCommentsAsync(id);
+            if (commentsResult?.Any() == true)
+            {
+                // Get the latest comment
+                var latestComment = commentsResult.OrderByDescending(c => c.CreatedDate).FirstOrDefault();
+                if (latestComment != null)
+                {
+                    // Broadcast to all clients in the ticket group
+                    await _hubContext.Clients.Group($"ticket-{id}").SendAsync("ReceiveComment", new
+                    {
+                        id = latestComment.Id,
+                        ticketId = id.ToString(),
+                        message = latestComment.Message,
+                        authorName = latestComment.AuthorName,
+                        isAdminReply = latestComment.IsAdminReply,
+                        createdDate = latestComment.CreatedDate
+                    });
+                }
+            }
 
             // Müşteri yorumu ise admini bilgilendir
             if (!dto.IsAdmin)

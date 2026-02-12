@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AssetService, Asset, CreateAssetDto } from '../../../core/services/asset.service';
 import { TenantService } from '../../../core/services/tenant.service';
@@ -46,7 +46,8 @@ export class AssetsComponent implements OnInit {
 
   constructor(
     private assetService: AssetService,
-    private tenantService: TenantService
+    private tenantService: TenantService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -225,5 +226,10 @@ export class AssetsComponent implements OnInit {
     const threeMonthsLater = new Date();
     threeMonthsLater.setMonth(threeMonthsLater.getMonth() + 3);
     return warrantyDate <= threeMonthsLater;
+  }
+
+  onAssetSelect(assetId: string): void {
+    if (!assetId) return;
+    this.router.navigate(['/admin/assets', assetId]);
   }
 }

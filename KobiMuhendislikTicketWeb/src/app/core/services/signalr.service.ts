@@ -324,4 +324,8 @@ export class SignalRService {
   public isNotificationConnected(): boolean {
     return this.notificationHubConnection?.state === signalR.HubConnectionState.Connected;
   }
+
+  public getNotificationHub(): signalR.HubConnection | null {
+    return this.notificationHubConnection;
+  }
 }

@@ -34,6 +34,7 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence.Repositories
             return await _context.Tickets
                 .Include(t => t.Asset)
                 .Include(t => t.Tenant)
+                .Include(t => t.TicketImages)
                 .FirstOrDefaultAsync(t => t.Id == id);
         }
 

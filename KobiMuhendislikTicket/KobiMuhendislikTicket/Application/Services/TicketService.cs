@@ -175,6 +175,14 @@ namespace KobiMuhendislikTicket.Application.Services
                 await LogHistoryAsync(ticketId, "Admin", 
                     $"Ticket durumu '{oldStatus}' → '{newStatusEnum}' olarak güncellendi");
 
+                // Customer'a sadece status değişikliği bildirimi
+                await _notificationService.NotifyCustomerStatusChangedAsync(
+                    ticket.TenantId,
+                    ticketId,
+                    ticket.Title,
+                    newStatusEnum.ToString()
+                );
+
                 _logger.LogInformation("Ticket durumu güncellendi: {TicketId}, {OldStatus} → {NewStatus}", 
                     ticketId, oldStatus, newStatusEnum);
 
@@ -423,6 +431,17 @@ namespace KobiMuhendislikTicket.Application.Services
                 }
 
                 _logger.LogInformation("Yorum eklendi: {TicketId} by {Author}", ticketId, author);
+
+                // Customer'a sadece admin/staff tarafından gelen mesajları bildir
+                if (!string.Equals(source, "Customer", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    await _notificationService.NotifyCustomerNewCommentAsync(
+                        ticketExists.TenantId,
+                        ticketId,
+                        ticketExists.Title,
+                        author
+                    );
+                }
                 return Result.Success();
             }
             catch (Exception ex)
@@ -481,6 +500,14 @@ namespace KobiMuhendislikTicket.Application.Services
                 await LogHistoryAsync(ticketId, actionBy, 
                     $"Ticket durumu '{oldStatus}' → '{newStatusEnum}' olarak güncellendi");
 
+                // Customer'a sadece status değişikliği bildirimi
+                await _notificationService.NotifyCustomerStatusChangedAsync(
+                    ticket.TenantId,
+                    ticketId,
+                    ticket.Title,
+                    newStatusEnum.ToString()
+                );
+
                 _logger.LogInformation("Ticket durumu güncellendi: {TicketId}, {OldStatus} → {NewStatus}", 
                     ticketId, oldStatus, newStatusEnum);
 
@@ -527,10 +554,20 @@ namespace KobiMuhendislikTicket.Application.Services
                 if (ticket == null)
                     return Result.Failure("Ticket bulunamadı");
 
-                ticket.ImagePath = imagePath;
+                if (string.IsNullOrWhiteSpace(ticket.ImagePath))
+                {
+                    ticket.ImagePath = imagePath;
+                }
+
+                var ticketImage = new TicketImage
+                {
+                    TicketId = ticketId,
+                    ImagePath = imagePath
+                };
+
+                _context.TicketImages.Add(ticketImage);
                 ticket.UpdatedDate = DateTimeHelper.GetLocalNow();
-                
-                await _ticketRepository.UpdateAsync(ticket);
+                await _context.SaveChangesAsync();
                 await LogHistoryAsync(ticketId, "System", "Ticket'a resim eklendi");
 
                 _logger.LogInformation("Ticket'a resim eklendi: {TicketId}, {ImagePath}", ticketId, imagePath);

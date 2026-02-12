@@ -4,7 +4,7 @@ import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TicketService } from '../../../core/services/ticket.service';
 import { SignalRService, CommentMessage } from '../../../core/services/signalr.service';
-import { Subscription } from 'rxjs';
+import { Subscription, forkJoin } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 
 interface TicketComment {
@@ -27,12 +27,18 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
   
   ticket: any = null;
   comments: TicketComment[] = [];
+  ticketImages: string[] = [];
   isLoading = true;
   isSubmittingComment = false;
   showChat = false;
   newComment = '';
   errorMessage = '';
   baseUrl = environment.baseUrl;
+  selectedFiles: File[] = [];
+  isUploadingFile = false;
+  uploadSuccessMessage = '';
+  showImagePreview = false;
+  selectedImagePath: string | null = null;
   
   // SignalR
   private ticketId: string = '';
@@ -57,6 +63,7 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
       this.ticketId = id;
       this.loadTicket(id);
       this.loadComments(id);
+      this.loadImages(id);
       if (this.isBrowser) {
         this.initSignalR();
       }
@@ -92,6 +99,11 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
         this.commentsContainer.nativeElement.scrollTop = this.commentsContainer.nativeElement.scrollHeight;
       }
     } catch (err) {}
+  }
+
+  openImagePreview(imagePath: string): void {
+    this.selectedImagePath = imagePath;
+    this.showImagePreview = true;
   }
 
   private async initSignalR(): Promise<void> {
@@ -179,8 +191,23 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
     });
   }
 
+  loadImages(ticketId: string): void {
+    this.ticketService.getTicketImages(ticketId).subscribe({
+      next: (response: any) => {
+        this.ticketImages = response.data || response || [];
+      },
+      error: () => {}
+    });
+  }
+
   addComment(): void {
     if (!this.newComment.trim() || !this.ticket) return;
+
+    // Prevent adding comments when ticket is closed
+    if (this.isTicketClosed()) {
+      this.errorMessage = 'Bu destek talebi üzerinde artık yorum yapılamaz.';
+      return;
+    }
 
     this.isSubmittingComment = true;
     
@@ -259,5 +286,79 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
       'Kritik': 'priority-critical'
     };
     return classMap[priorityText] || '';
+  }
+
+  isTicketClosed(): boolean {
+    if (!this.ticket) return false;
+    const statusText = this.getStatusText(this.ticket.status);
+    return statusText === 'Kapatıldı' || statusText === 'Çözüldü';
+  }
+
+  onFileSelected(event: any): void {
+    const files: FileList = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const selected: File[] = Array.from(files);
+    const invalidType = selected.find(file => !file.type.startsWith('image/'));
+    if (invalidType) {
+      this.errorMessage = 'Sadece resim dosyaları yüklenebilir.';
+      setTimeout(() => this.errorMessage = '', 3000);
+      return;
+    }
+
+    const oversized = selected.find(file => file.size > 5 * 1024 * 1024);
+    if (oversized) {
+      this.errorMessage = 'Dosya boyutu 5MB\'den küçük olmalıdır.';
+      setTimeout(() => this.errorMessage = '', 3000);
+      return;
+    }
+
+    this.selectedFiles = selected;
+    this.uploadImages();
+  }
+
+  uploadImages(): void {
+    if (this.selectedFiles.length === 0 || !this.ticket) return;
+
+    this.isUploadingFile = true;
+    this.errorMessage = '';
+
+    const uploads = this.selectedFiles.map(file => {
+      const formData = new FormData();
+      formData.append('file', file);
+      return this.ticketService.uploadTicketImage(this.ticket.id, formData);
+    });
+
+    forkJoin(uploads).subscribe({
+      next: () => {
+        this.uploadSuccessMessage = 'Resimler başarıyla yüklendi!';
+        setTimeout(() => this.uploadSuccessMessage = '', 3000);
+        this.selectedFiles = [];
+        this.isUploadingFile = false;
+        this.resetFileInput();
+        this.loadImages(this.ticketId);
+      },
+      error: (err) => {
+        this.errorMessage = err.error?.message || 'Resimler yüklenirken bir hata oluştu.';
+        setTimeout(() => this.errorMessage = '', 3000);
+        this.selectedFiles = [];
+        this.isUploadingFile = false;
+        this.resetFileInput();
+      }
+    });
+  }
+
+  triggerFileInput(): void {
+    const fileInput = document.getElementById('fileInput') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  }
+
+  private resetFileInput(): void {
+    const fileInput = document.getElementById('fileInput') as HTMLInputElement | null;
+    if (fileInput) {
+      fileInput.value = '';
+    }
   }
 }

@@ -6,6 +6,7 @@ using KobiMuhendislikTicket.Domain.Enums;
 using KobiMuhendislikTicket.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Text.RegularExpressions;
 
 namespace KobiMuhendislikTicket.Application.Services
 {
@@ -440,7 +441,43 @@ namespace KobiMuhendislikTicket.Application.Services
         }
 
         // Staff'ın kendisine atanmış ticketları getir
-        public async Task<List<TicketDto>> GetMyTicketsAsync(int staffId)
+        public async Task<List<TicketDto>> GetMyTicketsAsync(int staffId, int page = 1, int pageSize = 20)
+        {
+            var staff = await _context.Staff.FindAsync(staffId);
+            if (staff == null)
+                return new List<TicketDto>();
+
+            var tickets = await _context.Tickets
+                .Include(t => t.Tenant)
+                .Include(t => t.Asset)
+                .Where(t => t.AssignedPerson == staff.FullName)
+                .OrderByDescending(t => t.CreatedDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(t => new TicketDto
+                {
+                    Id = t.Id,
+                    TicketCode = t.TicketCode,
+                    Title = t.Title,
+                    Description = t.Description,
+                    Status = t.Status,
+                    Priority = t.Priority,
+                    AssignedPerson = t.AssignedPerson,
+                    CreatedDate = t.CreatedDate,
+                    UpdatedDate = t.UpdatedDate,
+                    TenantId = t.TenantId,
+                    CompanyName = t.Tenant != null ? t.Tenant.CompanyName : null,
+                    AssetId = t.AssetId,
+                    AssetName = t.Asset != null ? t.Asset.ProductName : null,
+                    ImagePath = t.ImagePath
+                })
+                .ToListAsync();
+
+            return tickets;
+        }
+
+        // Tüm ticketları getir (pagination olmadan - iç kontroller için)
+        public async Task<List<TicketDto>> GetAllMyTicketsAsync(int staffId)
         {
             var staff = await _context.Staff.FindAsync(staffId);
             if (staff == null)
@@ -454,6 +491,7 @@ namespace KobiMuhendislikTicket.Application.Services
                 .Select(t => new TicketDto
                 {
                     Id = t.Id,
+                    TicketCode = t.TicketCode,
                     Title = t.Title,
                     Description = t.Description,
                     Status = t.Status,
@@ -484,6 +522,7 @@ namespace KobiMuhendislikTicket.Application.Services
                 .Select(t => new TicketDto
                 {
                     Id = t.Id,
+                    TicketCode = t.TicketCode,
                     Title = t.Title,
                     Description = t.Description,
                     Status = t.Status,
@@ -648,5 +687,75 @@ namespace KobiMuhendislikTicket.Application.Services
                     : 0
             };
         }
-    }
+
+        // Staff kendi profilini güncelle
+        public async Task<Result> UpdateOwnProfileAsync(int staffId, UpdateOwnProfileDto dto)
+        {
+            try
+            {
+                var staff = await _context.Staff.FindAsync(staffId);
+                if (staff == null)
+                    return Result.Failure("Çalışan bulunamadı.");
+
+                if (!string.IsNullOrWhiteSpace(dto.FullName) && dto.FullName != "string")
+                    staff.FullName = dto.FullName;
+
+                if (!string.IsNullOrWhiteSpace(dto.Phone) && dto.Phone != "string")
+                    staff.Phone = dto.Phone;
+
+                if (!string.IsNullOrWhiteSpace(dto.Department) && dto.Department != "string")
+                    staff.Department = dto.Department;
+
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Çalışan profili güncellendi: {StaffId}", staffId);
+                return Result.Success();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Kendi profil güncellenirken hata: {StaffId}", staffId);
+                return Result.Failure("Profil güncellenirken bir hata oluştu.");
+            }
+        }
+
+        // Staff kendi şifresini değiştir
+        public async Task<Result> ChangeOwnPasswordAsync(int staffId, ChangePasswordDto dto)
+        {
+            try
+            {
+                var staff = await _context.Staff.FindAsync(staffId);
+                if (staff == null)
+                    return Result.Failure("Çalışan bulunamadı.");
+
+                // Eski şifreyi doğrula
+                if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, staff.PasswordHash))
+                    return Result.Failure("Mevcut şifre yanlış.");
+
+                // Yeni şifre validasyonu
+                if (string.IsNullOrWhiteSpace(dto.NewPassword) || dto.NewPassword.Length < 6)
+                    return Result.Failure("Yeni şifre en az 6 karakter olmalıdır.");
+
+                // Büyük harf kontrolü
+                if (!Regex.IsMatch(dto.NewPassword, "[A-Z]"))
+                    return Result.Failure("Şifre en az bir büyük harf içermelidir.");
+
+                // Küçük harf kontrolü
+                if (!Regex.IsMatch(dto.NewPassword, "[a-z]"))
+                    return Result.Failure("Şifre en az bir küçük harf içermelidir.");
+
+                // Sayı kontrolü
+                if (!Regex.IsMatch(dto.NewPassword, "[0-9]"))
+                    return Result.Failure("Şifre en az bir sayı içermelidir.");
+
+                staff.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Çalışan şifresi değiştirildi: {StaffId}", staffId);
+                return Result.Success();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Şifre değiştirilirken hata: {StaffId}", staffId);
+                return Result.Failure("Şifre değiştirilirken bir hata oluştu.");
+            }
+        }    }
 }

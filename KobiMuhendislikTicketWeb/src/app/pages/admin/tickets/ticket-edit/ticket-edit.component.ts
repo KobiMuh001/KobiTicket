@@ -13,6 +13,7 @@ interface TicketComment {
   message: string;
   authorName: string;
   isAdminReply: boolean;
+  isStaff?: boolean;
   createdDate: string;
 }
 
@@ -31,6 +32,7 @@ interface TicketDetail {
   priority: string | number;
   assignedPerson?: string;
   imagePath?: string;
+  imagePaths?: string[];
   createdDate: string;
   updatedDate?: string;
   tenantId: number;
@@ -77,6 +79,8 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
   isSignalRConnected = false;
   private isBrowser: boolean;
   baseUrl = environment.baseUrl;
+  showImagePreview = false;
+  selectedImagePath: string | null = null;
 
   statusOptions = [
     { value: 1, label: 'Açık', class: 'open' },
@@ -192,6 +196,11 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
     this.commentSubscription?.unsubscribe();
   }
 
+  openImagePreview(imagePath: string): void {
+    this.selectedImagePath = imagePath;
+    this.showImagePreview = true;
+  }
+
   ngAfterViewChecked(): void {
     if (this.shouldScrollToBottom && this.activeTab === 'comments') {
       this.scrollToBottom();
@@ -207,6 +216,10 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
         }, 0);
       } catch (err) {}
     }
+  }
+
+  public scrollToCommentsBottom(): void {
+    setTimeout(() => this.scrollToBottom(), 0);
   }
 
   loadStaff(): void {
@@ -238,7 +251,17 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
         }
         
         this.ticket = data;
-        const newComments = data.comments?.$values || data.comments || [];
+        
+        // Process comments to mark staff messages
+        let newComments = data.comments?.$values || data.comments || [];
+        newComments = newComments.map((c: TicketComment) => {
+          // If isAdminReply is true but authorName is not "Admin", it's a staff message
+          if (c.isAdminReply && c.authorName !== 'Admin') {
+            return { ...c, isStaff: true };
+          }
+          return c;
+        });
+        
         this.history = data.history?.$values || data.history || [];
         this.loading = false;
         // Sadece yorumlar değiştiyse scroll
@@ -327,8 +350,11 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
     this.addingComment = true;
     this.ticketService.addAdminComment(this.ticket.id, this.newComment.trim(), 'Admin', true).subscribe({
       next: () => {
+        // Don't add optimistically - let SignalR broadcast handle it
         this.newComment = '';
         this.addingComment = false;
+        this.shouldScrollToBottom = true;
+        
         // Only reload history to avoid scroll reset
         if (this.ticket) {
           this.ticketService.getTicketById(this.ticket.id).subscribe({
@@ -375,7 +401,8 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
             const exists = this.comments.some(c => c.id === comment.id);
             if (!exists) {
               console.log('Ticket-Edit: Adding new comment to list');
-              this.comments.push(comment);
+              // Immutability pattern - create new array reference to trigger change detection
+              this.comments = [...this.comments, comment];
               this.shouldScrollToBottom = true;
               // Only reload history when new comment from other user arrives, don't reload ticket which resets scroll
               this.ticketService.getTicketById(ticketId).subscribe({
@@ -428,6 +455,11 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
   }
 
   formatDate(date: string): string {
+    if (!date) return '-';
+    return new Date(date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  formatFullDate(date: string): string {
     if (!date) return '-';
     return new Date(date).toLocaleString('tr-TR');
   }

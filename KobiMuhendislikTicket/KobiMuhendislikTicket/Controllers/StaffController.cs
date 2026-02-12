@@ -1,10 +1,14 @@
 using KobiMuhendislikTicket.Application.DTOs;
 using KobiMuhendislikTicket.Application.Services;
 using KobiMuhendislikTicket.Application.Common;
+using KobiMuhendislikTicket.Hubs;
 using KobiMuhendislikTicket.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Collections.Generic;
 
 namespace KobiMuhendislikTicket.Controllers
 {
@@ -17,17 +21,20 @@ namespace KobiMuhendislikTicket.Controllers
         private readonly TicketService _ticketService;
         private readonly NotificationService _notificationService;
         private readonly ApplicationDbContext _context;
+        private readonly IHubContext<CommentHub> _hubContext;
 
         public StaffController(
             StaffService staffService, 
             TicketService ticketService, 
             NotificationService notificationService,
-            ApplicationDbContext context)
+            ApplicationDbContext context,
+            IHubContext<CommentHub> hubContext)
         {
             _staffService = staffService;
             _ticketService = ticketService;
             _notificationService = notificationService;
             _context = context;
+            _hubContext = hubContext;
         }
 
         private int GetStaffId()
@@ -65,10 +72,10 @@ namespace KobiMuhendislikTicket.Controllers
 
         // Staff'a atanmış ticketlar
         [HttpGet("tickets")]
-        public async Task<IActionResult> GetMyTickets()
+        public async Task<IActionResult> GetMyTickets([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         {
             var staffId = GetStaffId();
-            var tickets = await _staffService.GetMyTicketsAsync(staffId);
+            var tickets = await _staffService.GetMyTicketsAsync(staffId, page, pageSize);
             return Ok(new { success = true, data = tickets });
         }
 
@@ -117,6 +124,12 @@ namespace KobiMuhendislikTicket.Controllers
                 return NotFound(new { success = false, message = "Ticket bulunamadı." });
 
             var ticket = result.Data;
+            var imagePaths = new List<string>();
+            if (!string.IsNullOrWhiteSpace(ticket.ImagePath))
+            {
+                imagePaths.Add(ticket.ImagePath);
+            }
+            imagePaths.AddRange(ticket.TicketImages.Select(i => i.ImagePath));
             var ticketDetail = new
             {
                 id = ticket.Id.ToString(),
@@ -129,6 +142,7 @@ namespace KobiMuhendislikTicket.Controllers
                 createdDate = ticket.CreatedDate,
                 resolvedDate = ticket.UpdatedDate,
                 imagePath = ticket.ImagePath,
+                imagePaths = imagePaths.Distinct().ToList(),
                 assignedPerson = ticket.AssignedPerson,
                 asset = ticket.Asset != null ? new
                 {
@@ -152,6 +166,18 @@ namespace KobiMuhendislikTicket.Controllers
             if (profile == null)
                 return NotFound(new { success = false, message = "Profil bulunamadı." });
 
+            // Ticket staff'a atanmış mı kontrol et (üstlenmeden mesaj gönderemez)
+            var ticketAssignee = await _context.Tickets
+                .AsNoTracking()
+                .Where(t => t.Id == ticketId && !t.IsDeleted)
+                .Select(t => t.AssignedPerson)
+                .FirstOrDefaultAsync();
+
+            var assigned = (ticketAssignee ?? string.Empty).Trim();
+            var me = (profile.FullName ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(assigned) || !string.Equals(assigned, me, StringComparison.OrdinalIgnoreCase))
+                return Forbid();
+
             var result = await _ticketService.AddCommentAsync(ticketId, dto.Message, profile.FullName, true, "Staff");
             if (!result.IsSuccess)
                 return BadRequest(new { success = false, message = result.ErrorMessage });
@@ -160,6 +186,27 @@ namespace KobiMuhendislikTicket.Controllers
             var ticket = await _ticketService.GetTicketByIdAsync(ticketId);
             if (ticket.IsSuccess && ticket.Data != null)
             {
+                // Get the latest comment
+                var commentsResult = await _ticketService.GetCommentsAsync(ticketId);
+                if (commentsResult?.Any() == true)
+                {
+                    var latestComment = commentsResult.OrderByDescending(c => c.CreatedDate).FirstOrDefault();
+                    if (latestComment != null)
+                    {
+                        // Broadcast to all clients in the ticket group
+                        await _hubContext.Clients.Group($"ticket-{ticketId}").SendAsync("ReceiveComment", new
+                        {
+                            id = latestComment.Id,
+                            ticketId = ticketId.ToString(),
+                            message = latestComment.Message,
+                            authorName = latestComment.AuthorName,
+                            isAdminReply = latestComment.IsAdminReply,
+                            isStaff = true,
+                            createdDate = latestComment.CreatedDate
+                        });
+                    }
+                }
+
                 await _notificationService.NotifyNewCommentAsync(ticketId, ticket.Data.Title, profile.FullName, true);
             }
 
@@ -176,12 +223,23 @@ namespace KobiMuhendislikTicket.Controllers
             if (profile == null)
                 return NotFound(new { success = false, message = "Profil bulunamadı." });
 
-            // Sadece kendi ticketlarının durumunu değiştirebilir
-            var myTickets = await _staffService.GetMyTicketsAsync(staffId);
-            if (!myTickets.Any(t => t.Id == ticketId))
+            // Sadece kendisine atanmış/üstlenilmiş ticket'ın durumunu değiştirebilir
+            var ticket = await _context.Tickets
+                .AsNoTracking()
+                .Where(t => t.Id == ticketId && !t.IsDeleted)
+                .Select(t => new { t.Id, t.AssignedPerson })
+                .FirstOrDefaultAsync();
+
+            if (ticket == null)
+                return NotFound(new { success = false, message = "Ticket bulunamadı." });
+
+            var assigned = (ticket.AssignedPerson ?? string.Empty).Trim();
+            var me = (profile.FullName ?? string.Empty).Trim();
+
+            if (string.IsNullOrEmpty(assigned) || !string.Equals(assigned, me, StringComparison.OrdinalIgnoreCase))
                 return Forbid();
 
-            var result = await _ticketService.UpdateStatusAsync(ticketId, dto, profile.FullName);
+            var result = await _ticketService.UpdateStatusAsync(ticketId, dto, profile.FullName ?? "Staff");
             if (!result.IsSuccess)
                 return BadRequest(new { success = false, message = result.ErrorMessage });
 
@@ -199,7 +257,7 @@ namespace KobiMuhendislikTicket.Controllers
                 return NotFound(new { success = false, message = "Profil bulunamadı." });
 
             // Sadece kendi ticketlarını çözebilir
-            var myTickets = await _staffService.GetMyTicketsAsync(staffId);
+            var myTickets = await _staffService.GetAllMyTicketsAsync(staffId);
             if (!myTickets.Any(t => t.Id == ticketId))
                 return Forbid();
 
@@ -261,6 +319,15 @@ namespace KobiMuhendislikTicket.Controllers
             return Ok(new { success = true, message = "Bildirim okundu olarak işaretlendi." });
         }
 
+        // Tum bildirimleri okundu olarak isaretle
+        [HttpPatch("notifications/read-all")]
+        public async Task<IActionResult> MarkAllAsRead()
+        {
+            var staffId = GetStaffId();
+            await _notificationService.MarkAllAsReadForStaffAsync(staffId);
+            return Ok(new { success = true, message = "Tum bildirimler okundu olarak isaretlendi." });
+        }
+
         // Bildirimi sil
         [HttpDelete("notifications/{id}")]
         public async Task<IActionResult> DeleteNotification(int id)
@@ -277,6 +344,32 @@ namespace KobiMuhendislikTicket.Controllers
             
             await _notificationService.DeleteNotificationAsync(id);
             return Ok(new { success = true, message = "Bildirim silindi." });
+        }
+
+        // Kendi profili güncelle
+        [HttpPut("profile/update")]
+        public async Task<IActionResult> UpdateOwnProfile([FromBody] UpdateOwnProfileDto dto)
+        {
+            var staffId = GetStaffId();
+            var result = await _staffService.UpdateOwnProfileAsync(staffId, dto);
+
+            if (!result.IsSuccess)
+                return BadRequest(new { success = false, message = result.ErrorMessage });
+
+            return Ok(new { success = true, message = "Profil başarıyla güncellendi." });
+        }
+
+        // Kendi şifresini değiştir
+        [HttpPost("profile/change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+        {
+            var staffId = GetStaffId();
+            var result = await _staffService.ChangeOwnPasswordAsync(staffId, dto);
+
+            if (!result.IsSuccess)
+                return BadRequest(new { success = false, message = result.ErrorMessage });
+
+            return Ok(new { success = true, message = "Şifre başarıyla değiştirildi." });
         }
     }
 }

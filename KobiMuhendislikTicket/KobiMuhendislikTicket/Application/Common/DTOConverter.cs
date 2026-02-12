@@ -20,7 +20,7 @@ namespace KobiMuhendislikTicket.Application.Common
         /// <summary>
         /// Converts a TicketCommentDto timestamps to local timezone
         /// </summary>
-        public static TicketCommentDto ConvertCommentToLocal(TicketCommentDto comment)
+        public static TicketCommentDto? ConvertCommentToLocal(TicketCommentDto? comment)
         {
             if (comment == null) return null;
 
@@ -37,7 +37,7 @@ namespace KobiMuhendislikTicket.Application.Common
         /// <summary>
         /// Converts multiple comments to local timezone
         /// </summary>
-        public static List<TicketCommentDto> ConvertCommentsToLocal(List<TicketCommentDto> comments)
+        public static List<TicketCommentDto>? ConvertCommentsToLocal(List<TicketCommentDto>? comments)
         {
             if (comments == null) return null;
             return comments.Select(ConvertCommentToLocal).ToList();
@@ -46,7 +46,7 @@ namespace KobiMuhendislikTicket.Application.Common
         /// <summary>
         /// Converts a TicketHistoryItemDto to local timezone
         /// </summary>
-        public static TicketHistoryItemDto ConvertHistoryToLocal(TicketHistoryItemDto history)
+        public static TicketHistoryItemDto? ConvertHistoryToLocal(TicketHistoryItemDto? history)
         {
             if (history == null) return null;
 
@@ -61,7 +61,7 @@ namespace KobiMuhendislikTicket.Application.Common
         /// <summary>
         /// Converts multiple history items to local timezone
         /// </summary>
-        public static List<TicketHistoryItemDto> ConvertHistoryToLocal(List<TicketHistoryItemDto> histories)
+        public static List<TicketHistoryItemDto>? ConvertHistoryToLocal(List<TicketHistoryItemDto>? histories)
         {
             if (histories == null) return null;
             return histories.Select(ConvertHistoryToLocal).ToList();

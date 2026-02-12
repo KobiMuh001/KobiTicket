@@ -50,6 +50,7 @@ export interface UpdateStaffDto {
 
 export interface StaffTicket {
   id: number;
+  ticketCode?: string;
   title: string;
   description: string;
   status: number;
@@ -119,8 +120,10 @@ export class StaffService {
   }
 
   // Get tickets assigned to me
-  getMyTickets(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/staff/tickets`);
+  getMyTickets(page: number = 1, pageSize: number = 20): Observable<any> {
+    return this.http.get(`${this.apiUrl}/staff/tickets`, { 
+      params: { page: page.toString(), pageSize: pageSize.toString() } 
+    });
   }
 
   // Get unassigned tickets
@@ -166,5 +169,15 @@ export class StaffService {
   // Get ticket comments
   getTicketComments(ticketId: string): Observable<any> {
     return this.http.get(`${this.apiUrl}/staff/tickets/${ticketId}/comments`);
+  }
+
+  // Update own profile
+  updateOwnProfile(data: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/staff/profile/update`, data);
+  }
+
+  // Change own password
+  changePassword(data: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/staff/profile/change-password`, data);
   }
 }

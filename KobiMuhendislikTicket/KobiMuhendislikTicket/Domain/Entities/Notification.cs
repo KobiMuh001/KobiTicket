@@ -15,6 +15,8 @@ namespace KobiMuhendislikTicket.Domain.Entities
         
         // Bildirimin hedef kitlesi (Admin için null)
         public int? TargetUserId { get; set; }
+        // Müşteri (Tenant) bildirimleri için hedef tenant
+        public int? TargetTenantId { get; set; }
         public bool IsForAdmin { get; set; } = true;
     }
 

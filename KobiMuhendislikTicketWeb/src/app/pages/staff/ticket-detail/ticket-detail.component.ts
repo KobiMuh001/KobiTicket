@@ -35,6 +35,7 @@ export class TicketDetailComponent implements OnInit, OnDestroy, AfterViewChecke
   solutionNote: string = '';
   showResolveModal = false;
   showImagePreview = false;
+  selectedImagePath: string | null = null;
   
   activeTab: 'comments' | 'history' = 'comments';
 
@@ -150,6 +151,11 @@ export class TicketDetailComponent implements OnInit, OnDestroy, AfterViewChecke
     }
   }
 
+  openImagePreview(imagePath: string): void {
+    this.selectedImagePath = imagePath;
+    this.showImagePreview = true;
+  }
+
   loadStaffProfile(): void {
     this.staffService.getMyProfile().subscribe({
       next: (res) => {
@@ -163,7 +169,9 @@ export class TicketDetailComponent implements OnInit, OnDestroy, AfterViewChecke
 
   checkOwnership(): void {
     if (this.ticket && this.staffProfile) {
-      this.isMyTicket = this.ticket.assignedPerson === this.staffProfile.fullName;
+      const assigned = (this.ticket.assignedPerson || '').toString().trim().toLocaleLowerCase('tr-TR');
+      const me = (this.staffProfile.fullName || '').toString().trim().toLocaleLowerCase('tr-TR');
+      this.isMyTicket = assigned.length > 0 && assigned === me;
     }
   }
 
@@ -203,7 +211,16 @@ export class TicketDetailComponent implements OnInit, OnDestroy, AfterViewChecke
     this.staffService.getTicketComments(this.ticketId).subscribe({
       next: (res) => {
         if (res.success) {
-          this.comments = res.data;
+          // Process comments to mark staff messages
+          let comments = res.data || [];
+          comments = comments.map((c: any) => {
+            // If isAdminReply is true but authorName is not "Admin", it's a staff message
+            if (c.isAdminReply && c.authorName !== 'Admin') {
+              return { ...c, isStaff: true };
+            }
+            return c;
+          });
+          this.comments = comments;
           this.shouldScrollToBottom = true;
         }
       }
@@ -221,6 +238,10 @@ export class TicketDetailComponent implements OnInit, OnDestroy, AfterViewChecke
   }
 
   addComment(): void {
+    if (!this.isMyTicket) {
+      this.error = 'Ticketı üstlenmeden mesaj gönderemezsiniz';
+      return;
+    }
     if (!this.newComment.trim()) return;
     
     this.staffService.addComment(this.ticketId, this.newComment).subscribe({

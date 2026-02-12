@@ -86,6 +86,75 @@
 
   <!-- Main Content -->
   <main class="main-content">
+    <div class="topbar">
+      <div class="notifications-widget">
+        <button class="notification-toggle" [class.has-unread]="unreadNotificationsCount > 0" (click)="toggleNotificationsDropdown($event)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          @if (unreadNotificationsCount > 0) {
+            <span class="notification-badge">{{ unreadNotificationsCount }}</span>
+          }
+        </button>
+
+        @if (showNotificationsDropdown) {
+          <div class="notifications-dropdown" (click)="$event.stopPropagation()">
+            <div class="dropdown-header">
+              <h3>Bildirimler</h3>
+              @if (unreadNotificationsCount > 0) {
+                <span class="unread-count">{{ unreadNotificationsCount }} yeni</span>
+                <button class="mark-all-btn" (click)="markAllNotificationsAsRead($event)">
+                  Tumunu Okundu Isaretle
+                </button>
+              }
+            </div>
+
+            <div class="notifications-list">
+              @if (notifications.length === 0) {
+                <div class="empty-state">
+                  <p>Henüz bildirim yok</p>
+                </div>
+              } @else {
+                <table class="notifications-table">
+                  <tbody>
+                    @for (notification of notifications.slice(0, 5); track notification.id) {
+                      <tr [class.unread]="!notification.isRead" class="notification-row" (click)="onNotificationClick(notification)">
+                        <td class="notification-cell">
+                          <div class="notification-content">
+                            <p class="notification-title">{{ notification.title }}</p>
+                            <p class="notification-message">{{ notification.message }}</p>
+                          </div>
+                        </td>
+                        <td class="notification-date">{{ formatDate(notification.createdDate) }}</td>
+                        <td class="notification-actions-cell">
+                          @if (!notification.isRead) {
+                            <button class="mark-read-btn" (click)="markNotificationAsRead(notification.id, $event)" title="Okundu olarak işaretle">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                              </svg>
+                            </button>
+                          }
+                          <button class="delete-btn" (click)="deleteNotification(notification.id, $event)" title="Sil">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                              <line x1="10" y1="11" x2="10" y2="17"></line>
+                              <line x1="14" y1="11" x2="14" y2="17"></line>
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
     <router-outlet></router-outlet>
   </main>
 </div>

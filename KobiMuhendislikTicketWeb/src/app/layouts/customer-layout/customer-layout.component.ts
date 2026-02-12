@@ -1,7 +1,11 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Component, OnInit, OnDestroy, HostListener, Inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService, User } from '../../core/services/auth.service';
+import { NotificationService, Notification } from '../../core/services/notification.service';
+import { SignalRService } from '../../core/services/signalr.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-customer-layout',
@@ -10,9 +14,14 @@ import { AuthService, User } from '../../core/services/auth.service';
   templateUrl: './customer-layout.component.html',
   styleUrls: ['./customer-layout.component.scss']
 })
-export class CustomerLayoutComponent implements OnInit {
+export class CustomerLayoutComponent implements OnInit, OnDestroy {
   isSidebarCollapsed = false;
   currentUser: User | null = null;
+
+  notifications: Notification[] = [];
+  showNotificationsDropdown = false;
+  private destroy$ = new Subject<void>();
+  private isBrowser: boolean;
   
   menuItems = [
     {
@@ -37,12 +46,122 @@ export class CustomerLayoutComponent implements OnInit {
     }
   ];
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private notificationService: NotificationService,
+    private signalRService: SignalRService,
+    private router: Router,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {
+    this.isBrowser = isPlatformBrowser(this.platformId);
+  }
 
   ngOnInit(): void {
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
     });
+
+    this.notificationService.notificationsList$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(list => {
+        // Sadece customer için istenen tipleri göster
+        this.notifications = (list || []).filter(n =>
+          n.type === 'TicketStatusChanged' || n.type === 'TicketComment'
+        );
+      });
+
+    // Customer bildirimlerini başlat (polling)
+    this.notificationService.initializeCustomerNotifications();
+
+    // SignalR real-time customer bildirimleri
+    if (this.isBrowser) {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (token) {
+        this.signalRService.startNotificationConnection(token).then(() => {
+          const hub = this.signalRService.getNotificationHub();
+          hub?.off('CustomerNotificationReceived');
+          hub?.on('CustomerNotificationReceived', (notification: any) => {
+            this.notificationService.addStaffNotificationDirectly(notification);
+          });
+        }).catch(err => {
+          console.error('Customer Layout: SignalR Notification Hub bağlantı hatası:', err);
+        });
+      }
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.notificationService.stopPolling();
+    this.signalRService.stopNotificationConnection().catch(() => {});
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  get unreadNotificationsCount(): number {
+    return this.notifications.filter(n => !n.isRead).length;
+  }
+
+  formatDate(dateString: string): string {
+    return new Date(dateString).toLocaleDateString('tr-TR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  toggleNotificationsDropdown(event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.showNotificationsDropdown = !this.showNotificationsDropdown;
+  }
+
+  closeNotificationsDropdown(): void {
+    this.showNotificationsDropdown = false;
+  }
+
+  markNotificationAsRead(notificationId: string, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.notificationService.markAsRead(notificationId).subscribe();
+  }
+
+  deleteNotification(notificationId: string, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.notificationService.deleteNotification(notificationId).subscribe();
+  }
+
+  markAllNotificationsAsRead(event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.notificationService.markAllAsRead().subscribe();
+  }
+
+  onNotificationClick(notification: Notification): void {
+    if (!notification.isRead) {
+      this.notificationService.markAsRead(notification.id).subscribe();
+    }
+
+    if (notification.ticketId) {
+      this.router.navigate(['/customer/tickets', notification.ticketId]);
+    }
+
+    this.closeNotificationsDropdown();
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    const notificationsWidget = document.querySelector('.notifications-widget');
+    if (notificationsWidget && !notificationsWidget.contains(target)) {
+      this.closeNotificationsDropdown();
+    }
   }
 
   toggleSidebar(): void {

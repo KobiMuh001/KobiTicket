@@ -20,6 +20,11 @@ export class StaffEditComponent implements OnInit {
   error: string | null = null;
   successMessage: string | null = null;
 
+  // Password reset modal
+  showPasswordModal = false;
+  newPassword: string = '';
+  confirmPassword: string = '';
+
   // Form data
   formData: UpdateStaffDto = {
     fullName: '',
@@ -139,7 +144,12 @@ export class StaffEditComponent implements OnInit {
   getCapacityPercentage(): number {
     if (!this.workload) return 0;
     const max = this.formData.maxConcurrentTickets ?? 1;
-    return Math.min(100, (this.workload.openTickets / max) * 100);
+    return Math.min(100, (this.workload.assignedTickets / max) * 100);
+  }
+
+  getCurrentLoad(): number {
+    if (!this.workload) return 0;
+    return this.workload.assignedTickets || 0;
   }
 
   getCapacityClass(): string {
@@ -174,5 +184,88 @@ export class StaffEditComponent implements OnInit {
 
   dismissSuccess(): void {
     this.successMessage = null;
+  }
+
+  resetPassword(): void {
+    this.newPassword = '';
+    this.confirmPassword = '';
+    this.showPasswordModal = true;
+  }
+
+  confirmResetPassword(): void {
+    if (!this.newPassword || !this.confirmPassword) {
+      this.error = 'Lütfen şifreyi iki kez giriniz.';
+      return;
+    }
+
+    if (this.newPassword !== this.confirmPassword) {
+      this.error = 'Şifreler eşleşmiyor.';
+      return;
+    }
+
+    if (this.newPassword.length < 6) {
+      this.error = 'Şifre en az 6 karakter olmalıdır.';
+      return;
+    }
+
+    // Büyük harf kontrolü
+    if (!/[A-Z]/.test(this.newPassword)) {
+      this.error = 'Şifre en az bir büyük harf içermelidir.';
+      return;
+    }
+
+    // Küçük harf kontrolü
+    if (!/[a-z]/.test(this.newPassword)) {
+      this.error = 'Şifre en az bir küçük harf içermelidir.';
+      return;
+    }
+
+    // Sayı kontrolü
+    if (!/[0-9]/.test(this.newPassword)) {
+      this.error = 'Şifre en az bir sayı içermelidir.';
+      return;
+    }
+
+    this.isSaving = true;
+    this.error = null;
+
+    this.staffService.resetStaffPassword(this.staffId, this.newPassword).subscribe({
+      next: () => {
+        this.successMessage = 'Şifre başarıyla sıfırlandı.';
+        this.showPasswordModal = false;
+        this.isSaving = false;
+        
+        setTimeout(() => {
+          this.successMessage = null;
+        }, 3000);
+      },
+      error: (err) => {
+        this.error = err.error?.message || 'Şifre sıfırlanırken bir hata oluştu.';
+        this.isSaving = false;
+      }
+    });
+  }
+
+  cancelResetPassword(): void {
+    this.showPasswordModal = false;
+    this.newPassword = '';
+    this.confirmPassword = '';
+  }
+
+  // Password validation helper methods
+  hasUppercase(): boolean {
+    return /[A-Z]/.test(this.newPassword);
+  }
+
+  hasLowercase(): boolean {
+    return /[a-z]/.test(this.newPassword);
+  }
+
+  hasNumber(): boolean {
+    return /[0-9]/.test(this.newPassword);
+  }
+
+  hasMinLength(): boolean {
+    return this.newPassword.length >= 6;
   }
 }

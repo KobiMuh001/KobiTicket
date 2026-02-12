@@ -46,6 +46,13 @@ namespace KobiMuhendislikTicket.Application.DTOs
         public string NewPassword { get; set; } = string.Empty;
     }
 
+    public class UpdateOwnProfileDto
+    {
+        public string? FullName { get; set; }
+        public string? Phone { get; set; }
+        public string? Department { get; set; }
+    }
+
     public class StaffWorkloadDto
     {
         public int Id { get; set; }

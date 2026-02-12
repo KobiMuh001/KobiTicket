@@ -357,6 +357,7 @@ namespace KobiMuhendislikTicket.Application.Services
             var ticket = await _context.Tickets
                 .Include(t => t.Tenant)
                 .Include(t => t.Asset)
+                .Include(t => t.TicketImages)
                 .FirstOrDefaultAsync(t => t.Id == ticketId);
 
             if (ticket == null) return null;
@@ -371,6 +372,13 @@ namespace KobiMuhendislikTicket.Application.Services
                 .OrderByDescending(h => h.CreatedDate)
                 .ToListAsync();
 
+            var imagePaths = new List<string>();
+            if (!string.IsNullOrWhiteSpace(ticket.ImagePath))
+            {
+                imagePaths.Add(ticket.ImagePath);
+            }
+            imagePaths.AddRange(ticket.TicketImages.Select(i => i.ImagePath));
+
             return new TicketDetailDto
             {
                 Id = ticket.Id,
@@ -381,6 +389,7 @@ namespace KobiMuhendislikTicket.Application.Services
                 Priority = GetPriorityName(ticket.Priority),
                 AssignedPerson = ticket.AssignedPerson,
                 ImagePath = ticket.ImagePath,
+                ImagePaths = imagePaths.Distinct().ToList(),
                 CreatedDate = ticket.CreatedDate,
                 UpdatedDate = ticket.UpdatedDate,
                 TenantId = ticket.TenantId,

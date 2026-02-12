@@ -33,11 +33,94 @@ export class NotificationService {
   private notificationsSubject = new BehaviorSubject<Notification[]>([]);
   public notifications$ = this.notificationsSubject.asObservable();
   public notificationsList$ = this.notificationsSubject.asObservable();
+  
+  private pollingInterval: any = null;
 
   constructor(
     private http: HttpClient,
     private authService: AuthService
   ) {}
+
+  // Staff bildirimleri başlat
+  initializeStaffNotifications(): void {
+    // Polling zaten başlatılmışsa başlatma
+    if (this.pollingInterval) {
+      console.log('Staff notifications polling already started');
+      return;
+    }
+
+    console.log('Initializing staff notifications...');
+    // İlk yükle
+    this.getStaffNotifications(20).subscribe({
+      next: () => console.log('Staff notifications loaded'),
+      error: (err) => console.error('Staff notifications load error:', err)
+    });
+    
+    // Her 30 saniyede bir güncelle
+    this.pollingInterval = setInterval(() => {
+      console.log('Staff notifications polling...');
+      this.getStaffNotifications(20).subscribe({
+        error: (err) => console.error('Staff notifications polling error:', err)
+      });
+    }, 30000);
+  }
+
+  // Admin bildirimleri başlat
+  initializeAdminNotifications(): void {
+    // Polling zaten başlatılmışsa başlatma
+    if (this.pollingInterval) {
+      console.log('Admin notifications polling already started');
+      return;
+    }
+
+    console.log('Initializing admin notifications...');
+    // İlk yükle
+    this.getNotifications(20).subscribe({
+      next: () => console.log('Admin notifications loaded'),
+      error: (err) => console.error('Admin notifications load error:', err)
+    });
+    
+    // Her 30 saniyede bir güncelle
+    this.pollingInterval = setInterval(() => {
+      console.log('Admin notifications polling...');
+      this.getNotifications(20).subscribe({
+        error: (err) => console.error('Admin notifications polling error:', err)
+      });
+    }, 30000);
+  }
+
+  // Customer bildirimleri başlat
+  initializeCustomerNotifications(): void {
+    // Polling zaten başlatılmışsa başlatma
+    if (this.pollingInterval) {
+      console.log('Customer notifications polling already started');
+      return;
+    }
+
+    console.log('Initializing customer notifications...');
+    // İlk yükle
+    this.getCustomerNotifications(20).subscribe({
+      next: () => console.log('Customer notifications loaded'),
+      error: (err) => console.error('Customer notifications load error:', err)
+    });
+
+    // Her 30 saniyede bir güncelle
+    this.pollingInterval = setInterval(() => {
+      console.log('Customer notifications polling...');
+      this.getCustomerNotifications(20).subscribe({
+        error: (err) => console.error('Customer notifications polling error:', err)
+      });
+    }, 30000);
+  }
+
+  // Polling'i durdur
+  stopPolling(): void {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+      console.log('Notifications polling stopped');
+    }
+  }
 
   // Bildirimleri yükle
   getNotifications(take: number = 20): Observable<NotificationResponse> {
@@ -63,6 +146,18 @@ export class NotificationService {
     );
   }
 
+  // Customer bildirimlerini yükle
+  getCustomerNotifications(take: number = 20): Observable<NotificationResponse> {
+    return this.http.get<NotificationResponse>(`${this.apiUrl}/tickets/notifications?take=${take}`).pipe(
+      tap(response => {
+        if (response.success) {
+          this.notificationsSubject.next(response.data || []);
+          this.unreadCountSubject.next(response.unreadCount || 0);
+        }
+      })
+    );
+  }
+
   // Okunmamış bildirim sayısını getir
   getUnreadCount(): Observable<{ success: boolean; count: number }> {
     return this.http.get<{ success: boolean; count: number }>(`${this.apiUrl}/admin/notifications/unread-count`).pipe(
@@ -77,9 +172,11 @@ export class NotificationService {
   // Bildirimi okundu olarak işaretle
   markAsRead(notificationId: string): Observable<any> {
     const user = this.authService.getCurrentUser();
-    const endpoint = user?.role === 'Staff' 
+    const endpoint = user?.role === 'Staff'
       ? `${this.apiUrl}/staff/notifications/${notificationId}/read`
-      : `${this.apiUrl}/admin/notifications/${notificationId}/read`;
+      : user?.role === 'Customer'
+        ? `${this.apiUrl}/tickets/notifications/${notificationId}/read`
+        : `${this.apiUrl}/admin/notifications/${notificationId}/read`;
     
     return this.http.patch(endpoint, {}).pipe(
       tap(() => {
@@ -95,7 +192,13 @@ export class NotificationService {
 
   // Tüm bildirimleri okundu olarak işaretle
   markAllAsRead(): Observable<any> {
-    return this.http.patch(`${this.apiUrl}/admin/notifications/read-all`, {}).pipe(
+    const user = this.authService.getCurrentUser();
+    const endpoint = user?.role === 'Staff'
+      ? `${this.apiUrl}/staff/notifications/read-all`
+      : user?.role === 'Customer'
+        ? `${this.apiUrl}/tickets/notifications/read-all`
+        : `${this.apiUrl}/admin/notifications/read-all`;
+    return this.http.patch(endpoint, {}).pipe(
       tap(() => {
         const notifications = this.notificationsSubject.value;
         const updated = notifications.map(n => ({ ...n, isRead: true }));
@@ -108,9 +211,11 @@ export class NotificationService {
   // Bildirimi sil
   deleteNotification(notificationId: string): Observable<any> {
     const user = this.authService.getCurrentUser();
-    const endpoint = user?.role === 'Staff' 
+    const endpoint = user?.role === 'Staff'
       ? `${this.apiUrl}/staff/notifications/${notificationId}`
-      : `${this.apiUrl}/admin/notifications/${notificationId}`;
+      : user?.role === 'Customer'
+        ? `${this.apiUrl}/tickets/notifications/${notificationId}`
+        : `${this.apiUrl}/admin/notifications/${notificationId}`;
     
     return this.http.delete(endpoint).pipe(
       tap(() => {
@@ -158,11 +263,23 @@ export class NotificationService {
     const current = this.notificationsSubject.value;
     const updated = [notification, ...current].slice(0, 20); // Son 20 bildirimi tut
     this.notificationsSubject.next(updated);
-    this.unreadCountSubject.next(this.unreadCountSubject.value + 1);
+    if (!notification.isRead) {
+      this.unreadCountSubject.next(this.unreadCountSubject.value + 1);
+    }
   }
 
-  // Yeni bildirimi ekle ve sayıyı güncelle
-  addStaffNotificationDirectly(notification: Notification): void {
-    this.addNotificationDirectly(notification);
+  // Yeni bildirimi ekle ve sayıyı güncelle (Staff için - backend'den gelen format)
+  addStaffNotificationDirectly(notification: any): void {
+    // Backend'den gelen notification formatını dönüştür
+    const formattedNotification: Notification = {
+      id: notification.id?.toString() || notification.Id?.toString() || `notif-${Date.now()}`,
+      title: notification.title || notification.Title || '',
+      message: notification.message || notification.Message || '',
+      type: notification.type || notification.Type || '',
+      isRead: notification.isRead ?? notification.IsRead ?? false,
+      ticketId: notification.ticketId?.toString() || notification.TicketId?.toString(),
+      createdDate: notification.createdDate || notification.CreatedDate || new Date().toISOString()
+    };
+    this.addNotificationDirectly(formattedNotification);
   }
 }

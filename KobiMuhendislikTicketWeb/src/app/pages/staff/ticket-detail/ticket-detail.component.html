@@ -49,7 +49,13 @@
           <button *ngIf="ticket.status === 1" (click)="updateStatus(2)" class="btn btn-primary">
             İşleme Al
           </button>
-          <button *ngIf="ticket.status === 2" (click)="showResolveModal = true" class="btn btn-success">
+          <button *ngIf="ticket.status === 2" (click)="updateStatus(3)" class="btn btn-secondary">
+            Müşteri Bekliyor
+          </button>
+          <button *ngIf="ticket.status === 3" (click)="updateStatus(2)" class="btn btn-primary">
+            İşleme Al
+          </button>
+          <button *ngIf="ticket.status === 2 || ticket.status === 3" (click)="showResolveModal = true" class="btn btn-success">
             Çözüldü Olarak İşaretle
           </button>
           <button (click)="releaseTicket()" class="btn btn-secondary">
@@ -105,13 +111,19 @@
         </div>
 
         <!-- Ticket Image Section -->
-        <div class="detail-card" *ngIf="ticket.imagePath">
-          <h3>Eklenen Görsel</h3>
-          <div class="ticket-image-container" (click)="showImagePreview = true">
-            <img [src]="baseUrl + '/' + ticket.imagePath" [alt]="ticket.title" class="ticket-image">
-            <div class="image-overlay">
-              <span>Büyütmek için tıkla</span>
-            </div>
+        <div class="detail-card" *ngIf="ticket.imagePaths?.length">
+          <h3>Eklenen Gorseller</h3>
+          <div class="ticket-image-grid">
+            <button
+              class="ticket-image-tile"
+              type="button"
+              *ngFor="let image of ticket.imagePaths"
+              (click)="openImagePreview(image)">
+              <img [src]="baseUrl + '/' + image" [alt]="ticket.title" class="ticket-image">
+              <div class="image-overlay">
+                <span>Büyütmek için tıkla</span>
+              </div>
+            </button>
           </div>
         </div>
 
@@ -158,8 +170,8 @@
             </div>
           </div>
 
-          <!-- Add comment -->
-          <div class="add-comment-v2" *ngIf="ticket.status !== 4 && ticket.status !== 5">
+          <!-- Add comment (only when ticket is assigned to me) -->
+          <div class="add-comment-v2" *ngIf="isMyTicket && ticket.status !== 4 && ticket.status !== 5">
             <div class="input-wrapper">
               <textarea 
                 [(ngModel)]="newComment" 
@@ -225,6 +237,6 @@
 <div *ngIf="showImagePreview" class="image-preview-overlay" (click)="showImagePreview = false">
   <div class="preview-content" (click)="$event.stopPropagation()">
     <button class="btn-close-preview" (click)="showImagePreview = false">×</button>
-    <img [src]="baseUrl + '/' + ticket.imagePath" alt="Büyük Görsel">
+    <img [src]="baseUrl + '/' + selectedImagePath" alt="Büyük Görsel">
   </div>
 </div>

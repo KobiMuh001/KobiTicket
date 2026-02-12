@@ -185,6 +185,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
         public string Priority { get; set; } = string.Empty;
         public string? AssignedPerson { get; set; }
         public string? ImagePath { get; set; }
+        public List<string> ImagePaths { get; set; } = new();
         public DateTime CreatedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }
 

@@ -1,8 +1,11 @@
 ﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DashboardService, TicketListItem } from '../../../core/services/dashboard.service';
+import { NotificationService, Notification } from '../../../core/services/notification.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-tickets',
@@ -27,11 +30,68 @@ export class TicketsComponent implements OnInit {
   searchTerm = '';
   statusFilter = '';
   priorityFilter = '';
+  customerFilter = '';
+  customers: string[] = [];
 
-  constructor(private dashboardService: DashboardService) {}
+  // Notifications
+  notifications: Notification[] = [];
+  ticketNotifications: Map<number, number> = new Map(); // ticket id -> unread count
+  private destroy$ = new Subject<void>();
+
+  constructor(
+    private dashboardService: DashboardService,
+    private notificationService: NotificationService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.loadTickets();
+    this.subscribeToNotifications();
+  }
+
+  private subscribeToNotifications(): void {
+    // Bildirimleri dinle
+    this.notificationService.notificationsList$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(notifications => {
+        this.notifications = notifications;
+        this.updateTicketNotificationCounts();
+      });
+  }
+
+  private updateTicketNotificationCounts(): void {
+    this.ticketNotifications.clear();
+    this.notifications.forEach(notif => {
+      if (notif.ticketId && !notif.isRead) {
+        const ticketId = Number(notif.ticketId);
+        const count = this.ticketNotifications.get(ticketId) || 0;
+        this.ticketNotifications.set(ticketId, count + 1);
+      }
+    });
+  }
+
+  getTicketNotificationCount(ticketId: number): number {
+    return this.ticketNotifications.get(ticketId) || 0;
+  }
+
+  onTicketSelect(ticketId: number): void {
+    // Seçilen ticketa ait tüm okunmamış bildirimleri okundu olarak işaretle
+    const ticketNotifications = this.notifications.filter(
+      notif => notif.ticketId && Number(notif.ticketId) === ticketId && !notif.isRead
+    );
+    
+    ticketNotifications.forEach(notif => {
+      this.notificationService.markAsRead(notif.id).subscribe({
+        next: () => {
+          notif.isRead = true;
+        }
+      });
+    });
+    
+    this.updateTicketNotificationCounts();
+
+    // Satıra tıklayınca detay sayfasına git
+    this.router.navigate(['/admin/tickets', ticketId]);
   }
 
   loadTickets(): void {
@@ -42,13 +102,17 @@ export class TicketsComponent implements OnInit {
           this.tickets = response.items;
           this.totalCount = response.totalCount;
           this.totalPages = response.totalPages;
+          this.extractCustomers();
           this.filteredTickets = this.tickets;
         } else if (Array.isArray(response)) {
           this.tickets = response;
+          this.extractCustomers();
           this.filteredTickets = response;
           this.totalCount = response.length;
           this.totalPages = Math.ceil(this.totalCount / this.pageSize);
         }
+        // Sort: active tickets first, then resolved/closed at the end
+        this.sortTickets();
         this.isLoading = false;
       },
       error: () => {
@@ -56,6 +120,16 @@ export class TicketsComponent implements OnInit {
         this.isLoading = false;
       }
     });
+  }
+
+  extractCustomers(): void {
+    const uniqueCustomers = new Set<string>();
+    this.tickets.forEach(ticket => {
+      if (ticket.tenantName) {
+        uniqueCustomers.add(ticket.tenantName);
+      }
+    });
+    this.customers = Array.from(uniqueCustomers).sort();
   }
 
   onPageChange(newPage: number): void {
@@ -87,8 +161,23 @@ export class TicketsComponent implements OnInit {
       
       const matchesStatus = !this.statusFilter || ticket.status.toString() === this.statusFilter;
       const matchesPriority = !this.priorityFilter || ticket.priority.toString() === this.priorityFilter;
+      const matchesCustomer = !this.customerFilter || ticket.tenantName === this.customerFilter;
       
-      return matchesSearch && matchesStatus && matchesPriority;
+      return matchesSearch && matchesStatus && matchesPriority && matchesCustomer;
+    });
+
+    
+    this.sortTickets();
+  }
+
+  private sortTickets(): void {
+    this.filteredTickets.sort((a, b) => {
+      const aIsResolved = a.status === 4 || a.status === 5;
+      const bIsResolved = b.status === 4 || b.status === 5;
+      
+      if (aIsResolved && !bIsResolved) return 1;
+      if (!aIsResolved && bIsResolved) return -1;
+      return 0;
     });
   }
 
@@ -96,6 +185,7 @@ export class TicketsComponent implements OnInit {
     this.searchTerm = '';
     this.statusFilter = '';
     this.priorityFilter = '';
+    this.customerFilter = '';
     this.filteredTickets = this.tickets;
   }
 
@@ -165,5 +255,10 @@ export class TicketsComponent implements OnInit {
     if (id === null || id === undefined) return '-';
     const numericId = typeof id === 'number' ? id : Number(id);
     return Number.isFinite(numericId) ? `T${numericId.toString().padStart(5, '0')}` : String(id);
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

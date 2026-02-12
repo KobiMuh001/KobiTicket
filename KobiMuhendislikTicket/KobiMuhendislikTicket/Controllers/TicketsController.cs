@@ -1,11 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
+using System.Collections.Generic;
 using KobiMuhendislikTicket.Application.Services;
 using KobiMuhendislikTicket.Application.DTOs;
 using KobiMuhendislikTicket.Application.Common;
 using KobiMuhendislikTicket.Domain.Entities;
 using KobiMuhendislikTicket.Domain.Enums;
+using KobiMuhendislikTicket.Hubs;
 using Microsoft.EntityFrameworkCore;
 using KobiMuhendislikTicket.Infrastructure.Persistence;
 
@@ -19,15 +22,18 @@ namespace KobiMuhendislikTicket.Controllers
         private readonly TicketService _ticketService;
         private readonly NotificationService _notificationService;
         private readonly ApplicationDbContext _context;
+        private readonly IHubContext<CommentHub> _hubContext;
 
         public TicketsController(
             TicketService ticketService, 
             NotificationService notificationService,
-            ApplicationDbContext context)
+            ApplicationDbContext context,
+            IHubContext<CommentHub> hubContext)
         {
             _ticketService = ticketService;
             _notificationService = notificationService;
             _context = context;
+            _hubContext = hubContext;
         }
 
         [HttpPost("create-ticket")]
@@ -83,6 +89,33 @@ namespace KobiMuhendislikTicket.Controllers
 
             var tickets = await _ticketService.GetTenantTicketsAsync(tenantId);
             return Ok(tickets);
+        }
+
+        [HttpGet("{id}/images")]
+        public async Task<IActionResult> GetTicketImages(int id)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+                return Unauthorized(new { message = "Kullanıcı kimliği bulunamadı." });
+
+            if (!int.TryParse(userIdClaim.Value, out var tenantId))
+                return Unauthorized(new { message = "Geçersiz kullanıcı kimliği." });
+
+            var ticket = await _context.Tickets
+                .Include(t => t.TicketImages)
+                .FirstOrDefaultAsync(t => t.Id == id && t.TenantId == tenantId);
+
+            if (ticket == null)
+                return NotFound(new { message = "Ticket bulunamadı." });
+
+            var imagePaths = new List<string>();
+            if (!string.IsNullOrWhiteSpace(ticket.ImagePath))
+            {
+                imagePaths.Add(ticket.ImagePath);
+            }
+            imagePaths.AddRange(ticket.TicketImages.Select(i => i.ImagePath));
+
+            return Ok(new { success = true, data = imagePaths.Distinct().ToList() });
         }
 
         [Authorize(Roles = "Admin")]
@@ -224,6 +257,27 @@ namespace KobiMuhendislikTicket.Controllers
             if (!result.IsSuccess)
                 return BadRequest(new { success = false, message = result.ErrorMessage });
 
+            // Get the added comment with full details for broadcasting
+            var commentsResult = await _ticketService.GetCommentsAsync(ticketId);
+            if (commentsResult?.Any() == true)
+            {
+                // Get the latest comment
+                var latestComment = commentsResult.OrderByDescending(c => c.CreatedDate).FirstOrDefault();
+                if (latestComment != null)
+                {
+                    // Broadcast to all clients in the ticket group
+                    await _hubContext.Clients.Group($"ticket-{ticketId}").SendAsync("ReceiveComment", new
+                    {
+                        id = latestComment.Id,
+                        ticketId = ticketId.ToString(),
+                        message = latestComment.Message,
+                        authorName = latestComment.AuthorName,
+                        isAdminReply = latestComment.IsAdminReply,
+                        createdDate = latestComment.CreatedDate
+                    });
+                }
+            }
+
             // Admin'e bildirim gönder
             await _notificationService.NotifyNewCommentAsync(ticketId, ticket.Data.Title, authorName, true);
 
@@ -247,6 +301,76 @@ namespace KobiMuhendislikTicket.Controllers
             }
 
             return Ok(new { success = true, message = "Yorum eklendi." });
+        }
+
+        // ==================== MÜŞTERİ BİLDİRİMLERİ ====================
+
+        [Authorize(Roles = "Customer")]
+        [HttpGet("notifications")]
+        public async Task<IActionResult> GetNotifications([FromQuery] int take = 20)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+                return Unauthorized(new { success = false, message = "Kullanıcı kimliği bulunamadı." });
+
+            if (!int.TryParse(userIdClaim.Value, out var tenantId))
+                return Unauthorized(new { success = false, message = "Geçersiz kullanıcı kimliği." });
+
+            var notifications = await _notificationService.GetCustomerNotificationsAsync(tenantId, take);
+            return Ok(new { success = true, data = notifications, unreadCount = notifications.Count(n => !n.IsRead) });
+        }
+
+        [Authorize(Roles = "Customer")]
+        [HttpPatch("notifications/{id}/read")]
+        public async Task<IActionResult> MarkNotificationAsRead(int id)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+                return Unauthorized(new { success = false, message = "Kullanıcı kimliği bulunamadı." });
+
+            if (!int.TryParse(userIdClaim.Value, out var tenantId))
+                return Unauthorized(new { success = false, message = "Geçersiz kullanıcı kimliği." });
+
+            var notification = await _context.Notifications.FindAsync(id);
+            if (notification == null || notification.TargetTenantId != tenantId || notification.IsDeleted)
+                return NotFound(new { success = false, message = "Bildirim bulunamadı." });
+
+            await _notificationService.MarkAsReadAsync(id);
+            return Ok(new { success = true, message = "Bildirim okundu olarak işaretlendi." });
+        }
+
+        [Authorize(Roles = "Customer")]
+        [HttpPatch("notifications/read-all")]
+        public async Task<IActionResult> MarkAllNotificationsAsRead()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+                return Unauthorized(new { success = false, message = "Kullanıcı kimliği bulunamadı." });
+
+            if (!int.TryParse(userIdClaim.Value, out var tenantId))
+                return Unauthorized(new { success = false, message = "Geçersiz kullanıcı kimliği." });
+
+            await _notificationService.MarkAllAsReadForCustomerAsync(tenantId);
+            return Ok(new { success = true, message = "Tüm bildirimler okundu olarak işaretlendi." });
+        }
+
+        [Authorize(Roles = "Customer")]
+        [HttpDelete("notifications/{id}")]
+        public async Task<IActionResult> DeleteNotification(int id)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+                return Unauthorized(new { success = false, message = "Kullanıcı kimliği bulunamadı." });
+
+            if (!int.TryParse(userIdClaim.Value, out var tenantId))
+                return Unauthorized(new { success = false, message = "Geçersiz kullanıcı kimliği." });
+
+            var notification = await _context.Notifications.FindAsync(id);
+            if (notification == null || notification.TargetTenantId != tenantId || notification.IsDeleted)
+                return NotFound(new { success = false, message = "Bildirim bulunamadı." });
+
+            await _notificationService.DeleteNotificationAsync(id);
+            return Ok(new { success = true, message = "Bildirim silindi." });
         }
     }
 }

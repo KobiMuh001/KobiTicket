@@ -91,6 +91,10 @@ export class TicketService {
     return this.http.get(`${this.apiUrl}/tickets/my-tickets`);
   }
 
+  getTicketImages(ticketId: number | string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/tickets/${ticketId}/images`);
+  }
+
   createTicket(ticket: { title: string; description: string; priority: number; assetId?: string }): Observable<any> {
     return this.http.post(`${this.apiUrl}/tickets/create-ticket`, ticket);
   }

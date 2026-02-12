@@ -13,7 +13,7 @@ namespace KobiMuhendislikTicket.Application.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<NotificationService> _logger;
-        private readonly IHubContext<NotificationHub> _hubContext;
+        private readonly IHubContext<NotificationHub>? _hubContext;
         private readonly IEmailService _emailService;
 
         public NotificationService(
@@ -71,6 +71,27 @@ namespace KobiMuhendislikTicket.Application.Services
             return notifications;
         }
 
+        public async Task<List<NotificationDto>> GetCustomerNotificationsAsync(int tenantId, int take = 20)
+        {
+            var notifications = await _context.Notifications
+                .Where(n => !n.IsForAdmin && n.TargetTenantId == tenantId && !n.IsDeleted)
+                .OrderByDescending(n => n.CreatedDate)
+                .Take(take)
+                .Select(n => new NotificationDto
+                {
+                    Id = n.Id,
+                    Title = n.Title,
+                    Message = n.Message,
+                    Type = n.Type.ToString(),
+                    IsRead = n.IsRead,
+                    TicketId = n.TicketId,
+                    CreatedDate = n.CreatedDate
+                })
+                .ToListAsync();
+
+            return notifications;
+        }
+
         
         public async Task<int> GetUnreadCountAsync()
         {
@@ -100,6 +121,90 @@ namespace KobiMuhendislikTicket.Application.Services
                     .SetProperty(n => n.UpdatedDate, DateTimeHelper.GetLocalNow()));
         }
 
+        public async Task MarkAllAsReadForStaffAsync(int staffId)
+        {
+            await _context.Notifications
+                .Where(n => !n.IsForAdmin && n.TargetUserId == staffId && !n.IsRead)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(n => n.IsRead, true)
+                    .SetProperty(n => n.UpdatedDate, DateTimeHelper.GetLocalNow()));
+        }
+
+        public async Task MarkAllAsReadForCustomerAsync(int tenantId)
+        {
+            await _context.Notifications
+                .Where(n => !n.IsForAdmin && n.TargetTenantId == tenantId && !n.IsRead)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(n => n.IsRead, true)
+                    .SetProperty(n => n.UpdatedDate, DateTimeHelper.GetLocalNow()));
+        }
+
+        public async Task CreateCustomerNotificationAsync(int tenantId, string title, string message, NotificationType type, int? ticketId = null)
+        {
+            var notification = new Notification
+            {
+                Title = title,
+                Message = message,
+                Type = type,
+                TicketId = ticketId,
+                IsForAdmin = false,
+                TargetTenantId = tenantId,
+                IsRead = false
+            };
+
+            _context.Notifications.Add(notification);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Müşteriye bildirim gönderildi: {TenantId}, {Title}", tenantId, title);
+
+            if (_hubContext != null)
+            {
+                try
+                {
+                    var notificationDto = new NotificationDto
+                    {
+                        Id = notification.Id,
+                        Title = title,
+                        Message = message,
+                        Type = type.ToString(),
+                        IsRead = false,
+                        TicketId = ticketId,
+                        CreatedDate = notification.CreatedDate
+                    };
+
+                    await _hubContext.Clients.User(tenantId.ToString())
+                        .SendAsync("CustomerNotificationReceived", notificationDto)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Müşteriye SignalR bildirim gönderilemedi: {TenantId}", tenantId);
+                }
+            }
+        }
+
+        public async Task NotifyCustomerStatusChangedAsync(int tenantId, int ticketId, string ticketTitle, string newStatus)
+        {
+            await CreateCustomerNotificationAsync(
+                tenantId,
+                "Durum Değişikliği",
+                $"Ticket durumu değişti: {ticketTitle} → {newStatus}",
+                NotificationType.TicketStatusChanged,
+                ticketId
+            );
+        }
+
+        public async Task NotifyCustomerNewCommentAsync(int tenantId, int ticketId, string ticketTitle, string authorName)
+        {
+            await CreateCustomerNotificationAsync(
+                tenantId,
+                "Yeni Mesaj",
+                $"{authorName} bir mesaj gönderdi: {ticketTitle}",
+                NotificationType.TicketComment,
+                ticketId
+            );
+        }
+
         
         public async Task CreateNotificationAsync(string title, string message, NotificationType type, int? ticketId = null)
         {
@@ -117,6 +222,35 @@ namespace KobiMuhendislikTicket.Application.Services
             await _context.SaveChangesAsync();
             
             _logger.LogInformation("Bildirim oluşturuldu: {Title}", title);
+
+            // Admin'lere SignalR ile gerçek zamanlı bildirim gönder
+            if (_hubContext != null)
+            {
+                try
+                {
+                    var notificationDto = new NotificationDto
+                    {
+                        Id = notification.Id,
+                        Title = title,
+                        Message = message,
+                        Type = type.ToString(),
+                        IsRead = false,
+                        TicketId = ticketId,
+                        CreatedDate = notification.CreatedDate
+                    };
+
+                    // Tüm admin kullanıcılara broadcast
+                    await _hubContext.Clients.All
+                        .SendAsync("AdminNotificationReceived", notificationDto)
+                        .ConfigureAwait(false);
+
+                    _logger.LogInformation("Admin'lere SignalR bildirim gönderildi: {Title}", title);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Admin'lere SignalR bildirim gönderilemedi: {Title}", title);
+                }
+            }
         }
 
         

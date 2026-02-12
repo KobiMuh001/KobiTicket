@@ -67,7 +67,10 @@
               <span class="time-ago">{{ getTimeAgo(ticket.createdDate) }}</span>
             </div>
             
-            <h3 class="ticket-title">{{ ticket.title }}</h3>
+            <h3 class="ticket-title">
+              <span class="ticket-code">{{ ticket.ticketCode || '#' + ticket.id }}</span>
+              {{ ticket.title }}
+            </h3>
             <p class="ticket-description">{{ ticket.description }}</p>
             
             <div class="ticket-meta">

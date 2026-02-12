@@ -56,7 +56,7 @@ namespace KobiMuhendislikTicket.Application.Services
             if (IsValidValue(dto.Email))
             {
                 // Email zaten başka bir müşteri tarafından kullanılıyor mu kontrol et
-                var existingEmail = await _context.Tenants.FirstOrDefaultAsync(t => t.Email.ToLower() == dto.Email.ToLower() && t.Id != tenantId);
+                var existingEmail = await _context.Tenants.FirstOrDefaultAsync(t => t.Email.ToLower() == (dto.Email ?? "").ToLower() && t.Id != tenantId);
                 if (existingEmail != null)
                     return Result.Failure("Bu email adresi başka bir müşteri tarafından zaten kullanılmaktadır.");
                 

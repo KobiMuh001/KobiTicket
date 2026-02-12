@@ -4,6 +4,7 @@ using KobiMuhendislikTicket.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace KobiMuhendislikTicket.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260211140224_AddTicketImages")]
+    partial class AddTicketImages
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -87,9 +90,6 @@ namespace KobiMuhendislikTicket.Migrations
                     b.Property<string>("Message")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("TargetTenantId")
-                        .HasColumnType("int");
 
                     b.Property<int?>("TargetUserId")
                         .HasColumnType("int");
@@ -174,7 +174,7 @@ namespace KobiMuhendislikTicket.Migrations
                             IsActive = true,
                             IsDeleted = false,
                             MaxConcurrentTickets = 10,
-                            PasswordHash = "$2a$11$.AU2AvtoBtYHSKsSUCPVW.3v9BcZMdna2pcfqdR.46O20VARMKdk.",
+                            PasswordHash = "$2a$11$sfPMBUHw7wJLorErzU5jmuWeO89zGTjFB0ENM6qsT0wldlAlvf3l.",
                             Phone = "(532) 111 2233"
                         },
                         new
@@ -187,7 +187,7 @@ namespace KobiMuhendislikTicket.Migrations
                             IsActive = true,
                             IsDeleted = false,
                             MaxConcurrentTickets = 8,
-                            PasswordHash = "$2a$11$2df5xxuuJpo247TD/hbXre2MyunpO8CVq1QpqOKsb4/YSXNdaWN0a",
+                            PasswordHash = "$2a$11$KUcikctL36Q/h1ssZSwlOO6e2owIao2EYfhhbGsgG5I44mgkEr3fC",
                             Phone = "(533) 222 3344"
                         },
                         new
@@ -200,7 +200,7 @@ namespace KobiMuhendislikTicket.Migrations
                             IsActive = true,
                             IsDeleted = false,
                             MaxConcurrentTickets = 5,
-                            PasswordHash = "$2a$11$A.53.nRSGuKrBxduvQYOK.nskKlGSfGo6rcjT5SIVAXJan7N/tqN6",
+                            PasswordHash = "$2a$11$lMJ1oP3q1vAJS0XNP7kQXeRBJQCTapv7RCYX0qO5HBXW0EKhtr7Q6",
                             Phone = "(534) 333 4455"
                         });
                 });

@@ -17,6 +17,7 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence
         public DbSet<Ticket> Tickets { get; set; }
         public DbSet<TicketComment> TicketComments { get; set; }
         public DbSet<TicketHistory> TicketHistories { get; set; }
+        public DbSet<TicketImage> TicketImages { get; set; }
         public DbSet<Staff> Staff { get; set; }
         public DbSet<Notification> Notifications { get; set; }
 
@@ -49,6 +50,12 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence
                 .HasMany(t => t.Tickets)
                 .WithOne(ticket => ticket.Tenant)
                 .HasForeignKey(ticket => ticket.TenantId);
+
+            modelBuilder.Entity<Ticket>()
+                .HasMany(t => t.TicketImages)
+                .WithOne(i => i.Ticket)
+                .HasForeignKey(i => i.TicketId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Seed Staff Data
             modelBuilder.Entity<Staff>().HasData(

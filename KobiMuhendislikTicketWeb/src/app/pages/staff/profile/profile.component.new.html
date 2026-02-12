@@ -101,6 +101,16 @@
               [(ngModel)]="editFormData.phone"
               placeholder="Telefon numarası">
           </div>
+
+          <div class="form-group">
+            <label for="department">Departman</label>
+            <input 
+              type="text" 
+              id="department" 
+              class="form-input"
+              [(ngModel)]="editFormData.department"
+              placeholder="Departman adı">
+          </div>
         </div>
 
         <div class="form-footer">
@@ -248,7 +258,7 @@
           <button 
             class="btn btn-primary" 
             (click)="changePassword()" 
-            [disabled]="isSaving || !passwordsMatch() || hasPasswordErrors()">
+            [disabled]="isSaving || !passwordsMatch() || Object.keys(passwordErrors).length > 0">
             @if (isSaving) {
               <span class="spinner-small"></span>
               İşleniyor...

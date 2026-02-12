@@ -85,7 +85,7 @@
             <div class="capacity-section">
               <div class="capacity-header">
                 <span>Kapasite Kullanımı</span>
-                <span>{{ workload.openTickets }} / {{ formData.maxConcurrentTickets }}</span>
+                <span>{{ getCurrentLoad() }} / {{ formData.maxConcurrentTickets }}</span>
               </div>
               <div class="capacity-bar large">
                 <div 
@@ -197,24 +197,109 @@
 
           <div class="form-footer">
             <a routerLink="/admin/staff" class="btn btn-secondary">İptal</a>
-            <button 
-              type="submit" 
-              class="btn btn-primary"
-              [disabled]="isSaving || !isFormValid()">
-              @if (isSaving) {
-                <span class="spinner-small"></span>
-                Kaydediliyor...
-              } @else {
+            <div class="button-group">
+              <button
+                type="button"
+                class="btn btn-warning"
+                (click)="resetPassword()"
+                [disabled]="isSaving">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                  <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                  <polyline points="7 3 7 8 15 8"></polyline>
+                  <circle cx="12" cy="12" r="1"></circle>
+                  <path d="M4.9 19a9 9 0 0 1 14.85-3.36M19.1 5a9 9 0 0 0-14.85 3.36m-.5 1.64v-2.5h2.5"></path>
                 </svg>
-                Kaydet
-              }
-            </button>
+                Şifre Sıfırla
+              </button>
+              <button 
+                type="submit" 
+                class="btn btn-primary"
+                [disabled]="isSaving || !isFormValid()">
+                @if (isSaving) {
+                  <span class="spinner-small"></span>
+                  Kaydediliyor...
+                } @else {
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                  </svg>
+                  Kaydet
+                }
+              </button>
+            </div>
           </div>
         </form>
+      </div>
+    </div>
+  }
+
+  <!-- Password Reset Modal -->
+  @if (showPasswordModal) {
+    <div class="modal-overlay" (click)="cancelResetPassword()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Şifre Sıfırla</h3>
+          <button class="modal-close" (click)="cancelResetPassword()">×</button>
+        </div>
+
+        <div class="modal-body">
+          <p class="modal-description">{{ staff?.fullName }} personelinin yeni şifresini belirleyin:</p>
+          
+          <div class="form-group">
+            <label for="newPassword">Yeni Şifre *</label>
+            <input 
+              type="password" 
+              id="newPassword" 
+              class="form-input"
+              [(ngModel)]="newPassword"
+              placeholder="Minimum 6 karakter"
+              (keyup.enter)="confirmResetPassword()">
+            <div class="password-requirements">
+              <p class="requirement-title">Şifre gereksinimleri:</p>
+              <ul>
+                <li [class.met]="newPassword && hasUppercase()">
+                  <span class="check">✓</span> En az bir büyük harf (A-Z)
+                </li>
+                <li [class.met]="newPassword && hasLowercase()">
+                  <span class="check">✓</span> En az bir küçük harf (a-z)
+                </li>
+                <li [class.met]="newPassword && hasNumber()">
+                  <span class="check">✓</span> En az bir sayı (0-9)
+                </li>
+                <li [class.met]="newPassword && hasMinLength()">
+                  <span class="check">✓</span> Minimum 6 karakter
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword">Şifreyi Onayla *</label>
+            <input 
+              type="password" 
+              id="confirmPassword" 
+              class="form-input"
+              [(ngModel)]="confirmPassword"
+              placeholder="Şifreyi tekrar girin"
+              (keyup.enter)="confirmResetPassword()">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="cancelResetPassword()">
+            İptal
+          </button>
+          <button 
+            class="btn btn-primary" 
+            (click)="confirmResetPassword()"
+            [disabled]="isSaving || !newPassword || !confirmPassword">
+            @if (isSaving) {
+              <span class="spinner-small"></span>
+              İşleniyor...
+            } @else {
+              Şifreyi Sıfırla
+            }
+          </button>
+        </div>
       </div>
     </div>
   }

@@ -1,9 +1,10 @@
-﻿import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
-import { CommonModule } from '@angular/common';
+﻿import { Component, OnInit, OnDestroy, HostListener, Inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService, User } from '../../core/services/auth.service';
 import { NotificationService, Notification } from '../../core/services/notification.service';
-import { Subject, interval } from 'rxjs';
+import { SignalRService } from '../../core/services/signalr.service';
+import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 @Component({
@@ -15,6 +16,7 @@ import { takeUntil } from 'rxjs/operators';
 })
 export class AdminLayoutComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
+  private isBrowser: boolean;
   
   isSidebarCollapsed = false;
   currentUser: User | null = null;
@@ -66,23 +68,42 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
   constructor(
     private authService: AuthService,
     private notificationService: NotificationService,
-    private router: Router
-  ) {}
+    private signalRService: SignalRService,
+    private router: Router,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {
+    this.isBrowser = isPlatformBrowser(this.platformId);
+  }
 
   ngOnInit(): void {
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
     });
     
-    // Bildirimleri yükle
-    this.loadNotifications();
+    // Bildirimleri başlat
+    this.notificationService.initializeAdminNotifications();
     
-    // Her 30 saniyede bir bildirimleri kontrol et
-    interval(30000)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.loadNotifications();
-      });
+    // SignalR bağlantısını başlat
+    if (this.isBrowser) {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (token) {
+        // Notification hub bağlantısı
+        this.signalRService.startNotificationConnection(token).then(() => {
+          console.log('Admin Layout: SignalR Notification Hub bağlantısı kuruldu');
+          
+          // Bağlantı kurulduktan sonra event listener ekle
+          const hub = this.signalRService.getNotificationHub();
+          hub?.off('AdminNotificationReceived');
+          hub?.on('AdminNotificationReceived', (notification: any) => {
+            console.log('Admin Layout: Yeni bildirim alındı', notification);
+            // Staff metodu kullan çünkü backend formatını handle ediyor
+            this.notificationService.addStaffNotificationDirectly(notification);
+          });
+        }).catch(err => {
+          console.error('Admin Layout: SignalR Notification Hub bağlantı hatası:', err);
+        });
+      }
+    }
     
     // Notification service'teki değişiklikleri dinle
     this.notificationService.notifications$
@@ -99,17 +120,17 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.notificationService.stopPolling();
+    this.signalRService.stopNotificationConnection().catch(err => {
+      console.log('Admin Layout: Error stopping SignalR notification connection:', err);
+    });
     this.destroy$.next();
     this.destroy$.complete();
   }
 
-  // Bildirimleri yükle
+  // Bildirimleri yükle (artık otomatik yapılıyor ama opsiyonel)
   loadNotifications(): void {
-    this.notificationService.getNotifications(10).subscribe({
-      error: () => {
-        
-      }
-    });
+    // Artık initializeAdminNotifications tarafından yapılıyor
   }
 
   // Bildirim dropdown'ını aç/kapat
@@ -124,7 +145,7 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;
-    if (!target.closest('.notification-container')) {
+    if (!target.closest('.notifications-widget')) {
       this.showNotificationDropdown = false;
     }
   }
@@ -145,6 +166,22 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
   // Tüm bildirimleri okundu olarak işaretle
   markAllAsRead(): void {
     this.notificationService.markAllAsRead().subscribe();
+  }
+
+  // Bildirimi okundu olarak isaretle (buton)
+  markNotificationAsRead(notificationId: string, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.notificationService.markAsRead(notificationId).subscribe();
+  }
+
+  // Bildirimi sil (buton)
+  deleteNotification(notificationId: string, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.notificationService.deleteNotification(notificationId).subscribe();
   }
 
   // Bildirim tipine göre ikon

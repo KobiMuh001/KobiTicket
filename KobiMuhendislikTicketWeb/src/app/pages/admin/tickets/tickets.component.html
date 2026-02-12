@@ -48,8 +48,15 @@
           <option value="3">Yüksek</option>
           <option value="4">Kritik</option>
         </select>
+
+        <select [(ngModel)]="customerFilter" (change)="applyFilters()" class="filter-select">
+          <option value="">Tüm Müşteriler</option>
+          @for (customer of customers; track customer) {
+            <option [value]="customer">{{ customer }}</option>
+          }
+        </select>
         
-        @if (searchTerm || statusFilter || priorityFilter) {
+        @if (searchTerm || statusFilter || priorityFilter || customerFilter) {
           <button class="btn btn-outline btn-sm" (click)="clearFilters()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"/>
@@ -108,9 +115,19 @@
           </thead>
           <tbody>
             @for (ticket of filteredTickets; track ticket.id) {
-              <tr>
+              <tr [class.has-notification]="getTicketNotificationCount(ticket.id) > 0" (click)="onTicketSelect(ticket.id)">
                 <td>
-                  <span class="ticket-id">{{ formatTicketId(ticket.id, ticket.ticketCode) }}</span>
+                  <div class="ticket-id-container">
+                    <span class="ticket-code">{{ formatTicketId(ticket.id, ticket.ticketCode) }}</span>
+                    @if (getTicketNotificationCount(ticket.id) > 0) {
+                      <span class="notification-badge">{{ getTicketNotificationCount(ticket.id) }}
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                      </span>
+                    }
+                  </div>
                 </td>
                 <td>
                   <div class="ticket-title">
@@ -133,13 +150,13 @@
                 <td>{{ formatDate(ticket.createdDate) }}</td>
                 <td>
                   <div class="actions">
-                    <a [routerLink]="['/admin/tickets', ticket.id]" class="action-btn" title="Görüntüle">
+                    <a [routerLink]="['/admin/tickets', ticket.id]" class="action-btn" title="Görüntüle" (click)="$event.stopPropagation()">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                         <circle cx="12" cy="12" r="3"/>
                       </svg>
                     </a>
-                    <a [routerLink]="['/admin/tickets', ticket.id, 'edit']" class="action-btn" title="Düzenle">
+                    <a [routerLink]="['/admin/tickets', ticket.id, 'edit']" class="action-btn" title="Düzenle" (click)="$event.stopPropagation()">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
