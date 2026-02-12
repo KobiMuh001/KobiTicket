@@ -12,6 +12,7 @@ using FluentValidation.AspNetCore;
 using System.Threading.RateLimiting;
 using KobiMuhendislikTicket.Middlewares;
 using KobiMuhendislikTicket.Hubs;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -193,7 +194,7 @@ builder.Services.AddCors(options =>
         if (builder.Environment.IsDevelopment())
         {
             
-            policy.WithOrigins("http://localhost:4200", "https://localhost:4200")
+            policy.WithOrigins("http://localhost:4200", "https://localhost:4200","http://127.0.0.1:5098")
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials();
@@ -215,6 +216,14 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+var webRootPath = app.Environment.WebRootPath;
+if (string.IsNullOrWhiteSpace(webRootPath))
+{
+    webRootPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+}
+
+var spaDistPath = Path.Combine(webRootPath, "ticket-web", "browser");
+
 
 
 if (app.Environment.IsDevelopment())
@@ -226,7 +235,20 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowAngularApp");
 
-// Static Files middleware - wwwroot'daki dosyaları serve et
+if (Directory.Exists(spaDistPath))
+{
+    app.UseDefaultFiles(new DefaultFilesOptions
+    {
+        FileProvider = new PhysicalFileProvider(spaDistPath)
+    });
+
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(spaDistPath)
+    });
+}
+
+// Static Files middleware - wwwroot (ör: uploads) dosyalarını serve et
 app.UseStaticFiles();
 
 // Exception middleware - hata detaylarını gizle
@@ -247,5 +269,28 @@ app.MapControllers();
 app.MapHub<CommentHub>("/hubs/comments");
 app.MapHub<DashboardStatsHub>("/hubs/dashboard-stats");
 app.MapHub<NotificationHub>("/hubs/notifications");
+
+// SPA fallback (API/Hub route'larını etkilemeden Angular index.html'e yönlendir)
+app.MapFallback(async context =>
+{
+    var requestPath = context.Request.Path.Value ?? string.Empty;
+
+    if (requestPath.StartsWith("/api", StringComparison.OrdinalIgnoreCase) ||
+        requestPath.StartsWith("/hubs", StringComparison.OrdinalIgnoreCase))
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        return;
+    }
+
+    var indexFile = Path.Combine(spaDistPath, "index.html");
+    if (File.Exists(indexFile))
+    {
+        context.Response.ContentType = "text/html; charset=utf-8";
+        await context.Response.SendFileAsync(indexFile);
+        return;
+    }
+
+    context.Response.StatusCode = StatusCodes.Status404NotFound;
+});
 
 app.Run();
