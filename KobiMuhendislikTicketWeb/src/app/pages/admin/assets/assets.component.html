@@ -125,6 +125,54 @@
         </table>
       </div>
 
+      <div class="assets-cards">
+        @for (asset of filteredAssets; track asset.id) {
+          <div class="asset-card" (click)="onAssetSelect(asset.id)">
+            <div class="asset-card-header">
+              <div>
+                <div class="asset-card-title">{{ asset.productName }}</div>
+                <div class="serial-number">{{ asset.serialNumber }}</div>
+              </div>
+              <span class="status-badge" [class]="getStatusClass(asset.status)">
+                {{ asset.status }}
+              </span>
+            </div>
+
+            <div class="asset-card-meta">
+              <div class="meta-row">
+                <span class="meta-label">Müşteri</span>
+                <span class="meta-value">{{ asset.tenantName }}</span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-label">Garanti Bitiş</span>
+                <span class="warranty-date" [class.expired]="isWarrantyExpired(asset)" [class.expiring-soon]="isWarrantyExpiringSoon(asset)">
+                  {{ asset.warrantyEndDate | date:'dd.MM.yyyy' }}
+                </span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-label">Eklenme Tarihi</span>
+                <span class="meta-value">{{ asset.createdDate | date:'dd.MM.yyyy' }}</span>
+              </div>
+            </div>
+
+            <div class="asset-card-actions actions">
+              <a [routerLink]="['/admin/assets', asset.id]" class="btn-icon" title="Düzenle" (click)="$event.stopPropagation()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+              </a>
+              <button class="btn-icon btn-danger" (click)="openDeleteModal(asset); $event.stopPropagation()" title="Sil">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+
       <!-- Pagination -->
       @if (totalPages > 1) {
         <div class="pagination">

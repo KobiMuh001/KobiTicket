@@ -256,6 +256,57 @@
   -webkit-overflow-scrolling: touch;
 }
 
+.staff-cards {
+  display: none;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.staff-card {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  padding: 0.875rem;
+}
+
+.staff-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.staff-card-meta {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.meta-label {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.meta-value {
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-align: right;
+  word-break: break-word;
+}
+
+.staff-card-actions {
+  margin-top: 0.75rem;
+  justify-content: flex-end;
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -664,15 +715,17 @@
     min-width: 100%;
   }
 
-  .data-table {
-    min-width: 980px;
+  .table-container {
+    display: none;
+  }
 
-    th, td {
-      padding: 0.75rem;
-    }
+  .staff-cards {
+    display: grid;
+  }
 
-    .staff-avatar {
-      display: none;
-    }
+  .staff-card .staff-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 0.875rem;
   }
 }

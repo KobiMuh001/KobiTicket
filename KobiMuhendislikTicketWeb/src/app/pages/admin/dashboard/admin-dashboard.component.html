@@ -354,6 +354,42 @@
               }
             </tbody>
           </table>
+
+          <div class="recent-tickets-cards">
+            @for (ticket of recentTickets; track ticket.id) {
+              <div class="recent-ticket-card">
+                <div class="recent-ticket-card__header">
+                  <span class="ticket-id">{{ formatTicketId(ticket.id, ticket.ticketCode) }}</span>
+                  <span class="badge" [class]="'badge--' + getStatusClass(ticket.status)">
+                    {{ getStatusText(ticket.status) }}
+                  </span>
+                </div>
+
+                <h3 class="recent-ticket-card__title">{{ ticket.title }}</h3>
+
+                <div class="recent-ticket-card__meta">
+                  <div class="meta-row">
+                    <span class="meta-label">Müşteri</span>
+                    <span class="meta-value">{{ ticket.tenantName || 'Bilinmiyor' }}</span>
+                  </div>
+                  <div class="meta-row">
+                    <span class="meta-label">Öncelik</span>
+                    <span class="priority" [class]="'priority--' + getPriorityClass(ticket.priority)">
+                      {{ getPriorityText(ticket.priority) }}
+                    </span>
+                  </div>
+                  <div class="meta-row">
+                    <span class="meta-label">Tarih</span>
+                    <span class="meta-value">{{ formatDate(ticket.createdDate) }}</span>
+                  </div>
+                </div>
+
+                <div class="recent-ticket-card__actions">
+                  <a [routerLink]="['/admin/tickets', ticket.id]" class="btn btn-sm btn-primary">Detay</a>
+                </div>
+              </div>
+            }
+          </div>
         }
       </div>
     </div>

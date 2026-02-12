@@ -181,6 +181,36 @@
             </tbody>
           </table>
         </div>
+
+        <div class="tickets-cards">
+          @for (ticket of recentTickets; track ticket.id) {
+            <div class="ticket-card">
+              <div class="ticket-card-header">
+                <h3 class="ticket-card-title">{{ ticket.title }}</h3>
+                <span class="badge" [ngClass]="getStatusClass(ticket.status)">
+                  {{ ticket.status }}
+                </span>
+              </div>
+
+              <div class="ticket-card-meta">
+                <div class="meta-item">
+                  <span class="meta-label">Öncelik</span>
+                  <span class="badge" [ngClass]="getPriorityClass(ticket.priority)">
+                    {{ ticket.priority }}
+                  </span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-label">Tarih</span>
+                  <span class="meta-value">{{ ticket.createdAt | date:'dd.MM.yyyy' }}</span>
+                </div>
+              </div>
+
+              <div class="ticket-card-actions">
+                <a [routerLink]="['/customer/tickets', ticket.id]" class="btn-view">Detay</a>
+              </div>
+            </div>
+          }
+        </div>
       }
     </div>
   }

@@ -134,6 +134,59 @@
         </table>
       </div>
 
+      <div class="tickets-cards">
+        @for (ticket of filteredTickets; track ticket.id) {
+          <div class="ticket-card clickable-row" [routerLink]="['/staff/tickets', ticket.id]" (click)="onTicketSelect(ticket.id)" [class.has-notification]="getTicketNotificationCount(ticket.id) > 0">
+            <div class="ticket-card-header">
+              <div class="ticket-id-container">
+                <span class="ticket-code">{{ ticket.ticketCode || '#' + ticket.id }}</span>
+                @if (getTicketNotificationCount(ticket.id) > 0) {
+                  <span class="notification-badge">{{ getTicketNotificationCount(ticket.id) }}</span>
+                }
+              </div>
+              <span class="status-badge" [class]="getStatusClass(ticket.status)">
+                {{ getStatusText(ticket.status) }}
+              </span>
+            </div>
+
+            <div class="ticket-card-title">
+              <span class="ticket-title">{{ ticket.title }}</span>
+              @if (ticket.assetName) {
+                <span class="asset-name">{{ ticket.assetName }}</span>
+              }
+            </div>
+
+            <div class="ticket-card-meta">
+              <div class="meta-row">
+                <span class="meta-label">Müşteri</span>
+                <span class="meta-value">{{ ticket.companyName || '-' }}</span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-label">Öncelik</span>
+                <span class="priority-badge" [class]="getPriorityClass(ticket.priority)">
+                  {{ getPriorityText(ticket.priority) }}
+                </span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-label">Tarih</span>
+                <span class="date-cell">{{ formatDate(ticket.createdDate) }}</span>
+              </div>
+            </div>
+
+            <div class="ticket-card-actions actions-cell" (click)="$event.stopPropagation()">
+              @if (ticket.status !== 4 && ticket.status !== 5) {
+                <button class="action-btn release" (click)="releaseTicket(ticket.id, $event)" title="Ticketı Bırak">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 11 12 14 22 4"/>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                  </svg>
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
       <!-- Pagination -->
       <div class="pagination-controls">
         <button class="pagination-btn" (click)="previousPage()" [disabled]="currentPage === 1">

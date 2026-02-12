@@ -363,6 +363,64 @@
   }
 }
 
+.tickets-cards {
+  display: none;
+  gap: 12px;
+}
+
+.ticket-card {
+  background: #f8f9fc;
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.ticket-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.ticket-card-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a2e;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.ticket-card-meta {
+  display: grid;
+  gap: 8px;
+}
+
+.meta-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.meta-label {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.meta-value {
+  font-size: 13px;
+  color: #495057;
+  font-weight: 500;
+}
+
+.ticket-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
 // Badges
 .badge {
   display: inline-block;
@@ -381,6 +439,11 @@
 .status-progress {
   background: #cce5ff;
   color: #004085;
+}
+
+.status-waiting {
+  background: #e0e7ff;
+  color: #4338ca;
 }
 
 .status-resolved {
@@ -433,13 +496,11 @@
   }
 
   .tickets-table {
-    th, td {
-      padding: 10px 8px;
-    }
+    display: none;
+  }
 
-    .ticket-title {
-      max-width: 150px;
-    }
+  .tickets-cards {
+    display: grid;
   }
 }
 

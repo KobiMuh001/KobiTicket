@@ -2,6 +2,7 @@
   padding: 16px;
   max-width: 1400px;
   margin: 0 auto;
+  overflow-x: hidden;
 }
 
 // Page Header
@@ -160,6 +161,12 @@
   border-bottom: 1px solid #e2e8f0;
   padding-bottom: 0;
 
+  @media (max-width: 768px) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+
   .tab {
     display: flex;
     align-items: center;
@@ -174,6 +181,12 @@
     cursor: pointer;
     transition: all 0.2s;
     margin-bottom: -1px;
+
+    @media (max-width: 768px) {
+      flex: 0 0 auto;
+      padding: 10px 12px;
+      font-size: 13px;
+    }
 
     &:hover {
       color: #334155;
@@ -215,6 +228,10 @@
   grid-template-columns: 1fr 300px;
   gap: 16px;
 
+  > * {
+    min-width: 0;
+  }
+
   @media (max-width: 1024px) {
     grid-template-columns: 1fr;
   }
@@ -239,6 +256,7 @@
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   overflow: hidden;
+  min-width: 0;
 
   .card-header {
     padding: 12px 16px;
@@ -586,6 +604,10 @@ textarea.form-control {
 // Comments Tab
 .comments-tab {
   max-width: 800px;
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+  }
 }
 
 .add-comment {
@@ -618,6 +640,10 @@ textarea.form-control {
   flex-direction: column;
   align-self: flex-start;
   max-width: 70%;
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+  }
 
   &.admin {
     background: #f0f9ff;
@@ -686,6 +712,10 @@ textarea.form-control {
 // History Tab
 .history-tab {
   max-width: 800px;
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+  }
 }
 
 .timeline {
@@ -812,4 +842,110 @@ select.form-control {
   background-position: right 12px center;
   padding-right: 36px;
   cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .ticket-edit-page {
+    padding: 12px;
+  }
+
+  .card .card-body {
+    padding: 12px;
+  }
+
+  .form-group .value.description {
+    padding: 10px 12px;
+  }
+
+  .current-assignee .assignee-info span,
+  .form-group .value {
+    word-break: break-word;
+  }
+}
+
+@media (max-width: 480px) {
+  .ticket-edit-page {
+    padding: 10px;
+    max-width: 100%;
+  }
+
+  .status-badge,
+  .priority-badge {
+    font-size: 11px;
+    padding: 3px 10px;
+  }
+
+  .page-header .header-left {
+    width: 100%;
+    gap: 10px;
+  }
+
+  .page-header .ticket-info {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .page-header .ticket-info h1 {
+    font-size: 16px;
+    width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .details-tab {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .details-tab .main-content,
+  .details-tab .sidebar {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .card {
+    width: 100%;
+  }
+
+  .card .card-header,
+  .card .card-body {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .tabs {
+    white-space: normal;
+    overflow: visible;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tabs .tab {
+    flex: 1 1 calc(50% - 6px);
+    justify-content: center;
+    min-height: 40px;
+  }
+
+  .tab-content {
+    min-width: 0;
+  }
+
+  .form-group .value,
+  .form-group .value.description,
+  .current-assignee .assignee-info span {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .image-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .image-preview-overlay {
+    padding: 16px;
+  }
 }
