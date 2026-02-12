@@ -75,6 +75,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     }
 });
 
+
+
 builder.Services.AddScoped<ITenantRepository, TenantRepository>();
 builder.Services.AddScoped<IAssetRepository, AssetRepository>();
 builder.Services.AddScoped<TenantService>();
@@ -215,6 +217,23 @@ builder.Services.AddCors(options =>
 
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        dbContext.Database.Migrate();
+        logger.LogInformation("Database migrations başarıyla uygulandı.");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Database migration sırasında hata oluştu.");
+        throw;
+    }
+}
 
 var webRootPath = app.Environment.WebRootPath;
 if (string.IsNullOrWhiteSpace(webRootPath))
