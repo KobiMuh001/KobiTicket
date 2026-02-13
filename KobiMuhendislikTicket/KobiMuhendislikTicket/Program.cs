@@ -196,7 +196,7 @@ builder.Services.AddCors(options =>
         if (builder.Environment.IsDevelopment())
         {
             
-            policy.WithOrigins("http://localhost:4200", "https://localhost:4200","http://127.0.0.1:5098")
+            policy.WithOrigins("http://localhost:4200", "https://localhost:4200","http://127.0.0.1:5000","http://192.168.150.179:8080")
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials();
@@ -217,7 +217,7 @@ builder.Services.AddCors(options =>
 
 
 var app = builder.Build();
-
+/*
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -234,7 +234,7 @@ using (var scope = app.Services.CreateScope())
         throw;
     }
 }
-
+*/
 var webRootPath = app.Environment.WebRootPath;
 if (string.IsNullOrWhiteSpace(webRootPath))
 {
