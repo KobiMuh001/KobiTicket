@@ -67,7 +67,6 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
     
-    // Sadece Development ortamında SQL log'ları göster
     if (builder.Environment.IsDevelopment())
     {
         options.LogTo(Console.WriteLine, LogLevel.Information)
@@ -75,8 +74,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     }
 });
 
-
-
+#region SCOPE
 builder.Services.AddScoped<ITenantRepository, TenantRepository>();
 builder.Services.AddScoped<IAssetRepository, AssetRepository>();
 builder.Services.AddScoped<TenantService>();
@@ -89,15 +87,13 @@ builder.Services.AddScoped<AdminService>();
 builder.Services.AddScoped<StaffService>(); 
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<NotificationService>();
+#endregion
 
-// Token Blacklist - Logout desteği
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ITokenBlacklistService, TokenBlacklistService>();
 
-// SignalR - Real-time comments
 builder.Services.AddSignalR(); 
 
-// Rate Limiting - Brute force koruması
 builder.Services.AddRateLimiter(options =>
 {
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
@@ -111,7 +107,6 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 5
             }));
 
-    // Login endpoint için daha sıkı limit
     options.AddPolicy("LoginPolicy", context =>
         RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
@@ -195,21 +190,35 @@ builder.Services.AddCors(options =>
     {
         if (builder.Environment.IsDevelopment())
         {
-            
-            policy.WithOrigins("http://localhost:4200", "https://localhost:4200","http://127.0.0.1:5000","http://192.168.150.179:8080")
-                  .AllowAnyHeader()
-                  .AllowAnyMethod()
-                  .AllowCredentials();
+            policy
+                .SetIsOriginAllowed(_ => true)
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+               // .AllowCredentials();
         }
         else
         {
-            
-            var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() 
-                                 ?? new[] { "https://yourdomain.com" };
-            policy.WithOrigins(allowedOrigins)
-                  .AllowAnyHeader()
-                  .AllowAnyMethod()
-                  .AllowCredentials();
+            // Yapılandırmadan listeyi al
+            var allowedOrigins = builder.Configuration
+                .GetSection("Cors:AllowedOrigins")
+                .Get<string[]>();
+
+            // Liste boş değilse ve içinde veri varsa işle
+            if (allowedOrigins != null && allowedOrigins.Length > 0)
+            {
+                policy.WithOrigins(allowedOrigins)
+                      .AllowAnyHeader()
+                      .AllowAnyMethod();
+                      //.AllowCredentials();
+            }
+            else
+            {
+                // Eğer config boşsa, uygulamanın çökmemesi için fallback (B planı)
+                // Buraya sunucu adresini manuel de ekleyebilirsin
+                policy.AllowAnyHeader()
+                      .AllowAnyMethod(); 
+                      // Not: Burada AllowCredentials() kullanamazsın çünkü origin belli değil.
+            }
         }
     });
 });
