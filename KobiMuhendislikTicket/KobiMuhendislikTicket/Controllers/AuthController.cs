@@ -30,7 +30,17 @@ public class AuthController : ControllerBase
         _staffService = staffService;
         _tokenBlacklistService = tokenBlacklistService;
     }
-
+    [HttpGet("ping")]
+    [AllowAnonymous]
+    public IActionResult Ping()
+    {
+        return Ok(new
+        {
+            status = "OK",
+            serverTime = DateTime.UtcNow,
+            machine = Environment.MachineName
+        });
+    }
     [EnableRateLimiting("LoginPolicy")]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
