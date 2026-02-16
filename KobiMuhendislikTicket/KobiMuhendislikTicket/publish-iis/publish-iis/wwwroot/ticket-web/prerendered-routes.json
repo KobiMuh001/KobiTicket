@@ -1,0 +1,24 @@
+{
+  "routes": [
+    "/admin",
+    "/admin/assets",
+    "/admin/dashboard",
+    "/admin/staff",
+    "/admin/tenants",
+    "/admin/tickets",
+    "/customer",
+    "/customer/assets",
+    "/customer/dashboard",
+    "/customer/profile",
+    "/customer/tickets",
+    "/customer/tickets/new",
+    "/login",
+    "/staff",
+    "/staff-login",
+    "/staff/dashboard",
+    "/staff/my-tickets",
+    "/staff/open-tickets",
+    "/staff/profile",
+    "/unauthorized"
+  ]
+}
