@@ -90,7 +90,7 @@
         }
 
         <div class="form-group">
-          <label for="identifier">E-posta veya Vergi Numarası</label>
+          <label for="identifier">Kullanıcı Adı, E-posta veya Vergi Numarası</label>
           <div class="input-wrapper">
             <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -102,7 +102,7 @@
               name="identifier"
               [(ngModel)]="loginData.identifier"
               class="form-control"
-              placeholder="ornek@email.com veya vergi no"
+              placeholder="kullanici_adi, ornek@email.com veya vergi no"
               autocomplete="username"
             />
           </div>
@@ -170,10 +170,6 @@
           }
         </button>
       </form>
-
-      <div class="login-footer">
-        <p>Personel misiniz? <a (click)="goToStaffLogin()" class="staff-login-link">Personel Girişi</a></p>
-      </div>
     </div>
   </div>
 </div>

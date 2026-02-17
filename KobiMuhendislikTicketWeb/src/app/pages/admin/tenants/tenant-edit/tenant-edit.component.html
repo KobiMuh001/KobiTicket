@@ -126,6 +126,18 @@
             />
             <small class="form-hint">Geçerli bir e-posta adresi girin</small>
           </div>
+
+          <div class="form-group">
+            <label for="username">Kullanıcı Adı</label>
+            <input
+              type="text"
+              id="username"
+              [(ngModel)]="editForm.username"
+              name="username"
+              placeholder="ornek_kullanici"
+            />
+            <small class="form-hint">Müşteri bu kullanıcı adı ile de giriş yapabilir.</small>
+          </div>
           
           <div class="form-group">
             <label for="phoneNumber">Telefon</label>

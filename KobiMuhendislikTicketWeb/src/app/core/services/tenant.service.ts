@@ -8,7 +8,9 @@ export interface Tenant {
   companyName: string;
   taxNumber: string;
   email: string;
+  username?: string;
   phoneNumber: string;
+  logoUrl?: string;
   createdDate: string;
   ticketCount?: number;
   assetCount?: number;
@@ -23,13 +25,16 @@ export interface TenantDetail extends Tenant {
 export interface UpdateTenantDto {
   companyName?: string;
   email?: string;
+  username?: string;
   phoneNumber?: string;
+  logoUrl?: string;
 }
 
 export interface CreateTenantDto {
   companyName: string;
   taxNumber: string;
   email: string;
+  username?: string;
   password: string;
   phoneNumber: string;
 }
@@ -86,8 +91,14 @@ export class TenantService {
     return this.http.get(`${this.apiUrl}/tenants/me`);
   }
 
-  updateMyProfile(dto: { contactName?: string; email?: string; phoneNumber?: string; address?: string }): Observable<any> {
+  updateMyProfile(dto: { companyName?: string; email?: string; phoneNumber?: string; logoUrl?: string }): Observable<any> {
     return this.http.put(`${this.apiUrl}/tenants/me`, dto);
+  }
+
+  uploadMyLogo(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post(`${this.apiUrl}/tenants/me/upload-logo`, formData);
   }
 
   changePassword(dto: { currentPassword: string; newPassword: string; confirmPassword: string }): Observable<any> {

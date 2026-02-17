@@ -90,8 +90,8 @@ namespace KobiMuhendislikTicket.Application.Services
                     CreatedDate = t.CreatedDate,
                     UpdatedDate = t.UpdatedDate,
                     AssignedPerson = t.AssignedPerson ?? "Atanmadı",
-                    AssetName = t.Asset?.ProductName ?? "Bilgisayar/Yazılım",
-                    AssetId = t.AssetId
+                    ProductName = t.Product?.Name ?? "Belirtilmemiş",
+                    ProductId = t.ProductId
                 }).ToList();
 
                 var result = new PaginatedTicketsDto
@@ -327,8 +327,8 @@ namespace KobiMuhendislikTicket.Application.Services
                     TotalAssets = totalAssets,
                     CriticalTicketCount = tickets.Count(t => t.Priority == TicketPriority.Critical && t.Status != TicketStatus.Resolved),
                     TopFailingAssets = tickets
-                        .Where(t => t.Asset != null)
-                        .GroupBy(t => t.Asset!.ProductName)
+                        .Where(t => t.Product != null)
+                        .GroupBy(t => t.Product!.Name)
                         .Select(g => new AssetTicketCountDto { ProductName = g.Key, TicketCount = g.Count() })
                         .OrderByDescending(x => x.TicketCount)
                         .Take(5).ToList()

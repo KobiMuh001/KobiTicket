@@ -167,8 +167,8 @@ namespace KobiMuhendislikTicket.Application.DTOs
         public string? AssignedPerson { get; set; }
         public string TenantName { get; set; } = string.Empty;
         public int TenantId { get; set; }
-        public string? AssetName { get; set; }
-        public int? AssetId { get; set; }
+        public string? ProductName { get; set; }
+        public int? ProductId { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }
         public int CommentCount { get; set; }
@@ -196,10 +196,8 @@ namespace KobiMuhendislikTicket.Application.DTOs
         public string? TenantPhone { get; set; }
 
         
-        public int? AssetId { get; set; }
-        public string? AssetName { get; set; }
-        public string? AssetSerialNumber { get; set; }
-        public bool? AssetUnderWarranty { get; set; }
+        public int? ProductId { get; set; }
+        public string? ProductName { get; set; }
 
         public List<TicketCommentDto> Comments { get; set; } = new();
         public List<TicketHistoryItemDto> History { get; set; } = new();

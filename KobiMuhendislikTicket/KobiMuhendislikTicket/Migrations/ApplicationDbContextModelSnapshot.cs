@@ -114,6 +114,86 @@ namespace KobiMuhendislikTicket.Migrations
                     b.ToTable("Notifications");
                 });
 
+            modelBuilder.Entity("KobiMuhendislikTicket.Domain.Entities.Product", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Products");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedDate = new DateTime(2026, 2, 17, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Finans süreçleri için temel ürün modülü.",
+                            IsDeleted = false,
+                            Name = "izRP Finans Modülü"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedDate = new DateTime(2026, 2, 17, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "İK operasyonları için temel ürün modülü.",
+                            IsDeleted = false,
+                            Name = "izRP İnsan Kaynakları"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedDate = new DateTime(2026, 2, 17, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Muhasebe süreçleri için temel ürün modülü.",
+                            IsDeleted = false,
+                            Name = "izRP Muhasebe"
+                        });
+                });
+
+            modelBuilder.Entity("KobiMuhendislikTicket.Domain.Entities.ProductTenant", b =>
+                {
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("AcquisitionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("WarrantyEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ProductId", "TenantId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("ProductTenants");
+                });
+
             modelBuilder.Entity("KobiMuhendislikTicket.Domain.Entities.Staff", b =>
                 {
                     b.Property<int>("Id")
@@ -174,7 +254,7 @@ namespace KobiMuhendislikTicket.Migrations
                             IsActive = true,
                             IsDeleted = false,
                             MaxConcurrentTickets = 10,
-                            PasswordHash = "$2a$11$.AU2AvtoBtYHSKsSUCPVW.3v9BcZMdna2pcfqdR.46O20VARMKdk.",
+                            PasswordHash = "$2a$11$cTwQ.jQm7My6yGwI7wWpU.by5.7kEE9yozJm/zOcSNvq8Y7cbWP1W",
                             Phone = "(532) 111 2233"
                         },
                         new
@@ -187,7 +267,7 @@ namespace KobiMuhendislikTicket.Migrations
                             IsActive = true,
                             IsDeleted = false,
                             MaxConcurrentTickets = 8,
-                            PasswordHash = "$2a$11$2df5xxuuJpo247TD/hbXre2MyunpO8CVq1QpqOKsb4/YSXNdaWN0a",
+                            PasswordHash = "$2a$11$YPRdP.qPm9sZ8az/q3HuauBrdMAM6EG2w8PKHwwcpHJE.xFrCG16W",
                             Phone = "(533) 222 3344"
                         },
                         new
@@ -200,7 +280,7 @@ namespace KobiMuhendislikTicket.Migrations
                             IsActive = true,
                             IsDeleted = false,
                             MaxConcurrentTickets = 5,
-                            PasswordHash = "$2a$11$A.53.nRSGuKrBxduvQYOK.nskKlGSfGo6rcjT5SIVAXJan7N/tqN6",
+                            PasswordHash = "$2a$11$YDnRiNKcvQQYjM8otdH6CudJstUIIHvaOtDypEFpl4KZ9GE6sY7gC",
                             Phone = "(534) 333 4455"
                         });
                 });
@@ -227,6 +307,9 @@ namespace KobiMuhendislikTicket.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<string>("LogoUrl")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -246,6 +329,9 @@ namespace KobiMuhendislikTicket.Migrations
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Username")
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
@@ -253,6 +339,10 @@ namespace KobiMuhendislikTicket.Migrations
 
                     b.HasIndex("TaxNumber")
                         .IsUnique();
+
+                    b.HasIndex("Username")
+                        .IsUnique()
+                        .HasFilter("[Username] IS NOT NULL");
 
                     b.ToTable("Tenants");
                 });
@@ -264,9 +354,6 @@ namespace KobiMuhendislikTicket.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("AssetId")
-                        .HasColumnType("int");
 
                     b.Property<string>("AssignedPerson")
                         .HasColumnType("nvarchar(max)");
@@ -287,6 +374,9 @@ namespace KobiMuhendislikTicket.Migrations
                     b.Property<int>("Priority")
                         .HasColumnType("int");
 
+                    b.Property<int?>("ProductId")
+                        .HasColumnType("int");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -305,7 +395,7 @@ namespace KobiMuhendislikTicket.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AssetId");
+                    b.HasIndex("ProductId");
 
                     b.HasIndex("TenantId");
 
@@ -436,11 +526,31 @@ namespace KobiMuhendislikTicket.Migrations
                     b.Navigation("Ticket");
                 });
 
+            modelBuilder.Entity("KobiMuhendislikTicket.Domain.Entities.ProductTenant", b =>
+                {
+                    b.HasOne("KobiMuhendislikTicket.Domain.Entities.Product", "Product")
+                        .WithMany("ProductTenants")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("KobiMuhendislikTicket.Domain.Entities.Tenant", "Tenant")
+                        .WithMany("ProductTenants")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Tenant");
+                });
+
             modelBuilder.Entity("KobiMuhendislikTicket.Domain.Entities.Ticket", b =>
                 {
-                    b.HasOne("KobiMuhendislikTicket.Domain.Entities.Asset", "Asset")
+                    b.HasOne("KobiMuhendislikTicket.Domain.Entities.Product", "Product")
                         .WithMany()
-                        .HasForeignKey("AssetId");
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("KobiMuhendislikTicket.Domain.Entities.Tenant", "Tenant")
                         .WithMany("Tickets")
@@ -448,7 +558,7 @@ namespace KobiMuhendislikTicket.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Asset");
+                    b.Navigation("Product");
 
                     b.Navigation("Tenant");
                 });
@@ -486,9 +596,16 @@ namespace KobiMuhendislikTicket.Migrations
                     b.Navigation("Ticket");
                 });
 
+            modelBuilder.Entity("KobiMuhendislikTicket.Domain.Entities.Product", b =>
+                {
+                    b.Navigation("ProductTenants");
+                });
+
             modelBuilder.Entity("KobiMuhendislikTicket.Domain.Entities.Tenant", b =>
                 {
                     b.Navigation("Assets");
+
+                    b.Navigation("ProductTenants");
 
                     b.Navigation("Tickets");
                 });

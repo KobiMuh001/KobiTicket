@@ -52,7 +52,7 @@ export class CustomerTicketsComponent implements OnInit {
           priority: this.getPriorityText(t.priority),
           createdAt: t.createdDate || t.createdAt,
           updatedAt: t.updatedDate || t.updatedAt,
-          assetName: t.asset?.name || t.asset?.productName || t.assetName
+          assetName: t.productName || t.asset?.productName || t.asset?.name || t.assetName
         })).sort((a: any, b: any) => {
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });

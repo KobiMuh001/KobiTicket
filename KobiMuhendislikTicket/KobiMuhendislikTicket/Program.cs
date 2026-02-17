@@ -87,6 +87,7 @@ builder.Services.AddScoped<AdminService>();
 builder.Services.AddScoped<StaffService>(); 
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<ProductService>();
 #endregion
 
 builder.Services.AddMemoryCache();

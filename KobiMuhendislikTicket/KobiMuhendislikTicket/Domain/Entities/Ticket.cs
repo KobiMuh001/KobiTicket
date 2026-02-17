@@ -17,8 +17,8 @@ namespace KobiMuhendislikTicket.Domain.Entities
         public int TenantId { get; set; } 
         public Tenant? Tenant { get; set; }
 
-        public int? AssetId { get; set; } 
-        public Asset? Asset { get; set; }
+        public int? ProductId { get; set; } 
+        public Product? Product { get; set; }
         public string? ImagePath { get; set; }
         public ICollection<TicketImage> TicketImages { get; set; } = new List<TicketImage>();
     }

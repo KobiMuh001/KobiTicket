@@ -2,14 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TenantService } from '../../../core/services/tenant.service';
+import { environment } from '../../../../environments/environment';
 
 interface Profile {
   id: number;
   companyName: string;
-  contactName: string;
   email: string;
   phoneNumber: string;
-  address: string;
+  logoUrl?: string;
   createdAt: string;
 }
 
@@ -27,10 +27,12 @@ export class CustomerProfileComponent implements OnInit {
   isSaving = false;
   isChangingPassword = false;
   isChangingPasswordView = false;
+  private readonly apiOrigin = new URL(environment.apiUrl).origin;
+  selectedLogoFile: File | null = null;
+  logoPreviewUrl: string | null = null;
   
   editForm = {
-    phoneNumber: '',
-    address: ''
+    phoneNumber: ''
   };
 
   passwordForm = {
@@ -59,10 +61,9 @@ export class CustomerProfileComponent implements OnInit {
         this.profile = {
           id: data.id,
           companyName: data.companyName,
-          contactName: data.contactName,
           email: data.email,
           phoneNumber: data.phoneNumber,
-          address: data.address,
+          logoUrl: data.logoUrl,
           createdAt: data.createdDate || data.createdAt
         };
         this.isLoading = false;
@@ -77,9 +78,10 @@ export class CustomerProfileComponent implements OnInit {
   startEditing(): void {
     if (this.profile) {
       this.editForm = {
-        phoneNumber: this.profile.phoneNumber || '',
-        address: this.profile.address || ''
+        phoneNumber: this.profile.phoneNumber || ''
       };
+      this.selectedLogoFile = null;
+      this.clearLogoPreview();
       this.isEditing = true;
       this.successMessage = '';
       this.errorMessage = '';
@@ -89,6 +91,8 @@ export class CustomerProfileComponent implements OnInit {
   cancelEditing(): void {
     this.isEditing = false;
     this.errorMessage = '';
+    this.selectedLogoFile = null;
+    this.clearLogoPreview();
   }
 
   saveProfile(): void {
@@ -102,19 +106,96 @@ export class CustomerProfileComponent implements OnInit {
 
     this.tenantService.updateMyProfile(updateDto).subscribe({
       next: () => {
-        if (this.profile) {
-          this.profile.phoneNumber = this.editForm.phoneNumber;
-          this.profile.address = this.editForm.address;
+        if (this.selectedLogoFile) {
+          this.tenantService.uploadMyLogo(this.selectedLogoFile).subscribe({
+            next: (uploadResponse: any) => {
+              if (this.profile && uploadResponse?.path) {
+                this.profile.logoUrl = uploadResponse.path;
+              }
+              this.finishSaveSuccess();
+            },
+            error: (err) => {
+              this.errorMessage = err.error?.message || 'Logo yükleme sırasında bir hata oluştu.';
+              this.isSaving = false;
+            }
+          });
+          return;
         }
-        this.successMessage = 'Profil bilgileriniz başarıyla güncellendi.';
-        this.isEditing = false;
-        this.isSaving = false;
+
+        this.finishSaveSuccess();
       },
       error: (err) => {
         this.errorMessage = err.error?.message || 'Güncelleme sırasında bir hata oluştu.';
         this.isSaving = false;
       }
     });
+  }
+
+  private finishSaveSuccess(): void {
+    if (this.profile) {
+      this.profile.phoneNumber = this.editForm.phoneNumber;
+    }
+    this.selectedLogoFile = null;
+    this.clearLogoPreview();
+    this.successMessage = 'Profil bilgileriniz başarıyla güncellendi.';
+    this.isEditing = false;
+    this.isSaving = false;
+  }
+
+  getProfileLogoUrl(): string | null {
+    if (this.logoPreviewUrl) {
+      return this.logoPreviewUrl;
+    }
+
+    if (!this.profile?.logoUrl) {
+      return null;
+    }
+
+    if (this.profile.logoUrl.startsWith('http')) {
+      return this.profile.logoUrl;
+    }
+
+    return `${this.apiOrigin}${this.profile.logoUrl}`;
+  }
+
+  onLogoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files && input.files.length > 0 ? input.files[0] : null;
+
+    if (!file) {
+      this.selectedLogoFile = null;
+      this.clearLogoPreview();
+      return;
+    }
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      this.errorMessage = 'Yalnızca resim dosyaları (JPG, PNG, GIF, WEBP) seçebilirsiniz.';
+      input.value = '';
+      this.selectedLogoFile = null;
+      this.clearLogoPreview();
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      this.errorMessage = 'Logo dosyası 5MB\'dan büyük olamaz.';
+      input.value = '';
+      this.selectedLogoFile = null;
+      this.clearLogoPreview();
+      return;
+    }
+
+    this.errorMessage = '';
+    this.selectedLogoFile = file;
+    this.clearLogoPreview();
+    this.logoPreviewUrl = URL.createObjectURL(file);
+  }
+
+  private clearLogoPreview(): void {
+    if (this.logoPreviewUrl) {
+      URL.revokeObjectURL(this.logoPreviewUrl);
+    }
+    this.logoPreviewUrl = null;
   }
 
   formatPhoneNumber(event: Event): void {

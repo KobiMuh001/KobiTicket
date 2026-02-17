@@ -3,6 +3,7 @@
     "/admin",
     "/admin/assets",
     "/admin/dashboard",
+    "/admin/products",
     "/admin/staff",
     "/admin/tenants",
     "/admin/tickets",

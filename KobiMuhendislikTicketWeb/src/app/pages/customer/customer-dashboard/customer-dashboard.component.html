@@ -1,12 +1,22 @@
 <div class="customer-dashboard">
   <div class="page-header">
-    <h1>
-      <span class="welcome-text">Hoş Geldiniz</span>
-      @if (currentUser?.companyName) {
-        <span class="company-name">, {{ currentUser?.companyName }}</span>
+    <div class="page-header-content">
+      <h1>
+        <span class="welcome-text">Hoş Geldiniz,</span>
+        @if (currentUser?.companyName) {
+          <span class="company-name"> {{ currentUser?.companyName }}</span>
+        }
+      </h1>
+      <p>Destek taleplerinizi buradan takip edebilirsiniz.</p>
+    </div>
+
+    <div class="company-logo" aria-label="Şirket logosu">
+      @if (companyLogoUrl) {
+        <img [src]="companyLogoUrl" alt="Şirket logosu" />
+      } @else {
+        <span>{{ (currentUser?.companyName || 'M').charAt(0) }}</span>
       }
-    </h1>
-    <p>Destek taleplerinizi buradan takip edebilirsiniz.</p>
+    </div>
   </div>
 
   @if (isLoading) {

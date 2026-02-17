@@ -52,6 +52,12 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
       active: false
     },
     {
+      title: 'Ürünler',
+      icon: 'products',
+      route: '/admin/products',
+      active: false
+    },
+    {
       title: 'Personel',
       icon: 'staff',
       route: '/admin/staff',
