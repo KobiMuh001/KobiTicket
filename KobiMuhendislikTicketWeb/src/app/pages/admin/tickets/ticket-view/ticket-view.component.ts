@@ -38,9 +38,8 @@ interface TicketDetail {
   tenantName: string;
   tenantEmail?: string;
   tenantPhone?: string;
-  assetId?: number;
+  productId?: number;
   assetName?: string;
-  assetSerialNumber?: string;
   assetUnderWarranty?: boolean;
   comments: TicketComment[];
   history: TicketHistoryItem[];
@@ -73,6 +72,7 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
   baseUrl = environment.baseUrl;
   showImagePreview = false;
   selectedImagePath: string | null = null;
+  private refreshInterval: any;
 
   statusDisplayMap: { [key: string]: string; [key: number]: string } = {
     'Open': 'Açık',
@@ -144,10 +144,18 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
       if (this.isBrowser) {
         this.initSignalR(id);
       }
+
+      this.refreshInterval = setInterval(() => {
+        this.refreshCommentsAndHistory(id);
+      }, 2000);
     }
   }
 
   ngOnDestroy(): void {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
+
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.signalRService.leaveTicketGroup(id);
@@ -212,6 +220,29 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
       error: () => {
         this.error = 'Talep yüklenirken bir hata oluştu';
         this.loading = false;
+      }
+    });
+  }
+
+  private refreshCommentsAndHistory(ticketId: string): void {
+    this.ticketService.getTicketById(ticketId).subscribe({
+      next: (response: any) => {
+        const data = response?.data?.data || response?.data || response;
+
+        let freshComments = data.comments?.$values || data.comments || [];
+        freshComments = freshComments.map((c: TicketComment) => {
+          if (c.isAdminReply && c.authorName !== 'Admin') {
+            return { ...c, isStaff: true };
+          }
+          return c;
+        });
+
+        if (freshComments.length !== this.comments.length) {
+          this.comments = freshComments;
+          this.shouldScrollToBottom = true;
+        }
+
+        this.history = data.history?.$values || data.history || [];
       }
     });
   }
@@ -328,8 +359,8 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
       this.commentSubscription = this.signalRService.commentReceived$.subscribe(
         (comment: CommentMessage) => {
           console.log('Ticket-View: Received comment from SignalR:', comment);
-          if (comment.ticketId === ticketId) {
-            const exists = this.comments.some(c => c.id === comment.id);
+          if (String(comment.ticketId) === String(ticketId)) {
+            const exists = this.comments.some(c => String(c.id) === String(comment.id));
             if (!exists) {
               console.log('Ticket-View: Adding new comment to list');
               // Immutability pattern - create new array reference to trigger change detection

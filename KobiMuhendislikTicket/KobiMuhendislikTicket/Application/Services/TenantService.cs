@@ -28,11 +28,19 @@ namespace KobiMuhendislikTicket.Application.Services
             var existingEmail = await _context.Tenants.FirstOrDefaultAsync(t => t.Email.ToLower() == dto.Email.ToLower());
             if (existingEmail != null) return "Bu email adresi zaten sistemde kayıtlı.";
 
+            if (IsValidValue(dto.Username))
+            {
+                var normalizedUsername = dto.Username!.Trim().ToLower();
+                var existingUsername = await _context.Tenants.FirstOrDefaultAsync(t => t.Username != null && t.Username.ToLower() == normalizedUsername);
+                if (existingUsername != null) return "Bu kullanıcı adı zaten sistemde kayıtlı.";
+            }
+
             var tenant = new Tenant
             {
                 CompanyName = dto.CompanyName,
                 TaxNumber = dto.TaxNumber,
                 Email = dto.Email,
+                Username = IsValidValue(dto.Username) ? dto.Username!.Trim() : null,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 PhoneNumber = dto.PhoneNumber
             };
@@ -63,8 +71,25 @@ namespace KobiMuhendislikTicket.Application.Services
                 tenant.Email = dto.Email!;
             }
 
+            if (IsValidValue(dto.Username))
+            {
+                var normalizedUsername = dto.Username!.Trim().ToLower();
+                var existingUsername = await _context.Tenants.FirstOrDefaultAsync(t =>
+                    t.Username != null &&
+                    t.Username.ToLower() == normalizedUsername &&
+                    t.Id != tenantId);
+
+                if (existingUsername != null)
+                    return Result.Failure("Bu kullanıcı adı başka bir müşteri tarafından zaten kullanılmaktadır.");
+
+                tenant.Username = dto.Username!.Trim();
+            }
+
             if (IsValidValue(dto.PhoneNumber))
                 tenant.PhoneNumber = dto.PhoneNumber!;
+
+            if (IsValidValue(dto.LogoUrl))
+                tenant.LogoUrl = dto.LogoUrl!;
 
             tenant.UpdatedDate = DateTimeHelper.GetLocalNow();
 

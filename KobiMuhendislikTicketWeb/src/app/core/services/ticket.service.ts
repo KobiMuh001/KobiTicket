@@ -15,15 +15,15 @@ export interface Ticket {
   assignedPerson?: string;
   imagePath?: string;
   tenantId: number;
-  assetId?: number;
+  productId?: number;
   tenant?: {
     companyName: string;
     email?: string;
     phoneNumber?: string;
   };
-  asset?: {
-    productName: string;
-    serialNumber?: string;
+  product?: {
+    name: string;
+    description?: string;
   };
 }
 
@@ -95,7 +95,7 @@ export class TicketService {
     return this.http.get(`${this.apiUrl}/tickets/${ticketId}/images`);
   }
 
-  createTicket(ticket: { title: string; description: string; priority: number; assetId?: string }): Observable<any> {
+  createTicket(ticket: { title: string; description: string; priority: number; productId?: number }): Observable<any> {
     return this.http.post(`${this.apiUrl}/tickets/create-ticket`, ticket);
   }
 

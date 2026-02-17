@@ -55,7 +55,7 @@ export interface TicketListItem {
   updatedDate?: string;
   assignedPerson?: string;
   assetName?: string;
-  assetId?: number;
+  productId?: number;
   commentCount?: number;
   isOverdue?: boolean;
 }

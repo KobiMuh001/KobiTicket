@@ -6,6 +6,8 @@
         public required string CompanyName { get; set; }
         public required string TaxNumber { get; set; }
         public required string Email { get; set; }
+        public string? Username { get; set; }
+        public string? LogoUrl { get; set; }
     }
 
     public class CreateTenantDto
@@ -13,34 +15,28 @@
         public required string CompanyName { get; set; }
         public required string TaxNumber { get; set; }
         public required string Email { get; set; }
+        public string? Username { get; set; }
         public required string Password { get; set; }
         public required string PhoneNumber { get; set; }
     }
-
     public class UpdateTenantDto
     {
         public string? CompanyName { get; set; }
         public string? Email { get; set; }
+        public string? Username { get; set; }
         public string? PhoneNumber { get; set; }
+        public string? LogoUrl { get; set; }
     }
-
-    
-
-    
     public class ChangePasswordDto
     {
         public string CurrentPassword { get; set; } = string.Empty;
         public string NewPassword { get; set; } = string.Empty;
         public string ConfirmNewPassword { get; set; } = string.Empty;
     }
-
-   
     public class AdminResetPasswordDto
     {
         public string NewPassword { get; set; } = string.Empty;
     }
-
-    
     public class DeleteTenantResultDto
     {
         public bool Success { get; set; }

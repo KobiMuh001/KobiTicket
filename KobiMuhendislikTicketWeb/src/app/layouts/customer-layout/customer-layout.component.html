@@ -66,7 +66,11 @@
       @if (!isSidebarCollapsed) {
         <div class="user-info">
           <div class="user-avatar">
-            <span>{{ (currentUser?.fullName || currentUser?.companyName || 'M').charAt(0) }}</span>
+            @if (customerLogoUrl) {
+              <img [src]="customerLogoUrl" alt="Müşteri logosu" />
+            } @else {
+              <span>{{ (currentUser?.fullName || currentUser?.companyName || 'M').charAt(0) }}</span>
+            }
           </div>
           <div class="user-details">
             <span class="user-name">{{ currentUser?.fullName || currentUser?.companyName || 'Müşteri' }}</span>

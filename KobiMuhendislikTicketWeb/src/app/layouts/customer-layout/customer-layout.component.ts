@@ -2,10 +2,12 @@ import { Component, OnInit, OnDestroy, HostListener, Inject, PLATFORM_ID } from 
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService, User } from '../../core/services/auth.service';
+import { TenantService } from '../../core/services/tenant.service';
 import { NotificationService, Notification } from '../../core/services/notification.service';
 import { SignalRService } from '../../core/services/signalr.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-customer-layout',
@@ -17,6 +19,8 @@ import { takeUntil } from 'rxjs/operators';
 export class CustomerLayoutComponent implements OnInit, OnDestroy {
   isSidebarCollapsed = false;
   currentUser: User | null = null;
+  customerLogoUrl: string | null = null;
+  private readonly apiOrigin = new URL(environment.apiUrl).origin;
 
   notifications: Notification[] = [];
   showNotificationsDropdown = false;
@@ -48,6 +52,7 @@ export class CustomerLayoutComponent implements OnInit, OnDestroy {
 
   constructor(
     private authService: AuthService,
+    private tenantService: TenantService,
     private notificationService: NotificationService,
     private signalRService: SignalRService,
     private router: Router,
@@ -57,9 +62,16 @@ export class CustomerLayoutComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.authService.currentUser$.subscribe(user => {
-      this.currentUser = user;
-    });
+    this.authService.currentUser$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(user => {
+        this.currentUser = user;
+        if (user?.role === 'Customer') {
+          this.loadCustomerLogo();
+        } else {
+          this.customerLogoUrl = null;
+        }
+      });
 
     this.notificationService.notificationsList$
       .pipe(takeUntil(this.destroy$))
@@ -170,5 +182,31 @@ export class CustomerLayoutComponent implements OnInit, OnDestroy {
 
   logout(): void {
     this.authService.logout();
+  }
+
+  private loadCustomerLogo(): void {
+    this.tenantService.getMyProfile()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response: any) => {
+          const data = response?.data || response;
+          this.customerLogoUrl = this.toAbsoluteUrl(data?.logoUrl);
+        },
+        error: () => {
+          this.customerLogoUrl = null;
+        }
+      });
+  }
+
+  private toAbsoluteUrl(path?: string | null): string | null {
+    if (!path) {
+      return null;
+    }
+
+    if (path.startsWith('http')) {
+      return path;
+    }
+
+    return `${this.apiOrigin}${path}`;
   }
 }

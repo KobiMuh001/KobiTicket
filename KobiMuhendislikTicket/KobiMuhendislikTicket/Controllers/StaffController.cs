@@ -144,11 +144,10 @@ namespace KobiMuhendislikTicket.Controllers
                 imagePath = ticket.ImagePath,
                 imagePaths = imagePaths.Distinct().ToList(),
                 assignedPerson = ticket.AssignedPerson,
-                asset = ticket.Asset != null ? new
+                asset = ticket.Product != null ? new
                 {
-                    productName = ticket.Asset.ProductName,
-                    serialNumber = ticket.Asset.SerialNumber,
-                    status = ticket.Asset.Status
+                    productName = ticket.Product.Name,
+                    description = ticket.Product.Description
                 } : null,
                 solutionNote = (string?)null // TODO: Add solution note to Ticket entity if needed
             };

@@ -95,19 +95,17 @@
         </div>
 
         <div class="detail-card" *ngIf="ticket.asset">
-          <h3>Varlık Bilgileri</h3>
+          <h3>Seçilen Ürün</h3>
           <div class="detail-row">
             <label>Ürün Adı:</label>
             <span>{{ ticket.asset.productName }}</span>
           </div>
+          @if (ticket.asset.description) {
           <div class="detail-row">
-            <label>Seri No:</label>
-            <span>{{ ticket.asset.serialNumber }}</span>
+            <label>Açıklama:</label>
+            <span>{{ ticket.asset.description }}</span>
           </div>
-          <div class="detail-row">
-            <label>Durum:</label>
-            <span>{{ ticket.asset.status }}</span>
-          </div>
+          }
         </div>
 
         <!-- Ticket Image Section -->

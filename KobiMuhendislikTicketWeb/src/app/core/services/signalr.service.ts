@@ -1,4 +1,4 @@
-import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
+import { Injectable, Inject, PLATFORM_ID, NgZone } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import * as signalR from '@microsoft/signalr';
 import { Subject, Observable } from 'rxjs';
@@ -52,6 +52,7 @@ export class SignalRService {
   private hubConnection: signalR.HubConnection | null = null;
   private dashboardHubConnection: signalR.HubConnection | null = null;
   private notificationHubConnection: signalR.HubConnection | null = null;
+  private joinedTicketGroups = new Set<string>();
   private commentReceived = new Subject<CommentMessage>();
   private ticketUpdated = new Subject<TicketUpdateMessage>();
   private dashboardStatsUpdated = new Subject<DashboardStats>();
@@ -69,7 +70,7 @@ export class SignalRService {
   private notificationHubUrl = environment.apiUrl.replace('/api', '/hubs/notifications');
   private isBrowser: boolean;
 
-  constructor(@Inject(PLATFORM_ID) private platformId: Object) {
+  constructor(@Inject(PLATFORM_ID) private platformId: Object, private ngZone: NgZone) {
     this.isBrowser = isPlatformBrowser(this.platformId);
   }
 
@@ -84,20 +85,27 @@ export class SignalRService {
       return Promise.reject('No authentication token');
     }
 
-    if (this.hubConnection) {
-      console.log('SignalR: Hub connection already exists');
+    if (this.hubConnection?.state === signalR.HubConnectionState.Connected) {
+      console.log('SignalR: Hub connection already connected');
       return Promise.resolve();
     }
 
-    this.hubConnection = new signalR.HubConnectionBuilder()
-      .withUrl(this.hubUrl, {
-        accessTokenFactory: () => token
-      })
-      .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
-      .configureLogging(signalR.LogLevel.Information)
-      .build();
+    if (this.hubConnection?.state === signalR.HubConnectionState.Connecting || this.hubConnection?.state === signalR.HubConnectionState.Reconnecting) {
+      console.log('SignalR: Hub connection is connecting/reconnecting');
+      return this.waitForConnectedState();
+    }
 
-    this.registerHandlers();
+    if (!this.hubConnection) {
+      this.hubConnection = new signalR.HubConnectionBuilder()
+        .withUrl(this.hubUrl, {
+          accessTokenFactory: () => token
+        })
+        .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
+        .configureLogging(signalR.LogLevel.Information)
+        .build();
+
+      this.registerHandlers();
+    }
 
     return this.hubConnection.start()
       .then(() => {
@@ -112,8 +120,27 @@ export class SignalRService {
           source: err?.source
         });
         this.connectionState.next('Error');
+        this.hubConnection = null;
         throw err;
       });
+  }
+
+  private waitForConnectedState(timeoutMs: number = 10000): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const startedAt = Date.now();
+      const timer = setInterval(() => {
+        if (this.hubConnection?.state === signalR.HubConnectionState.Connected) {
+          clearInterval(timer);
+          resolve();
+          return;
+        }
+
+        if (Date.now() - startedAt > timeoutMs) {
+          clearInterval(timer);
+          reject(new Error('SignalR connection timeout while waiting for connected state'));
+        }
+      }, 150);
+    });
   }
 
   public startDashboardConnection(token: string): Promise<void> {
@@ -161,12 +188,12 @@ export class SignalRService {
 
     this.hubConnection.on('ReceiveComment', (comment: CommentMessage) => {
       console.log('New comment received:', comment);
-      this.commentReceived.next(comment);
+      this.ngZone.run(() => this.commentReceived.next(comment));
     });
 
     this.hubConnection.on('TicketUpdated', (ticket: TicketUpdateMessage) => {
       console.log('Ticket updated:', ticket);
-      this.ticketUpdated.next(ticket);
+      this.ngZone.run(() => this.ticketUpdated.next(ticket));
     });
 
     this.hubConnection.onreconnecting(() => {
@@ -174,9 +201,18 @@ export class SignalRService {
       this.connectionState.next('Reconnecting');
     });
 
-    this.hubConnection.onreconnected(() => {
+    this.hubConnection.onreconnected(async () => {
       console.log('SignalR Reconnected');
       this.connectionState.next('Connected');
+
+      for (const ticketId of this.joinedTicketGroups) {
+        try {
+          await this.hubConnection?.invoke('JoinTicketGroup', ticketId);
+          console.log('SignalR: Re-joined ticket group:', ticketId);
+        } catch (error) {
+          console.error('SignalR: Failed to re-join group', ticketId, error);
+        }
+      }
     });
 
     this.hubConnection.onclose(() => {
@@ -193,7 +229,7 @@ export class SignalRService {
 
     this.dashboardHubConnection.on('DashboardStatsUpdated', (stats: DashboardStats) => {
       console.log('Dashboard stats updated:', stats);
-      this.dashboardStatsUpdated.next(stats);
+      this.ngZone.run(() => this.dashboardStatsUpdated.next(stats));
     });
 
     this.dashboardHubConnection.onreconnecting(() => {
@@ -253,7 +289,7 @@ export class SignalRService {
 
     this.notificationHubConnection.on('StaffNotificationReceived', (notification: StaffNotification) => {
       console.log('Staff notification received:', notification);
-      this.staffNotificationReceived.next(notification);
+      this.ngZone.run(() => this.staffNotificationReceived.next(notification));
     });
 
     this.notificationHubConnection.onreconnecting(() => {
@@ -270,10 +306,14 @@ export class SignalRService {
   }
 
   public async joinTicketGroup(ticketId: string): Promise<void> {
-    if (this.hubConnection?.state === signalR.HubConnectionState.Connected) {
-      await this.hubConnection.invoke('JoinTicketGroup', ticketId);
-      console.log('Joined ticket group:', ticketId);
+    if (this.hubConnection?.state !== signalR.HubConnectionState.Connected) {
+      console.warn('SignalR: Cannot join ticket group, connection is not ready');
+      return;
     }
+
+    await this.hubConnection.invoke('JoinTicketGroup', ticketId);
+    this.joinedTicketGroups.add(ticketId);
+    console.log('Joined ticket group:', ticketId);
   }
 
   public async leaveTicketGroup(ticketId: string): Promise<void> {
@@ -281,12 +321,14 @@ export class SignalRService {
       await this.hubConnection.invoke('LeaveTicketGroup', ticketId);
       console.log('Left ticket group:', ticketId);
     }
+    this.joinedTicketGroups.delete(ticketId);
   }
 
   public stopConnection(): Promise<void> {
     if (this.hubConnection) {
       return this.hubConnection.stop().then(() => {
         this.hubConnection = null;
+        this.joinedTicketGroups.clear();
         console.log('SignalR Disconnected');
       });
     }

@@ -60,7 +60,7 @@ namespace KobiMuhendislikTicket.Controllers
                 Title = dto.Title,
                 Description = dto.Description,
                 Priority = (Domain.Enums.TicketPriority)dto.Priority,
-                AssetId = dto.AssetId, 
+                ProductId = dto.ProductId, 
                 TenantId = tenantId    
             };
 

@@ -1,0 +1,154 @@
+<div class="product-tenants-page">
+  <div class="page-header">
+    <button class="btn btn-secondary btn-icon" title="Ürünlere Dön" (click)="goBack()">←</button>
+
+    @if (product) {
+      <div class="header-content">
+        <h1 class="page-title">{{ product.productName }}</h1>
+        <p class="page-subtitle">{{ product.description || 'Açıklama yok' }}</p>
+      </div>
+    }
+
+    @if (product) {
+      <button class="btn btn-primary" (click)="openAssignModal()">Firma Ekle</button>
+    }
+  </div>
+
+  @if (errorMessage) {
+    <div class="alert alert-error">
+      {{ errorMessage }}
+    </div>
+  }
+
+  @if (successMessage) {
+    <div class="alert alert-success">
+      {{ successMessage }}
+    </div>
+  }
+
+  @if (isLoading) {
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p>Firma listesi yükleniyor...</p>
+    </div>
+  } @else {
+    @if (!product || product.tenants.length === 0) {
+      <div class="empty-state">
+        <h3>Firma bulunamadı</h3>
+        <p>Bu ürüne bağlı firma bulunmuyor.</p>
+      </div>
+    } @else {
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Firma Adı</th>
+              <th>E-posta</th>
+              <th>Kullanıcı Adı</th>
+              <th>Sahiplik Tarihi</th>
+              <th>Garanti Bitiş</th>
+              <th>İşlem</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (tenant of product.tenants; track tenant.tenantId) {
+              <tr>
+                <td class="company-name">{{ tenant.companyName }}</td>
+                <td>{{ tenant.email }}</td>
+                <td>{{ tenant.username || '-' }}</td>
+                <td>{{ tenant.acquisitionDate ? (tenant.acquisitionDate | date:'dd.MM.yyyy') : '-' }}</td>
+                <td>{{ tenant.warrantyEndDate ? (tenant.warrantyEndDate | date:'dd.MM.yyyy') : '-' }}</td>
+                <td>
+                  <button class="btn btn-secondary btn-sm" (click)="openEditModal(tenant.tenantId)" [disabled]="isSaving">
+                    Düzenle
+                  </button>
+                  <button class="btn btn-danger btn-sm" (click)="removeTenant(tenant.tenantId)" [disabled]="isSaving">
+                    Kaldır
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</div>
+
+@if (showAssignModal) {
+  <div class="modal-overlay" (click)="closeAssignModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Firma Ekle</h2>
+        <button class="modal-close" (click)="closeAssignModal()">×</button>
+      </div>
+      <div class="modal-body">
+      <div class="form-group">
+        <label>Firma *</label>
+        <div class="dropdown-container">
+          <input
+            type="text"
+            [(ngModel)]="selectedTenantName"
+            (focus)="openDropdown()"
+            (blur)="closeDropdown()"
+            (ngModelChange)="searchTenantQuery = $event"
+            placeholder="Firma seçin..."
+            class="form-input dropdown-input"
+          />
+          @if (showDropdown && getFilteredTenants().length > 0) {
+            <ul class="dropdown-list">
+              @for (tenant of getFilteredTenants(); track tenant.id) {
+                <li 
+                  (click)="selectTenant(tenant.id, tenant.companyName)"
+                  class="dropdown-item"
+                >
+                  {{ tenant.companyName }}
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </div>
+        <div class="form-group">
+          <label>Garanti Bitiş Tarihi *</label>
+          <input type="date" [(ngModel)]="warrantyEndDate" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label>Sahiplik Tarihi</label>
+          <input type="date" [(ngModel)]="acquisitionDate" class="form-input" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeAssignModal()">İptal</button>
+        <button class="btn btn-primary" (click)="assignTenant()" [disabled]="isSaving">
+          @if (isSaving) { Ekleniyor... } @else { Ekle }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showEditModal) {
+  <div class="modal-overlay" (click)="closeEditModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Ürün-Firma Bilgisi Düzenle</h2>
+        <button class="modal-close" (click)="closeEditModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Garanti Bitiş Tarihi *</label>
+          <input type="date" [(ngModel)]="editData.warrantyEndDate" class="date-input" />
+        </div>
+        <div class="form-group">
+          <label>Sahiplik Tarihi</label>
+          <input type="date" [(ngModel)]="editData.acquisitionDate" class="date-input" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeEditModal()">İptal</button>
+        <button class="btn btn-primary" (click)="saveEditModal()" [disabled]="isSaving">Kaydet</button>
+      </div>
+    </div>
+  </div>
+}

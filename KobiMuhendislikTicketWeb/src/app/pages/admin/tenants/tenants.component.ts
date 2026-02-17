@@ -38,6 +38,7 @@ export class TenantsComponent implements OnInit {
     companyName: '',
     taxNumber: '',
     email: '',
+    username: '',
     password: '',
     phoneNumber: ''
   };
@@ -90,6 +91,7 @@ export class TenantsComponent implements OnInit {
     this.filteredTenants = this.tenants.filter(tenant => 
       tenant.companyName?.toLowerCase().includes(search) ||
       tenant.email?.toLowerCase().includes(search) ||
+      tenant.username?.toLowerCase().includes(search) ||
       tenant.taxNumber?.toLowerCase().includes(search) ||
       tenant.phoneNumber?.toLowerCase().includes(search)
     );
@@ -142,6 +144,7 @@ export class TenantsComponent implements OnInit {
       companyName: '',
       taxNumber: '',
       email: '',
+      username: '',
       password: '',
       phoneNumber: ''
     };

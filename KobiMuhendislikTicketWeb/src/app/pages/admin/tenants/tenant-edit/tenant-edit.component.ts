@@ -22,6 +22,7 @@ export class TenantEditComponent implements OnInit {
   editForm: UpdateTenantDto = {
     companyName: '',
     email: '',
+    username: '',
     phoneNumber: ''
   };
   
@@ -62,6 +63,7 @@ export class TenantEditComponent implements OnInit {
           this.editForm = {
             companyName: this.tenant.companyName,
             email: this.tenant.email,
+            username: this.tenant.username,
             phoneNumber: this.tenant.phoneNumber
           };
         }
@@ -97,6 +99,7 @@ export class TenantEditComponent implements OnInit {
         if (this.tenant) {
           this.tenant.companyName = this.editForm.companyName || this.tenant.companyName;
           this.tenant.email = this.editForm.email || this.tenant.email;
+          this.tenant.username = this.editForm.username || this.tenant.username;
           this.tenant.phoneNumber = this.editForm.phoneNumber || this.tenant.phoneNumber;
         }
         setTimeout(() => this.successMessage = '', 3000);
