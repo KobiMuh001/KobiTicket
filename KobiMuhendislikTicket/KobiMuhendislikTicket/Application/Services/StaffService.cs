@@ -449,7 +449,7 @@ namespace KobiMuhendislikTicket.Application.Services
 
             var tickets = await _context.Tickets
                 .Include(t => t.Tenant)
-                .Include(t => t.Asset)
+                .Include(t => t.Product)
                 .Where(t => t.AssignedPerson == staff.FullName)
                 .OrderByDescending(t => t.CreatedDate)
                 .Skip((page - 1) * pageSize)
@@ -467,8 +467,8 @@ namespace KobiMuhendislikTicket.Application.Services
                     UpdatedDate = t.UpdatedDate,
                     TenantId = t.TenantId,
                     CompanyName = t.Tenant != null ? t.Tenant.CompanyName : null,
-                    AssetId = t.AssetId,
-                    AssetName = t.Asset != null ? t.Asset.ProductName : null,
+                    ProductId = t.ProductId,
+                    ProductName = t.Product != null ? t.Product.Name : null,
                     ImagePath = t.ImagePath
                 })
                 .ToListAsync();
@@ -485,7 +485,7 @@ namespace KobiMuhendislikTicket.Application.Services
 
             var tickets = await _context.Tickets
                 .Include(t => t.Tenant)
-                .Include(t => t.Asset)
+                .Include(t => t.Product)
                 .Where(t => t.AssignedPerson == staff.FullName)
                 .OrderByDescending(t => t.CreatedDate)
                 .Select(t => new TicketDto
@@ -501,8 +501,8 @@ namespace KobiMuhendislikTicket.Application.Services
                     UpdatedDate = t.UpdatedDate,
                     TenantId = t.TenantId,
                     CompanyName = t.Tenant != null ? t.Tenant.CompanyName : null,
-                    AssetId = t.AssetId,
-                    AssetName = t.Asset != null ? t.Asset.ProductName : null,
+                    ProductId = t.ProductId,
+                    ProductName = t.Product != null ? t.Product.Name : null,
                     ImagePath = t.ImagePath
                 })
                 .ToListAsync();
@@ -515,7 +515,7 @@ namespace KobiMuhendislikTicket.Application.Services
         {
             var tickets = await _context.Tickets
                 .Include(t => t.Tenant)
-                .Include(t => t.Asset)
+                .Include(t => t.Product)
                 .Where(t => string.IsNullOrEmpty(t.AssignedPerson) && t.Status == TicketStatus.Open)
                 .OrderByDescending(t => t.Priority)
                 .ThenBy(t => t.CreatedDate)
@@ -532,8 +532,8 @@ namespace KobiMuhendislikTicket.Application.Services
                     UpdatedDate = t.UpdatedDate,
                     TenantId = t.TenantId,
                     CompanyName = t.Tenant != null ? t.Tenant.CompanyName : null,
-                    AssetId = t.AssetId,
-                    AssetName = t.Asset != null ? t.Asset.ProductName : null,
+                    ProductId = t.ProductId,
+                    ProductName = t.Product != null ? t.Product.Name : null,
                     ImagePath = t.ImagePath
                 })
                 .ToListAsync();

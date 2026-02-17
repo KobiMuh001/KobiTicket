@@ -28,7 +28,7 @@ namespace KobiMuhendislikTicket.Application.Services
 
             var tickets = await _context.Tickets
                 .Include(t => t.Tenant)
-                .Include(t => t.Asset)
+                .Include(t => t.Product)
                 .ToListAsync();
 
             var histories = await _context.TicketHistories
@@ -82,11 +82,11 @@ namespace KobiMuhendislikTicket.Application.Services
 
                 
                 TopFailingAssets = tickets
-                    .Where(t => t.Asset != null)
-                    .GroupBy(t => new { t.AssetId, t.Asset!.ProductName })
+                    .Where(t => t.Product != null)
+                    .GroupBy(t => new { t.ProductId, t.Product!.Name })
                     .Select(g => new AssetTicketCountDto
                     {
-                        ProductName = g.Key.ProductName,
+                        ProductName = g.Key.Name,
                         TicketCount = g.Count()
                     })
                     .OrderByDescending(x => x.TicketCount)
@@ -180,7 +180,7 @@ namespace KobiMuhendislikTicket.Application.Services
                 .ToListAsync();
 
             var tickets = await _context.Tickets
-                .Include(t => t.Asset)
+                .Include(t => t.Product)
                 .Include(t => t.Tenant)
                 .Where(t => t.TenantId == tenantId)
                 .OrderByDescending(t => t.CreatedDate)
@@ -208,7 +208,7 @@ namespace KobiMuhendislikTicket.Application.Services
                     Status = a.Status,
                     WarrantyEndDate = a.WarrantyEndDate,
                     IsUnderWarranty = a.WarrantyEndDate > DateTimeHelper.GetLocalNow(),
-                    TicketCount = _context.Tickets.Count(t => t.AssetId == a.Id)
+                    TicketCount = 0
                 }).ToList(),
                 RecentTickets = tickets.Select(t => MapToTicketListItem(t)).ToList()
             };
@@ -249,7 +249,7 @@ namespace KobiMuhendislikTicket.Application.Services
                     Status = a.Status,
                     WarrantyEndDate = a.WarrantyEndDate,
                     IsUnderWarranty = a.WarrantyEndDate > DateTimeHelper.GetLocalNow(),
-                    TicketCount = _context.Tickets.Count(t => t.AssetId == a.Id)
+                    TicketCount = 0
                 })
                 .ToListAsync();
 
@@ -272,8 +272,8 @@ namespace KobiMuhendislikTicket.Application.Services
 
             var tickets = await _context.Tickets
                 .Include(t => t.Tenant)
-                .Include(t => t.Asset)
-                .Where(t => t.AssetId == assetId)
+                .Include(t => t.Product)
+                .Where(t => t.TenantId == asset.TenantId)  // Get all tickets for tenant since Assets no longer reference Products
                 .OrderByDescending(t => t.CreatedDate)
                 .ToListAsync();
 
@@ -302,7 +302,7 @@ namespace KobiMuhendislikTicket.Application.Services
         {
             var query = _context.Tickets
                 .Include(t => t.Tenant)
-                .Include(t => t.Asset)
+                .Include(t => t.Product)
                 .AsQueryable();
 
             
@@ -356,7 +356,7 @@ namespace KobiMuhendislikTicket.Application.Services
         {
             var ticket = await _context.Tickets
                 .Include(t => t.Tenant)
-                .Include(t => t.Asset)
+                .Include(t => t.Product)
                 .Include(t => t.TicketImages)
                 .FirstOrDefaultAsync(t => t.Id == ticketId);
 
@@ -396,10 +396,8 @@ namespace KobiMuhendislikTicket.Application.Services
                 TenantName = ticket.Tenant?.CompanyName ?? "Bilinmeyen",
                 TenantEmail = ticket.Tenant?.Email ?? "",
                 TenantPhone = ticket.Tenant?.PhoneNumber,
-                AssetId = ticket.AssetId,
-                AssetName = ticket.Asset?.ProductName,
-                AssetSerialNumber = ticket.Asset?.SerialNumber,
-                AssetUnderWarranty = ticket.Asset != null ? ticket.Asset.WarrantyEndDate > DateTimeHelper.GetLocalNow() : null,
+                ProductId = ticket.ProductId,
+                ProductName = ticket.Product?.Name,
                 Comments = comments.Select(c => new TicketCommentDto
                 {
                     Id = c.Id,
@@ -504,8 +502,8 @@ namespace KobiMuhendislikTicket.Application.Services
                 AssignedPerson = ticket.AssignedPerson,
                 TenantName = ticket.Tenant?.CompanyName ?? "Bilinmeyen",
                 TenantId = ticket.TenantId,
-                AssetName = ticket.Asset?.ProductName,
-                AssetId = ticket.AssetId,
+                ProductName = ticket.Product?.Name,
+                ProductId = ticket.ProductId,
                 CreatedDate = ticket.CreatedDate,
                 UpdatedDate = ticket.UpdatedDate,
                 CommentCount = _context.TicketComments.Count(c => c.TicketId == ticket.Id),

@@ -32,7 +32,7 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence.Repositories
         public async Task<Ticket?> GetByIdAsync(int id)
         {
             return await _context.Tickets
-                .Include(t => t.Asset)
+                .Include(t => t.Product)
                 .Include(t => t.Tenant)
                 .Include(t => t.TicketImages)
                 .FirstOrDefaultAsync(t => t.Id == id);
@@ -42,14 +42,14 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence.Repositories
         public async Task<List<Ticket>> GetAllAsync() =>
             await _context.Tickets
                 .Include(t => t.Tenant)
-                .Include(t => t.Asset)
+                .Include(t => t.Product)
                 .OrderByDescending(t => t.CreatedDate)
                 .ToListAsync();
 
         // 4. Firmaya Göre Listeleme: Müşteri paneli için.
         public async Task<List<Ticket>> GetByTenantIdAsync(int tenantId) =>
             await _context.Tickets
-                .Include(t => t.Asset)
+                .Include(t => t.Product)
                 .Where(t => t.TenantId == tenantId)
                 .ToListAsync();
 
@@ -140,7 +140,7 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence.Repositories
         {
             var query = _context.Tickets
                 .Include(t => t.Tenant)
-                .Include(t => t.Asset)
+                .Include(t => t.Product)
                 .OrderByDescending(t => t.CreatedDate);
 
             var totalCount = await query.CountAsync();

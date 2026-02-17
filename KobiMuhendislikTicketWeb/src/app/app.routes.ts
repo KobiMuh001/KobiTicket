@@ -60,6 +60,14 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/admin/assets/assets.component').then(m => m.AssetsComponent)
       },
       {
+        path: 'products',
+        loadComponent: () => import('./pages/admin/products/products.component').then(m => m.ProductsComponent)
+      },
+      {
+        path: 'products/:id',
+        loadComponent: () => import('./pages/admin/products/product-tenants.component').then(m => m.ProductTenantsComponent)
+      },
+      {
         path: 'assets/:id',
         loadComponent: () => import('./pages/admin/assets/asset-edit.component').then(m => m.AssetEditComponent)
       },

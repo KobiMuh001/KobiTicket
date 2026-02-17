@@ -3,13 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TicketService } from '../../../core/services/ticket.service';
-import { AssetService } from '../../../core/services/asset.service';
-
-interface Asset {
-  id: string;
-  name: string;
-  serialNumber: string;
-}
+import { ProductService, TenantProductItem } from '../../../core/services/product.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-customer-ticket-create',
@@ -23,10 +18,11 @@ export class CustomerTicketCreateComponent implements OnInit {
     title: '',
     description: '',
     priority: 2, // Orta default
-    assetId: null as string | null
+    productId: null as number | null
   };
 
-  assets: Asset[] = [];
+  products: TenantProductItem[] = [];
+  tenantId: number | null = null;
   isLoading = false;
   isSubmitting = false;
   errorMessage = '';
@@ -44,32 +40,43 @@ export class CustomerTicketCreateComponent implements OnInit {
 
   constructor(
     private ticketService: TicketService,
-    private assetService: AssetService,
+    private productService: ProductService,
+    private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
-    this.loadAssets();
+    this.getTenantId();
+    if (this.tenantId) {
+      this.loadProducts();
+    }
     
-    // Check if assetId is passed in query params
+    // Check if productId is passed in query params
     this.route.queryParams.subscribe(params => {
-      if (params['assetId']) {
-        this.ticket.assetId = params['assetId'];
+      if (params['productId']) {
+        this.ticket.productId = parseInt(params['productId'], 10);
       }
     });
   }
 
-  loadAssets(): void {
+  private getTenantId(): void {
+    const user = this.authService.getCurrentUser();
+    if (user && user.identifier) {
+      this.tenantId = parseInt(user.identifier, 10);
+    }
+  }
+
+  loadProducts(): void {
+    if (!this.tenantId) {
+      this.isLoading = false;
+      return;
+    }
+
     this.isLoading = true;
-    this.assetService.getMyAssets().subscribe({
+    this.productService.getTenantProducts(this.tenantId).subscribe({
       next: (response: any) => {
-        const data = response.data || response || [];
-        this.assets = data.map((a: any) => ({
-          id: a.id,
-          name: a.productName || a.name,
-          serialNumber: a.serialNumber
-        }));
+        this.products = response.data || response || [];
         this.isLoading = false;
       },
       error: () => {
@@ -91,7 +98,7 @@ export class CustomerTicketCreateComponent implements OnInit {
       title: this.ticket.title,
       description: this.ticket.description,
       priority: this.ticket.priority,
-      assetId: this.ticket.assetId || undefined
+      productId: this.ticket.productId || undefined
     };
 
     this.ticketService.createTicket(ticketData).subscribe({

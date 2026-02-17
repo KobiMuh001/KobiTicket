@@ -34,7 +34,11 @@
     <div class="profile-card">
       <div class="profile-header">
         <div class="avatar">
-          <span>{{ profile.companyName.charAt(0) }}</span>
+          @if (getProfileLogoUrl()) {
+            <img [src]="getProfileLogoUrl()!" alt="Firma logosu">
+          } @else {
+            <span>{{ profile.companyName.charAt(0) }}</span>
+          }
         </div>
         <div class="header-info">
           <h2>{{ profile.companyName }}</h2>
@@ -97,13 +101,14 @@
             </div>
 
             <div class="form-group">
-              <label for="address">Adres</label>
-              <textarea 
-                id="address"
-                [(ngModel)]="editForm.address"
-                name="address"
-                rows="3"
-                placeholder="Firma adresi"></textarea>
+              <label for="logoFile">Logo</label>
+              <input
+                type="file"
+                id="logoFile"
+                name="logoFile"
+                accept="image/png,image/jpeg,image/gif,image/webp"
+                (change)="onLogoSelected($event)">
+              <small>İsteğe bağlı. Maksimum 5MB (JPG, PNG, GIF, WEBP)</small>
             </div>
 
             <div class="form-actions">
@@ -216,19 +221,6 @@
               <div class="info-content">
                 <span class="info-label">Telefon</span>
                 <span class="info-value">{{ profile.phoneNumber || '-' }}</span>
-              </div>
-            </div>
-
-            <div class="info-item full-width">
-              <div class="info-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                  <circle cx="12" cy="10" r="3"/>
-                </svg>
-              </div>
-              <div class="info-content">
-                <span class="info-label">Adres</span>
-                <span class="info-value">{{ profile.address || '-' }}</span>
               </div>
             </div>
           </div>

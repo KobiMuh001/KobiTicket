@@ -18,8 +18,9 @@ namespace KobiMuhendislikTicket.Application.Validators
             RuleFor(x => x.Priority)
                 .InclusiveBetween(1, 4).WithMessage("Öncelik 1-4 arasında olmalıdır");
 
-            RuleFor(x => x.AssetId)
-                .NotEmpty().WithMessage("Ürün seçimi zorunludur");
+            RuleFor(x => x.ProductId)
+                .NotNull().WithMessage("Ürün seçimi zorunludur")
+                .GreaterThan(0).WithMessage("Geçerli bir ürün seçiniz");
         }
     }
 

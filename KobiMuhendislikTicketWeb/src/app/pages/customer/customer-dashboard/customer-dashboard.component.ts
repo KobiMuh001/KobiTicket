@@ -4,6 +4,8 @@ import { RouterModule } from '@angular/router';
 import { TicketService } from '../../../core/services/ticket.service';
 import { AssetService } from '../../../core/services/asset.service';
 import { AuthService, User } from '../../../core/services/auth.service';
+import { TenantService } from '../../../core/services/tenant.service';
+import { environment } from '../../../../environments/environment';
 
 interface DashboardStats {
   totalTickets: number;
@@ -40,16 +42,44 @@ export class CustomerDashboardComponent implements OnInit {
   recentTickets: Ticket[] = [];
   isLoading = true;
   currentUser: User | null = null;
+  companyLogoUrl: string | null = null;
+  private readonly apiOrigin = new URL(environment.apiUrl).origin;
 
   constructor(
     private ticketService: TicketService,
     private assetService: AssetService,
-    private authService: AuthService
+    private authService: AuthService,
+    private tenantService: TenantService
   ) {}
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
+    this.loadCompanyLogo();
     this.loadDashboardData();
+  }
+
+  private loadCompanyLogo(): void {
+    this.tenantService.getMyProfile().subscribe({
+      next: (response: any) => {
+        const data = response?.data || response;
+        this.companyLogoUrl = this.toAbsoluteUrl(data?.logoUrl);
+      },
+      error: () => {
+        this.companyLogoUrl = null;
+      }
+    });
+  }
+
+  private toAbsoluteUrl(path?: string | null): string | null {
+    if (!path) {
+      return null;
+    }
+
+    if (path.startsWith('http')) {
+      return path;
+    }
+
+    return `${this.apiOrigin}${path}`;
   }
 
   loadDashboardData(): void {

@@ -2,16 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { AssetService } from '../../../core/services/asset.service';
-
-interface Asset {
-  id: string;
-  name: string;
-  description: string;
-  serialNumber: string;
-  status: string;
-  createdAt: string;
-}
+import { ProductService, TenantProductItem } from '../../../core/services/product.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-customer-assets',
@@ -21,30 +13,48 @@ interface Asset {
   styleUrls: ['./customer-assets.component.scss']
 })
 export class CustomerAssetsComponent implements OnInit {
-  assets: Asset[] = [];
-  filteredAssets: Asset[] = [];
+  products: TenantProductItem[] = [];
+  filteredProducts: TenantProductItem[] = [];
   isLoading = true;
   searchQuery = '';
+  tenantId: number | null = null;
 
-  constructor(private assetService: AssetService) {}
+  constructor(
+    private productService: ProductService,
+    private authService: AuthService
+  ) {}
 
   ngOnInit(): void {
-    this.loadAssets();
+    this.getTenantId();
+    if (this.tenantId) {
+      this.loadTenantProducts();
+    }
   }
 
-  loadAssets(): void {
+  private getTenantId(): void {
+    const user = this.authService.getCurrentUser();
+    if (user && user.identifier) {
+      this.tenantId = parseInt(user.identifier, 10);
+    }
+  }
+
+  loadTenantProducts(): void {
+    if (!this.tenantId) {
+      this.isLoading = false;
+      return;
+    }
+
     this.isLoading = true;
-    
-    this.assetService.getMyAssets().subscribe({
+
+    this.productService.getTenantProducts(this.tenantId).subscribe({
       next: (response: any) => {
         const data = response.data || response || [];
-        this.assets = data.map((a: any) => ({
-          id: a.id,
-          name: a.productName || a.name,
-          description: a.description,
-          serialNumber: a.serialNumber,
-          status: this.getStatusText(a.status),
-          createdAt: a.createdDate || a.createdAt
+        this.products = data.map((p: any) => ({
+          productId: p.productId,
+          productName: p.productName,
+          description: p.description,
+          warrantyEndDate: p.warrantyEndDate,
+          acquisitionDate: p.acquisitionDate
         }));
         this.applyFilter();
         this.isLoading = false;
@@ -57,38 +67,17 @@ export class CustomerAssetsComponent implements OnInit {
 
   applyFilter(): void {
     if (!this.searchQuery) {
-      this.filteredAssets = [...this.assets];
+      this.filteredProducts = [...this.products];
     } else {
       const query = this.searchQuery.toLowerCase();
-      this.filteredAssets = this.assets.filter(asset =>
-        asset.name.toLowerCase().includes(query) ||
-        asset.serialNumber.toLowerCase().includes(query) ||
-        asset.description?.toLowerCase().includes(query)
+      this.filteredProducts = this.products.filter(product =>
+        product.productName.toLowerCase().includes(query) ||
+        product.description?.toLowerCase().includes(query)
       );
     }
   }
 
-  getStatusText(status: string | number): string {
-    const statusMap: { [key: string]: string; [key: number]: string } = {
-      'Active': 'Aktif',
-      'Inactive': 'Pasif',
-      'UnderMaintenance': 'Bakımda',
-      'Retired': 'Kullanım Dışı',
-      0: 'Aktif',
-      1: 'Pasif',
-      2: 'Bakımda',
-      3: 'Kullanım Dışı'
-    };
-    return statusMap[status] || status.toString();
-  }
-
   getStatusClass(status: string): string {
-    const classMap: { [key: string]: string } = {
-      'Aktif': 'status-active',
-      'Pasif': 'status-inactive',
-      'Bakımda': 'status-maintenance',
-      'Kullanım Dışı': 'status-retired'
-    };
-    return classMap[status] || '';
+    return 'status-active';
   }
 }

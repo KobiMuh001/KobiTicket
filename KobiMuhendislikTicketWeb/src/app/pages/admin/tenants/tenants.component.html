@@ -328,6 +328,17 @@
           />
           <small class="form-hint">Geçerli bir e-posta adresi girin</small>
         </div>
+
+        <div class="form-group">
+          <label for="username">Kullanıcı Adı</label>
+          <input
+            type="text"
+            id="username"
+            [(ngModel)]="createForm.username"
+            placeholder="ornek_kullanici"
+          />
+          <small class="form-hint">İsteğe bağlı. Müşteri e-posta/vergi no yerine bununla da giriş yapabilir.</small>
+        </div>
         
         <div class="form-group">
           <label for="password">Şifre *</label>

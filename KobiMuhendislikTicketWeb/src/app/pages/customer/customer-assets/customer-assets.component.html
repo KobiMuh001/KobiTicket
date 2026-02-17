@@ -1,7 +1,7 @@
 <div class="customer-assets">
   <div class="page-header">
-    <h1>Varlıklarım</h1>
-    <p>Firmanıza ait kayıtlı varlıkları buradan görüntüleyebilirsiniz.</p>
+    <h1>Ürünlerim</h1>
+    <p>Firmanıza ait kayıtlı ürünleri buradan görüntüleyebilirsiniz.</p>
   </div>
 
   <!-- Search -->
@@ -13,7 +13,7 @@
       </svg>
       <input 
         type="text" 
-        placeholder="Varlık ara (isim, seri no)..."
+        placeholder="Ürün ara (isim)..."
         [(ngModel)]="searchQuery"
         (ngModelChange)="applyFilter()">
     </div>
@@ -24,24 +24,24 @@
       <div class="loading-spinner"></div>
       <p>Yükleniyor...</p>
     </div>
-  } @else if (filteredAssets.length === 0) {
+  } @else if (filteredProducts.length === 0) {
     <div class="empty-state">
       <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
         <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
         <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
       </svg>
-      @if (assets.length === 0) {
-        <h3>Kayıtlı Varlık Yok</h3>
-        <p>Firmanıza ait henüz kayıtlı varlık bulunmamaktadır.</p>
+      @if (products.length === 0) {
+        <h3>Kayıtlı Ürün Yok</h3>
+        <p>Firmanıza ait henüz kayıtlı ürün bulunmamaktadır.</p>
       } @else {
         <h3>Sonuç Bulunamadı</h3>
-        <p>Arama kriterlerinize uygun varlık bulunamadı.</p>
+        <p>Arama kriterlerinize uygun ürün bulunamadı.</p>
         <button class="btn-clear" (click)="searchQuery = ''; applyFilter()">Aramayı Temizle</button>
       }
     </div>
   } @else {
     <div class="assets-grid">
-      @for (asset of filteredAssets; track asset.id) {
+      @for (product of filteredProducts; track product.productId) {
         <div class="asset-card">
           <div class="asset-icon">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -51,35 +51,37 @@
           </div>
           
           <div class="asset-content">
-            <h3 class="asset-name">{{ asset.name }}</h3>
-            <span class="badge" [ngClass]="getStatusClass(asset.status)">{{ asset.status }}</span>
+            <h3 class="asset-name">{{ product.productName }}</h3>
+            <span class="badge" [ngClass]="getStatusClass('active')">Aktif</span>
             
             <div class="asset-details">
               <div class="detail-item">
-                <span class="label">Cihaz Adı:</span>
-                <span class="value">{{ asset.name }}</span>
+                <span class="label">Ürün Adı:</span>
+                <span class="value">{{ product.productName }}</span>
               </div>
-              <div class="detail-item">
-                <span class="label">Seri No:</span>
-                <span class="value">{{ asset.serialNumber }}</span>
-              </div>
-              @if (asset.description) {
+              @if (product.description) {
                 <div class="detail-item">
                   <span class="label">Açıklama:</span>
-                  <span class="value description">{{ asset.description }}</span>
+                  <span class="value description">{{ product.description }}</span>
                 </div>
               }
-              @if (asset.createdAt) {
+              @if (product.acquisitionDate) {
                 <div class="detail-item">
-                  <span class="label">Kayıt Tarihi:</span>
-                  <span class="value">{{ asset.createdAt | date:'dd.MM.yyyy' }}</span>
+                  <span class="label">Sahiplik Tarihi:</span>
+                  <span class="value">{{ product.acquisitionDate | date:'dd.MM.yyyy' }}</span>
+                </div>
+              }
+              @if (product.warrantyEndDate) {
+                <div class="detail-item">
+                  <span class="label">Garanti Bitiş Tarihi:</span>
+                  <span class="value">{{ product.warrantyEndDate | date:'dd.MM.yyyy' }}</span>
                 </div>
               }
             </div>
           </div>
 
           <div class="asset-actions">
-            <a [routerLink]="['/customer/tickets/new']" [queryParams]="{assetId: asset.id}" class="btn-create-ticket">
+            <a [routerLink]="['/customer/tickets/new']" [queryParams]="{productId: product.productId}" class="btn-create-ticket">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/>
                 <line x1="12" y1="8" x2="12" y2="16"/>

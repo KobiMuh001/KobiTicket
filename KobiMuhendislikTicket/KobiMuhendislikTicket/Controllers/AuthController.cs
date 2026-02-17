@@ -56,8 +56,13 @@ public class AuthController : ControllerBase
             var token = GenerateJwtToken(request.Identifier, "Admin");
             return Ok(new LoginResponseDto { Token = token, CompanyName = "Kobi Mühendislik Yönetim" });
         }
+        var identifier = (request.Identifier ?? string.Empty).Trim();
+        var identifierLower = identifier.ToLower();
+
         var tenant = await _context.Tenants.FirstOrDefaultAsync(t =>
-            t.TaxNumber == request.Identifier || t.Email == request.Identifier);
+            t.TaxNumber == identifier ||
+            t.Email.ToLower() == identifierLower ||
+            (t.Username != null && t.Username.ToLower() == identifierLower));
 
         
         if (tenant != null && BCrypt.Net.BCrypt.Verify(request.Password, tenant.PasswordHash))

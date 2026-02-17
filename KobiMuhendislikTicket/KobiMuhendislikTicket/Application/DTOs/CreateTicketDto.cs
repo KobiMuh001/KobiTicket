@@ -15,8 +15,8 @@ namespace KobiMuhendislikTicket.Application.DTOs
         public DateTime? UpdatedDate { get; set; }
         public int TenantId { get; set; }
         public string? CompanyName { get; set; }
-        public int? AssetId { get; set; }
-        public string? AssetName { get; set; }
+        public int? ProductId { get; set; }
+        public string? ProductName { get; set; }
         public string? ImagePath { get; set; }
     }
 
@@ -25,7 +25,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public int Priority { get; set; } = 2; 
-        public int AssetId { get; set; } 
+        public int? ProductId { get; set; }
         public string? ImagePath { get; set; }
     }
 

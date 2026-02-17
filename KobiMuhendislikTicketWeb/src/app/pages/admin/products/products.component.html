@@ -1,0 +1,183 @@
+<div class="products-page">
+  <div class="page-header">
+    <div class="header-content">
+      <h1 class="page-title">Ürünler</h1>
+      <p class="page-subtitle">Global ürünleri ve bağlı firma sayılarını görüntüleyin</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary" (click)="openCreateModal()">Yeni Ürün</button>
+      <button class="btn btn-secondary" (click)="loadProducts()">Yenile</button>
+    </div>
+  </div>
+
+  <div class="filters-section">
+    <div class="search-box">
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="onSearch()"
+        placeholder="Ürün adı veya açıklama ara..."
+        class="search-input"
+      />
+    </div>
+  </div>
+
+  @if (errorMessage) {
+    <div class="alert alert-error">
+      {{ errorMessage }}
+      <button class="alert-close" (click)="errorMessage = ''">×</button>
+    </div>
+  }
+
+  @if (isLoading) {
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p>Ürünler yükleniyor...</p>
+    </div>
+  } @else {
+    @if (filteredProducts.length === 0) {
+      <div class="empty-state">
+        <h3>Ürün bulunamadı</h3>
+        <p>Aramanıza uygun ürün yok.</p>
+      </div>
+    } @else {
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Ürün Adı</th>
+              <th>Açıklama</th>
+              <th>Firma Sayısı</th>
+              <th>İşlem</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (product of filteredProducts; track product.id) {
+              <tr (click)="openProduct(product.id)">
+                <td class="product-name">{{ product.name }}</td>
+                <td>{{ product.description || '-' }}</td>
+                <td>{{ product.tenantCount }}</td>
+                <td class="actions">
+                  <button class="btn btn-secondary btn-sm" (click)="openEditModal(product, $event)">Düzenle</button>
+                  <button class="btn btn-danger btn-sm" (click)="openDeleteModal(product, $event)">Sil</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</div>
+
+@if (showCreateModal) {
+  <div class="modal-overlay" (click)="closeCreateModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Yeni Ürün Ekle</h2>
+        <button class="modal-close" (click)="closeCreateModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="productName">Ürün Adı *</label>
+          <input
+            id="productName"
+            type="text"
+            [(ngModel)]="newProduct.name"
+            class="form-input"
+            placeholder="Ör: izRP Finans Modülü"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="productDescription">Açıklama</label>
+          <textarea
+            id="productDescription"
+            [(ngModel)]="newProduct.description"
+            class="form-input"
+            rows="3"
+            placeholder="Ürün açıklaması"
+          ></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeCreateModal()">İptal</button>
+        <button class="btn btn-primary" (click)="createProduct()" [disabled]="isSubmitting">
+          @if (isSubmitting) {
+            Kaydediliyor...
+          } @else {
+            Kaydet
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showEditModal) {
+  <div class="modal-overlay" (click)="closeEditModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Ürün Düzenle</h2>
+        <button class="modal-close" (click)="closeEditModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="editProductName">Ürün Adı *</label>
+          <input
+            id="editProductName"
+            type="text"
+            [(ngModel)]="editProduct.name"
+            class="form-input"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="editProductDescription">Açıklama</label>
+          <textarea
+            id="editProductDescription"
+            [(ngModel)]="editProduct.description"
+            class="form-input"
+            rows="3"
+          ></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeEditModal()">İptal</button>
+        <button class="btn btn-primary" (click)="updateProduct()" [disabled]="isSubmitting">
+          @if (isSubmitting) {
+            Kaydediliyor...
+          } @else {
+            Güncelle
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showDeleteModal) {
+  <div class="modal-overlay" (click)="closeDeleteModal()">
+    <div class="modal modal-sm" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Ürün Sil</h2>
+        <button class="modal-close" (click)="closeDeleteModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <p>
+          <strong>{{ editProduct.name }}</strong> ürününü silmek istediğinize emin misiniz?
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeDeleteModal()">İptal</button>
+        <button class="btn btn-danger" (click)="deleteProduct()" [disabled]="isSubmitting">
+          @if (isSubmitting) {
+            Siliniyor...
+          } @else {
+            Sil
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

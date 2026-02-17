@@ -60,7 +60,7 @@ export interface StaffTicket {
   updatedDate?: string;
   tenantId: number;
   companyName?: string;
-  assetId?: number;
+  productId?: number;
   assetName?: string;
   imagePath?: string;
 }

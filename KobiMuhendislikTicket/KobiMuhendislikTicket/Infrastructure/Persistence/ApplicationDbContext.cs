@@ -20,6 +20,8 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence
         public DbSet<TicketImage> TicketImages { get; set; }
         public DbSet<Staff> Staff { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        public DbSet<Product> Products { get; set; }
+        public DbSet<ProductTenant> ProductTenants { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -55,6 +57,32 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence
                 .HasMany(t => t.TicketImages)
                 .WithOne(i => i.Ticket)
                 .HasForeignKey(i => i.TicketId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Ticket>()
+                .HasOne(t => t.Product)
+                .WithMany()
+                .HasForeignKey(t => t.ProductId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Product>()
+                .Property(p => p.Name)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            modelBuilder.Entity<ProductTenant>()
+                .HasKey(pt => new { pt.ProductId, pt.TenantId });
+
+            modelBuilder.Entity<ProductTenant>()
+                .HasOne(pt => pt.Product)
+                .WithMany(p => p.ProductTenants)
+                .HasForeignKey(pt => pt.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ProductTenant>()
+                .HasOne(pt => pt.Tenant)
+                .WithMany(t => t.ProductTenants)
+                .HasForeignKey(pt => pt.TenantId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Seed Staff Data
@@ -94,6 +122,33 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence
                     IsActive = true,
                     MaxConcurrentTickets = 5,
                     CreatedDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                }
+            );
+
+            modelBuilder.Entity<Product>().HasData(
+                new Product
+                {
+                    Id = 1,
+                    Name = "izRP Finans Modülü",
+                    Description = "Finans süreçleri için temel ürün modülü.",
+                    CreatedDate = new DateTime(2026, 2, 17, 0, 0, 0, DateTimeKind.Utc),
+                    IsDeleted = false
+                },
+                new Product
+                {
+                    Id = 2,
+                    Name = "izRP İnsan Kaynakları",
+                    Description = "İK operasyonları için temel ürün modülü.",
+                    CreatedDate = new DateTime(2026, 2, 17, 0, 0, 0, DateTimeKind.Utc),
+                    IsDeleted = false
+                },
+                new Product
+                {
+                    Id = 3,
+                    Name = "izRP Muhasebe",
+                    Description = "Muhasebe süreçleri için temel ürün modülü.",
+                    CreatedDate = new DateTime(2026, 2, 17, 0, 0, 0, DateTimeKind.Utc),
+                    IsDeleted = false
                 }
             );
 

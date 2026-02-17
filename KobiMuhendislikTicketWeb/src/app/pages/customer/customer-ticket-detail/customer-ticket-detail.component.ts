@@ -169,7 +169,7 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
             ...found,
             statusText: this.getStatusText(found.status),
             priorityText: this.getPriorityText(found.priority),
-            assetName: found.asset?.productName || found.asset?.name || found.assetName
+            assetName: found.productName || found.asset?.productName || found.asset?.name || found.assetName
           };
         }
         this.isLoading = false;

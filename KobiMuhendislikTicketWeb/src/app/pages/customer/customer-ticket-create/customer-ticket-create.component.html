@@ -103,16 +103,16 @@
         </div>
 
         <div class="form-group">
-          <label for="asset">İlgili Varlık (Opsiyonel)</label>
+          <label for="product">İlgili Ürün</label>
           @if (isLoading) {
-            <select id="asset" disabled>
+            <select id="product" disabled>
               <option>Yükleniyor...</option>
             </select>
           } @else {
-            <select id="asset" [(ngModel)]="ticket.assetId" name="assetId">
-              <option [ngValue]="null">Varlık Seçin (Opsiyonel)</option>
-              @for (asset of assets; track asset.id) {
-                <option [ngValue]="asset.id">{{ asset.name }} ({{ asset.serialNumber }})</option>
+            <select id="product" [(ngModel)]="ticket.productId" name="productId">
+              <option [ngValue]="null">Ürün Seçin (Opsiyonel)</option>
+              @for (product of products; track product.productId) {
+                <option [ngValue]="product.productId">{{ product.productName }}</option>
               }
             </select>
           }
