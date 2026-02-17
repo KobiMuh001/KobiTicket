@@ -227,7 +227,7 @@ builder.Services.AddCors(options =>
 
 
 var app = builder.Build();
-/*
+
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -244,7 +244,7 @@ using (var scope = app.Services.CreateScope())
         throw;
     }
 }
-*/
+
 var webRootPath = app.Environment.WebRootPath;
 if (string.IsNullOrWhiteSpace(webRootPath))
 {
