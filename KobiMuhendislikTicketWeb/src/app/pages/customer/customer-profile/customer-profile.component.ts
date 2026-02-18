@@ -34,6 +34,7 @@ export class CustomerProfileComponent implements OnInit {
   editForm = {
     phoneNumber: ''
   };
+  phoneError = '';
 
   passwordForm = {
     currentPassword: '',
@@ -85,6 +86,7 @@ export class CustomerProfileComponent implements OnInit {
       this.isEditing = true;
       this.successMessage = '';
       this.errorMessage = '';
+      this.phoneError = '';
     }
   }
 
@@ -93,13 +95,23 @@ export class CustomerProfileComponent implements OnInit {
     this.errorMessage = '';
     this.selectedLogoFile = null;
     this.clearLogoPreview();
+    this.phoneError = '';
   }
 
   saveProfile(): void {
-    this.isSaving = true;
+    this.phoneError = '';
     this.errorMessage = '';
 
-    // DTO mapping - frontend property adlarını backend DTO'suyla eşleştir
+    // Validate phone format before submitting
+    if (!this.isPhoneValid()) {
+      this.phoneError = 'Telefon numarası formatı geçersiz. Örnek: 0(5xx) xxx xx xx';
+      this.errorMessage = this.phoneError; // also show top banner for visibility
+      return;
+    }
+
+    this.isSaving = true;
+
+    // DTO mapping - frontend property adlarını backend DTO'sıyla eşleştir
     const updateDto = {
       phoneNumber: this.editForm.phoneNumber
     };
@@ -129,6 +141,13 @@ export class CustomerProfileComponent implements OnInit {
         this.isSaving = false;
       }
     });
+  }
+
+  isPhoneValid(): boolean {
+    const phone = (this.editForm.phoneNumber || '').trim();
+    // Strict format: 0(5xx) xxx xx xx
+    const re = /^0\(5\d{2}\) \d{3} \d{2} \d{2}$/;
+    return re.test(phone);
   }
 
   private finishSaveSuccess(): void {

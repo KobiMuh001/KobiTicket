@@ -110,13 +110,14 @@
           </div>
         </div>
       }
-      <button class="logout-btn" (click)="logout()" title="Çıkış Yap">
+      <button class="logout-btn" (click)="openLogoutConfirm()" title="Çıkış Yap">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
           <polyline points="16 17 21 12 16 7"/>
           <line x1="21" y1="12" x2="9" y2="12"/>
         </svg>
       </button>
+      <!-- logout card placeholder (moved to centered overlay) -->
     </div>
   </aside>
 
@@ -136,17 +137,17 @@
               <span class="notification-badge">{{ unreadCount }}</span>
             }
           </button>
+
           @if (showNotificationDropdown) {
             <div class="notifications-dropdown card" (click)="$event.stopPropagation()">
               <div class="dropdown-header card-header">
                 <h3>Bildirimler</h3>
                 @if (unreadCount > 0) {
                   <span class="unread-count">{{ unreadCount }} yeni</span>
-                  <button class="mark-all-btn" (click)="markAllAsRead()">
-                    Tumunu Okundu Isaretle
-                  </button>
+                  <button class="mark-all-btn" (click)="markAllAsRead()">Tumunu Okundu Isaretle</button>
                 }
               </div>
+
               <div class="notifications-list">
                 @if (notifications.length === 0) {
                   <div class="empty-state">
@@ -187,6 +188,7 @@
                   </table>
                 }
               </div>
+
               @if (notifications.length > 5) {
                 <div class="dropdown-footer">
                   <a routerLink="/admin/tickets" class="view-all" (click)="showNotificationDropdown = false">
@@ -198,6 +200,25 @@
                   </a>
                 </div>
               }
+            </div>
+          }
+
+          <!-- Logout overlay (centered) -->
+          @if (showLogoutConfirm) {
+            <div class="logout-overlay" (click)="closeLogoutConfirm()">
+              <div class="logout-card card" (click)="$event.stopPropagation()">
+                <div class="card-header">
+                  <h3>Çıkış Yap</h3>
+                  <button class="modal-close" (click)="closeLogoutConfirm()">×</button>
+                </div>
+                <div class="card-body">
+                  <p>Oturumdan çıkmak istediğinize emin misiniz?</p>
+                </div>
+                <div class="card-actions">
+                  <button class="btn btn-outline" (click)="closeLogoutConfirm()">İptal</button>
+                  <button class="btn btn-danger" (click)="confirmLogout()">Çıkış Yap</button>
+                </div>
+              </div>
             </div>
           }
         </div>

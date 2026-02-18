@@ -94,6 +94,20 @@ namespace KobiMuhendislikTicket.Controllers
             return Ok(new { success = true, message });
         }
 
+        [HttpGet("admin/tenants/{tenantId}/products")]
+        public async Task<IActionResult> GetTenantProductsForAdmin(int tenantId)
+        {
+            var products = await _productService.GetTenantProductsAsync(tenantId);
+            return Ok(new { success = true, data = products });
+        }
+
+        [HttpGet("admin/tenant-products")]
+        public async Task<IActionResult> GetAllTenantProductsForAdmin()
+        {
+            var products = await _productService.GetAllTenantProductsForAdminAsync();
+            return Ok(new { success = true, data = products });
+        }
+
         [AllowAnonymous]
         [HttpGet("tenant/{tenantId}")]
         public async Task<IActionResult> GetTenantProducts(int tenantId)

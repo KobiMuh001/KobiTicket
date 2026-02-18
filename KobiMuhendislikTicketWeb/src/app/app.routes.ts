@@ -52,6 +52,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/admin/tenants/tenants.component').then(m => m.TenantsComponent)
       },
       {
+        path: 'tenants/:id/products',
+        loadComponent: () => import('./pages/admin/tenants/tenant-products/tenant-products.component').then(m => m.TenantProductsComponent)
+      },
+      {
         path: 'tenants/:id',
         loadComponent: () => import('./pages/admin/tenants/tenant-edit/tenant-edit.component').then(m => m.TenantEditComponent)
       },

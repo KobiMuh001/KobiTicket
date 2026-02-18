@@ -54,6 +54,16 @@ export interface TenantProductItem {
   acquisitionDate?: string;
 }
 
+export interface AdminTenantProductItem {
+  tenantId: number;
+  tenantName: string;
+  tenantEmail: string;
+  productId: number;
+  productName: string;
+  warrantyEndDate?: string;
+  acquisitionDate?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -92,6 +102,14 @@ export class ProductService {
 
   removeProductFromTenant(productId: number, tenantId: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/products/admin/${productId}/tenants/${tenantId}`);
+  }
+
+  getTenantProductsForAdmin(tenantId: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/products/admin/tenants/${tenantId}/products`);
+  }
+
+  getAllTenantProductsForAdmin(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/products/admin/tenant-products`);
   }
 
   getTenantProducts(tenantId: number): Observable<any> {

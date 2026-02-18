@@ -40,6 +40,10 @@ export class ProductTenantsComponent implements OnInit {
     warrantyEndDate: '',
     acquisitionDate: ''
   };
+  // Remove-confirm modal state
+  showRemoveConfirm = false;
+  tenantToRemoveId: number | null = null;
+  tenantToRemoveName = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -169,8 +173,8 @@ export class ProductTenantsComponent implements OnInit {
 
   openAssignModal(): void {
     this.selectedTenantId = null;
-    this.warrantyEndDate = '';
-    this.acquisitionDate = '';
+    this.acquisitionDate = this.getTodayInput();
+    this.warrantyEndDate = this.getOneYearLaterInput();
     this.errorMessage = '';
     this.successMessage = '';
     this.showAssignModal = true;
@@ -243,7 +247,32 @@ export class ProductTenantsComponent implements OnInit {
   closeDropdown(): void {
     setTimeout(() => {
       this.showDropdown = false;
-    }, 150);
+    }, 250);
+  }
+
+  onTenantInputChange(value: string): void {
+    this.searchTenantQuery = value;
+    this.showDropdown = true;
+
+    if (value !== this.selectedTenantName) {
+      this.selectedTenantId = null;
+    }
+  }
+
+  onTenantOptionMouseDown(event: MouseEvent, tenantId: number, companyName: string): void {
+    event.preventDefault();
+    this.selectTenant(tenantId, companyName);
+  }
+
+  private getTodayInput(): string {
+    const today = new Date();
+    return this.toDateInput(today.toISOString());
+  }
+
+  private getOneYearLaterInput(): string {
+    const nextYear = new Date();
+    nextYear.setFullYear(nextYear.getFullYear() + 1);
+    return this.toDateInput(nextYear.toISOString());
   }
 
   selectTenant(tenantId: number, companyName: string): void {
@@ -251,5 +280,26 @@ export class ProductTenantsComponent implements OnInit {
     this.selectedTenantName = companyName;
     this.searchTenantQuery = '';
     this.showDropdown = false;
+  }
+
+  openRemoveConfirm(tenantId: number, companyName: string): void {
+    this.tenantToRemoveId = tenantId;
+    this.tenantToRemoveName = companyName || '';
+    this.showRemoveConfirm = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+  }
+
+  closeRemoveConfirm(): void {
+    this.showRemoveConfirm = false;
+    this.tenantToRemoveId = null;
+    this.tenantToRemoveName = '';
+  }
+
+  confirmRemoveTenant(): void {
+    if (!this.tenantToRemoveId) return;
+    const id = this.tenantToRemoveId;
+    this.closeRemoveConfirm();
+    this.removeTenant(id);
   }
 }

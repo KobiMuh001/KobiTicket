@@ -88,7 +88,7 @@
         } @else {
           <div class="ticket-list">
             @for (ticket of myTickets; track ticket.id) {
-              <a [routerLink]="['/staff/my-tickets', ticket.id]" class="ticket-item">
+              <a [routerLink]="['/staff/tickets', ticket.id]" class="ticket-item">
                 <div class="ticket-info">
                   <span class="ticket-title">{{ ticket.title }}</span>
                   <span class="ticket-company">{{ ticket.companyName }}</span>
@@ -124,22 +124,22 @@
         } @else {
           <div class="ticket-list">
             @for (ticket of unassignedTickets; track ticket.id) {
-              <div class="ticket-item unassigned">
-                <div class="ticket-info">
-                  <span class="ticket-title">{{ ticket.title }}</span>
-                  <span class="ticket-company">{{ ticket.companyName }}</span>
-                </div>
-                <div class="ticket-actions">
-                  <span class="priority" [class]="getPriorityClass(ticket.priority)">
-                    {{ getPriorityText(ticket.priority) }}
-                  </span>
-                  <button class="claim-btn" (click)="claimTicket(ticket.id)" 
-                          [disabled]="workload && !workload.isAvailable">
-                    Üstlen
-                  </button>
-                </div>
-              </div>
-            }
+                <a [routerLink]="['/staff/tickets', ticket.id]" class="ticket-item unassigned" (click)="onTicketSelect(ticket.id)">
+                  <div class="ticket-info">
+                    <span class="ticket-title">{{ ticket.title }}</span>
+                    <span class="ticket-company">{{ ticket.companyName }}</span>
+                  </div>
+                  <div class="ticket-actions">
+                    <span class="priority" [class]="getPriorityClass(ticket.priority)">
+                      {{ getPriorityText(ticket.priority) }}
+                    </span>
+                    <button class="claim-btn" (click)="$event.preventDefault(); $event.stopPropagation(); claimTicket(ticket.id)" 
+                            [disabled]="workload && !workload.isAvailable">
+                      Üstlen
+                    </button>
+                  </div>
+                </a>
+              }
           </div>
         }
       </div>

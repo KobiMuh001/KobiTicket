@@ -119,11 +119,11 @@
                 <td class="date-cell">{{ formatDate(ticket.createdDate) }}</td>
                 <td class="actions-cell" (click)="$event.stopPropagation()">
                   @if (ticket.status !== 4 && ticket.status !== 5) {
-                    <button class="action-btn release" (click)="releaseTicket(ticket.id, $event)" 
-                            title="Ticketı Bırak">
+                      <button class="action-btn release" (click)="openReleaseConfirm(ticket.id, $event, ticket.title)" 
+                              title="Ticketı Bırak">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="9 11 12 14 22 4"/>
-                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                        <line x1="21" y1="12" x2="7" y2="12" />
+                        <polyline points="14 5 7 12 14 19" />
                       </svg>
                     </button>
                   }
@@ -174,11 +174,11 @@
             </div>
 
             <div class="ticket-card-actions actions-cell" (click)="$event.stopPropagation()">
-              @if (ticket.status !== 4 && ticket.status !== 5) {
-                <button class="action-btn release" (click)="releaseTicket(ticket.id, $event)" title="Ticketı Bırak">
+                @if (ticket.status !== 4 && ticket.status !== 5) {
+                <button class="action-btn release" (click)="openReleaseConfirm(ticket.id, $event, ticket.title)" title="Ticketı Bırak">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="9 11 12 14 22 4"/>
-                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    <line x1="21" y1="12" x2="7" y2="12" />
+                    <polyline points="14 5 7 12 14 19" />
                   </svg>
                 </button>
               }
@@ -212,4 +212,26 @@
       </div>
     }
   </div>
+
+  <!-- Release confirmation modal -->
+  @if (showReleaseConfirm) {
+    <div class="release-overlay" (click)="closeReleaseConfirm()">
+      <div class="release-card card" (click)="$event.stopPropagation()">
+        <div class="card-header">
+          <h3>Ticketı Bırak</h3>
+          <button class="modal-close" (click)="closeReleaseConfirm()">×</button>
+        </div>
+        <div class="card-body">
+          <p>Bu ticketı bırakmak istediğinize emin misiniz?</p>
+          @if (ticketToReleaseTitle) {
+            <p><strong>{{ ticketToReleaseTitle }}</strong></p>
+          }
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-outline" (click)="closeReleaseConfirm()">İptal</button>
+          <button class="btn btn-danger" (click)="confirmRelease()">Tamam</button>
+        </div>
+      </div>
+    </div>
+  }
 </div>

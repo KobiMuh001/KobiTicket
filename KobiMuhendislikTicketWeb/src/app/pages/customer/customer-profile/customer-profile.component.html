@@ -208,6 +208,9 @@
               </div>
               <div class="info-content">
                 <span class="info-label">E-posta</span>
+             @if (phoneError) {
+               <small class="error-text">{{ phoneError }}</small>
+             }
                 <span class="info-value">{{ profile.email }}</span>
               </div>
             </div>

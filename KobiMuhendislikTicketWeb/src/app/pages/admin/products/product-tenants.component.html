@@ -59,11 +59,17 @@
                 <td>{{ tenant.acquisitionDate ? (tenant.acquisitionDate | date:'dd.MM.yyyy') : '-' }}</td>
                 <td>{{ tenant.warrantyEndDate ? (tenant.warrantyEndDate | date:'dd.MM.yyyy') : '-' }}</td>
                 <td>
-                  <button class="btn btn-secondary btn-sm" (click)="openEditModal(tenant.tenantId)" [disabled]="isSaving">
-                    Düzenle
+                  <button class="action-btn" title="Düzenle" aria-label="Düzenle" (click)="openEditModal(tenant.tenantId)" [disabled]="isSaving">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
                   </button>
-                  <button class="btn btn-danger btn-sm" (click)="removeTenant(tenant.tenantId)" [disabled]="isSaving">
-                    Kaldır
+                  <button class="action-btn action-btn--danger" title="Kaldır" aria-label="Kaldır" (click)="openRemoveConfirm(tenant.tenantId, tenant.companyName)" [disabled]="isSaving">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
                   </button>
                 </td>
               </tr>
@@ -83,32 +89,32 @@
         <button class="modal-close" (click)="closeAssignModal()">×</button>
       </div>
       <div class="modal-body">
-      <div class="form-group">
-        <label>Firma *</label>
-        <div class="dropdown-container">
-          <input
-            type="text"
-            [(ngModel)]="selectedTenantName"
-            (focus)="openDropdown()"
-            (blur)="closeDropdown()"
-            (ngModelChange)="searchTenantQuery = $event"
-            placeholder="Firma seçin..."
-            class="form-input dropdown-input"
-          />
-          @if (showDropdown && getFilteredTenants().length > 0) {
-            <ul class="dropdown-list">
-              @for (tenant of getFilteredTenants(); track tenant.id) {
-                <li 
-                  (click)="selectTenant(tenant.id, tenant.companyName)"
-                  class="dropdown-item"
-                >
-                  {{ tenant.companyName }}
-                </li>
-              }
-            </ul>
-          }
+        <div class="form-group">
+          <label>Firma *</label>
+          <div class="dropdown-container">
+            <input
+              type="text"
+              [(ngModel)]="selectedTenantName"
+              (focus)="openDropdown()"
+              (blur)="closeDropdown()"
+              (ngModelChange)="onTenantInputChange($event)"
+              placeholder="Firma seçin..."
+              class="form-input dropdown-input"
+            />
+            @if (showDropdown && getFilteredTenants().length > 0) {
+              <ul class="dropdown-list">
+                @for (tenant of getFilteredTenants(); track tenant.id) {
+                  <li 
+                    (mousedown)="onTenantOptionMouseDown($event, tenant.id, tenant.companyName)"
+                    class="dropdown-item"
+                  >
+                    {{ tenant.companyName }}
+                  </li>
+                }
+              </ul>
+            }
+          </div>
         </div>
-      </div>
         <div class="form-group">
           <label>Garanti Bitiş Tarihi *</label>
           <input type="date" [(ngModel)]="warrantyEndDate" class="form-input" />
@@ -148,6 +154,24 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" (click)="closeEditModal()">İptal</button>
         <button class="btn btn-primary" (click)="saveEditModal()" [disabled]="isSaving">Kaydet</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showRemoveConfirm) {
+  <div class="modal-overlay" (click)="closeRemoveConfirm()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Firma Kaldır</h2>
+        <button class="modal-close" (click)="closeRemoveConfirm()">×</button>
+      </div>
+      <div class="modal-body">
+        <p>“{{ tenantToRemoveName }}” firmasını bu üründen kaldırmak istediğinize emin misiniz?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeRemoveConfirm()">İptal</button>
+        <button class="btn btn-danger" (click)="confirmRemoveTenant()" [disabled]="isSaving">Kaldır</button>
       </div>
     </div>
   </div>

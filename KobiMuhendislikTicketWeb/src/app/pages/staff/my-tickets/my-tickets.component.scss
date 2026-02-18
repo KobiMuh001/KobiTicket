@@ -641,3 +641,70 @@
     display: grid;
   }
 }
+
+/* Release confirmation modal styles */
+.release-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 1200;
+  padding: 1rem;
+}
+
+.release-card {
+  width: 420px;
+  max-width: 95%;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(2,6,23,0.12);
+  overflow: hidden;
+  border: 1px solid #eef2f7;
+  animation: popUp 0.18s ease-out;
+}
+
+.release-card .card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.release-card .modal-close {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: #64748b;
+}
+
+.release-card .card-body {
+  padding: 1rem 1.25rem;
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+
+.release-card .card-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem 1.25rem;
+  justify-content: flex-end;
+}
+
+.release-card .btn-danger {
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  padding: .625rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+@keyframes popUp {
+  from { transform: translateY(8px) scale(0.995); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}

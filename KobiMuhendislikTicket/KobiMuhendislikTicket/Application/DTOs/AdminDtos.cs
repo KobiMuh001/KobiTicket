@@ -86,6 +86,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
     {
         public int Id { get; set; }
         public string CompanyName { get; set; } = string.Empty;
+        public string? Username { get; set; }
         public string TaxNumber { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string? PhoneNumber { get; set; }
