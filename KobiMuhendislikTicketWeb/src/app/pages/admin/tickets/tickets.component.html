@@ -135,7 +135,7 @@
                   </div>
                 </td>
                 <td>{{ ticket.tenantName || '-' }}</td>
-                <td>{{ ticket.assetName || '-' }}</td>
+                <td>{{ ticket.productName || ticket.assetName || '-' }}</td>
                 <td>
                   <span class="badge" [class]="'badge--' + getStatusClass(ticket.status)">
                     {{ getStatusText(ticket.status) }}
@@ -189,7 +189,7 @@
               </div>
               <div class="meta-row">
                 <span class="meta-label">Varlık</span>
-                <span class="meta-value">{{ ticket.assetName || '-' }}</span>
+                <span class="meta-value">{{ ticket.productName || ticket.assetName || '-' }}</span>
               </div>
               <div class="meta-row">
                 <span class="meta-label">Durum</span>

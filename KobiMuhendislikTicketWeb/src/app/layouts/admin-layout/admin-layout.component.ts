@@ -46,12 +46,6 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
       active: false
     },
     {
-      title: 'Varlıklar',
-      icon: 'assets',
-      route: '/admin/assets',
-      active: false
-    },
-    {
       title: 'Ürünler',
       icon: 'products',
       route: '/admin/products',
@@ -64,12 +58,21 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
       active: false
     },
     {
+      title: 'Müşteri Ürün',
+      icon: 'assets',
+      route: '/admin/assets',
+      active: false
+    },
+    {
       title: 'Ayarlar',
       icon: 'settings',
       route: '/admin/settings',
       active: false
     }
   ];
+
+  // Logout confirmation modal state
+  showLogoutConfirm = false;
 
   constructor(
     private authService: AuthService,
@@ -225,7 +228,16 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
     this.isSidebarCollapsed = !this.isSidebarCollapsed;
   }
 
-  logout(): void {
+  openLogoutConfirm(): void {
+    this.showLogoutConfirm = true;
+  }
+
+  closeLogoutConfirm(): void {
+    this.showLogoutConfirm = false;
+  }
+
+  confirmLogout(): void {
+    this.showLogoutConfirm = false;
     this.authService.logout();
   }
 }

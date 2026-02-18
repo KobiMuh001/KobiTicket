@@ -1,0 +1,129 @@
+<div class="tenant-products-page">
+  <div class="page-header">
+    <button class="btn btn-secondary btn-icon" title="Müşteriye Dön" (click)="goBack()">←</button>
+
+    <div class="header-content">
+      <h1 class="page-title">{{ tenantName || 'Müşteri Ürünleri' }}</h1>
+      <p class="page-subtitle">Müşterinin sahip olduğu ürünleri görüntüleyin ve yönetin.</p>
+    </div>
+
+    <button class="btn btn-primary" (click)="openAssignModal()">Ürün Ekle</button>
+  </div>
+
+  @if (errorMessage) {
+    <div class="alert alert-error">
+      {{ errorMessage }}
+    </div>
+  }
+
+  @if (successMessage) {
+    <div class="alert alert-success">
+      {{ successMessage }}
+    </div>
+  }
+
+  @if (isLoading) {
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p>Ürün listesi yükleniyor...</p>
+    </div>
+  } @else {
+    @if (products.length === 0) {
+      <div class="empty-state">
+        <h3>Ürün bulunamadı</h3>
+        <p>Bu müşteriye bağlı ürün bulunmuyor.</p>
+      </div>
+    } @else {
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Ürün Adı</th>
+              <th>Sahiplik Tarihi</th>
+              <th>Garanti Bitiş</th>
+              <th>İşlem</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (product of products; track product.productId) {
+              <tr>
+                <td class="product-name">{{ product.productName }}</td>
+                <td>{{ product.acquisitionDate ? (product.acquisitionDate | date:'dd.MM.yyyy') : '-' }}</td>
+                <td>{{ product.warrantyEndDate ? (product.warrantyEndDate | date:'dd.MM.yyyy') : '-' }}</td>
+                <td>
+                  <button class="btn btn-secondary btn-sm" (click)="openEditModal(product.productId)" [disabled]="isSaving">
+                    Düzenle
+                  </button>
+                  <button class="btn btn-danger btn-sm" (click)="removeProduct(product.productId)" [disabled]="isSaving">
+                    Kaldır
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</div>
+
+@if (showAssignModal) {
+  <div class="modal-overlay" (click)="closeAssignModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Ürün Ekle</h2>
+        <button class="modal-close" (click)="closeAssignModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Ürün *</label>
+          <select [(ngModel)]="selectedProductId" class="form-select">
+            <option [ngValue]="null">Ürün seçin...</option>
+            @for (product of allProducts; track product.id) {
+              <option [ngValue]="product.id">{{ product.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Garanti Bitiş Tarihi *</label>
+          <input type="date" [(ngModel)]="warrantyEndDate" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label>Sahiplik Tarihi</label>
+          <input type="date" [(ngModel)]="acquisitionDate" class="form-input" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeAssignModal()">İptal</button>
+        <button class="btn btn-primary" (click)="assignProduct()" [disabled]="isSaving">
+          @if (isSaving) { Ekleniyor... } @else { Ekle }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showEditModal) {
+  <div class="modal-overlay" (click)="closeEditModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Ürün Bilgisi Düzenle</h2>
+        <button class="modal-close" (click)="closeEditModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Garanti Bitiş Tarihi *</label>
+          <input type="date" [(ngModel)]="editData.warrantyEndDate" class="date-input" />
+        </div>
+        <div class="form-group">
+          <label>Sahiplik Tarihi</label>
+          <input type="date" [(ngModel)]="editData.acquisitionDate" class="date-input" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeEditModal()">İptal</button>
+        <button class="btn btn-primary" (click)="saveEditModal()" [disabled]="isSaving">Kaydet</button>
+      </div>
+    </div>
+  </div>
+}

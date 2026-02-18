@@ -58,4 +58,15 @@ namespace KobiMuhendislikTicket.Application.DTOs
         public DateTime? WarrantyEndDate { get; set; }
         public DateTime? AcquisitionDate { get; set; }
     }
+
+    public class AdminTenantProductItemDto
+    {
+        public int TenantId { get; set; }
+        public string TenantName { get; set; } = string.Empty;
+        public string TenantEmail { get; set; } = string.Empty;
+        public int ProductId { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public DateTime? WarrantyEndDate { get; set; }
+        public DateTime? AcquisitionDate { get; set; }
+    }
 }

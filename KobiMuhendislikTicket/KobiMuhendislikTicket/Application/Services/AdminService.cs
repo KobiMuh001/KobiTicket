@@ -190,6 +190,7 @@ namespace KobiMuhendislikTicket.Application.Services
             return new TenantDetailDto
             {
                 Id = tenant.Id,
+                Username = tenant.Username,
                 CompanyName = tenant.CompanyName,
                 TaxNumber = tenant.TaxNumber,
                 Email = tenant.Email,

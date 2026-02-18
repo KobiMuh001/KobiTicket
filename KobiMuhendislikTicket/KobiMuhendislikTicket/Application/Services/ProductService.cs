@@ -208,5 +208,25 @@ namespace KobiMuhendislikTicket.Application.Services
                 .OrderBy(p => p.ProductName)
                 .ToListAsync();
         }
+
+        public async Task<List<AdminTenantProductItemDto>> GetAllTenantProductsForAdminAsync()
+        {
+            return await _context.ProductTenants
+                .AsNoTracking()
+                .Where(pt => !pt.Product.IsDeleted && pt.Tenant != null && !pt.Tenant.IsDeleted)
+                .Select(pt => new AdminTenantProductItemDto
+                {
+                    TenantId = pt.TenantId,
+                    TenantName = pt.Tenant!.CompanyName,
+                    TenantEmail = pt.Tenant.Email,
+                    ProductId = pt.ProductId,
+                    ProductName = pt.Product.Name,
+                    WarrantyEndDate = pt.WarrantyEndDate,
+                    AcquisitionDate = pt.AcquisitionDate
+                })
+                .OrderBy(x => x.TenantName)
+                .ThenBy(x => x.ProductName)
+                .ToListAsync();
+        }
     }
 }

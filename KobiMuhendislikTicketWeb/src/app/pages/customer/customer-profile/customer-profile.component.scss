@@ -335,6 +335,12 @@
   cursor: pointer;
   transition: all 0.2s;
 
+
+.error-text {
+  color: #dc2626;
+  font-size: 12px;
+  margin-top: 4px;
+}
   &:hover {
     background: #e5e7eb;
   }

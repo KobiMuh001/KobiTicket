@@ -27,6 +27,7 @@ export class CustomerTicketCreateComponent implements OnInit {
   isSubmitting = false;
   errorMessage = '';
   successMessage = '';
+  titleError = '';
   selectedFile: File | null = null;
   selectedFileName: string = '';
   imagePreviewUrl: string | null = null;
@@ -86,8 +87,16 @@ export class CustomerTicketCreateComponent implements OnInit {
   }
 
   onSubmit(): void {
+    this.titleError = '';
     if (!this.ticket.title || !this.ticket.description) {
       this.errorMessage = 'Lütfen başlık ve açıklama alanlarını doldurun.';
+      return;
+    }
+
+    // Title length validation: at least 3 characters
+    if ((this.ticket.title || '').trim().length < 3) {
+      this.titleError = 'Başlık en az 3 karakter olmalıdır.';
+      this.errorMessage = this.titleError;
       return;
     }
 
@@ -118,7 +127,36 @@ export class CustomerTicketCreateComponent implements OnInit {
         }
       },
       error: (err) => {
-        this.errorMessage = err.error?.message || 'Talep oluşturulurken bir hata oluştu.';
+        // Try to extract field-specific validation messages from backend
+        const backend = err.error || {};
+        let message = 'Talep oluşturulurken bir hata oluştu.';
+
+        const fieldMap: { [key: string]: string } = {
+          title: 'Başlık',
+          description: 'Açıklama',
+          productId: 'Ürün',
+          priority: 'Öncelik'
+        };
+
+        if (backend.errors && typeof backend.errors === 'object') {
+          const parts: string[] = [];
+          Object.keys(backend.errors).forEach(key => {
+            const msgs = backend.errors[key];
+            const label = fieldMap[key] || key;
+            if (Array.isArray(msgs)) {
+              parts.push(`${label}: ${msgs.join(', ')}`);
+            } else if (typeof msgs === 'string') {
+              parts.push(`${label}: ${msgs}`);
+            }
+          });
+          if (parts.length) message = parts.join(' | ');
+        } else if (backend.message) {
+          message = backend.message;
+        } else if (err.error && typeof err.error === 'string') {
+          message = err.error;
+        }
+
+        this.errorMessage = message;
         this.isSubmitting = false;
       }
     });

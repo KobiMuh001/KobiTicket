@@ -1,14 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { AssetService, Asset, CreateAssetDto } from '../../../core/services/asset.service';
-import { TenantService } from '../../../core/services/tenant.service';
-
-interface Tenant {
-  id: string;
-  companyName: string;
-}
+import { ProductService, AdminTenantProductItem } from '../../../core/services/product.service';
 
 @Component({
   selector: 'app-assets',
@@ -18,84 +12,173 @@ interface Tenant {
   styleUrls: ['./assets.component.scss']
 })
 export class AssetsComponent implements OnInit {
-  assets: Asset[] = [];
-  filteredAssets: Asset[] = [];
-  tenants: Tenant[] = [];
+  items: AdminTenantProductItem[] = [];
+  filteredItems: AdminTenantProductItem[] = [];
   isLoading = true;
+  isSaving = false;
   errorMessage = '';
+  successMessage = '';
   searchTerm = '';
 
-  // Modal states
-  showCreateModal = false;
-  showDeleteModal = false;
-  assetToDelete: Asset | null = null;
-  isSubmitting = false;
-
-  // Create form
-  newAsset: CreateAssetDto = {
-    productName: '',
-    serialNumber: '',
-    tenantId: '',
-    warrantyEndDate: ''
-  };
+  showEditModal = false;
+  editingItem: AdminTenantProductItem | null = null;
+  editWarrantyEndDate = '';
+  editAcquisitionDate = '';
+  // remove-confirm modal state
+  showRemoveConfirm = false;
+  itemToRemove: AdminTenantProductItem | null = null;
 
   // Pagination
   currentPage = 1;
   itemsPerPage = 10;
   totalPages = 1;
 
-  constructor(
-    private assetService: AssetService,
-    private tenantService: TenantService,
-    private router: Router
-  ) {}
+  constructor(private productService: ProductService) {}
 
   ngOnInit(): void {
-    this.loadAssets();
-    this.loadTenants();
+    this.loadItems();
   }
 
-  loadAssets(): void {
+  loadItems(): void {
     this.isLoading = true;
-    this.assetService.getAssets().subscribe({
+    this.productService.getAllTenantProductsForAdmin().subscribe({
       next: (response) => {
-        this.assets = response.data || [];
+        this.items = response?.data || [];
         this.applyFilter();
         this.isLoading = false;
       },
       error: () => {
-        this.errorMessage = 'Varlıklar yüklenirken bir hata oluştu.';
+        this.errorMessage = 'Müşteri ürünleri yüklenirken bir hata oluştu.';
         this.isLoading = false;
-      }
-    });
-  }
-
-  loadTenants(): void {
-    this.tenantService.getTenants().subscribe({
-      next: (response) => {
-        this.tenants = response.data?.items || response.data || [];
-      },
-      error: () => {
-        // Production'da hata detayları gizlenir
       }
     });
   }
 
   applyFilter(): void {
-    let filtered = this.assets;
+    let filtered = this.items;
 
     if (this.searchTerm) {
-      const term = this.searchTerm.toLowerCase();
-      filtered = filtered.filter(a => 
-        a.productName.toLowerCase().includes(term) ||
-        a.serialNumber.toLowerCase().includes(term) ||
-        a.tenantName.toLowerCase().includes(term)
+      const term = this.normalizeText(this.searchTerm);
+      filtered = filtered.filter(x =>
+        this.normalizeText(x.productName).includes(term) ||
+        this.normalizeText(x.tenantName).includes(term) ||
+        this.normalizeText(x.tenantEmail).includes(term)
       );
     }
 
     this.totalPages = Math.ceil(filtered.length / this.itemsPerPage);
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    this.filteredAssets = filtered.slice(startIndex, startIndex + this.itemsPerPage);
+    this.filteredItems = filtered.slice(startIndex, startIndex + this.itemsPerPage);
+  }
+
+  openEditModal(item: AdminTenantProductItem): void {
+    this.editingItem = item;
+    this.editWarrantyEndDate = this.toDateInput(item.warrantyEndDate);
+    this.editAcquisitionDate = this.toDateInput(item.acquisitionDate);
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.showEditModal = true;
+  }
+
+  closeEditModal(): void {
+    this.showEditModal = false;
+    this.editingItem = null;
+    this.editWarrantyEndDate = '';
+    this.editAcquisitionDate = '';
+  }
+
+  saveEditModal(): void {
+    if (!this.editingItem) {
+      return;
+    }
+
+    if (!this.editWarrantyEndDate) {
+      this.errorMessage = 'Garanti bitiş tarihi zorunludur.';
+      return;
+    }
+
+    this.isSaving = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    this.productService.updateProductTenant(this.editingItem.productId, this.editingItem.tenantId, {
+      warrantyEndDate: this.editWarrantyEndDate,
+      acquisitionDate: this.editAcquisitionDate || undefined
+    }).subscribe({
+      next: (response) => {
+        this.isSaving = false;
+        this.successMessage = response?.message || 'Müşteri ürün bilgisi güncellendi.';
+        this.closeEditModal();
+        this.loadItems();
+      },
+      error: (error) => {
+        this.isSaving = false;
+        this.errorMessage = error?.error?.message || 'Güncelleme sırasında bir hata oluştu.';
+      }
+    });
+  }
+
+  // perform removal without browser confirm (used by modal confirm)
+  removeItem(item: AdminTenantProductItem): void {
+    this.isSaving = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    this.productService.removeProductFromTenant(item.productId, item.tenantId).subscribe({
+      next: (response) => {
+        this.isSaving = false;
+        this.successMessage = response?.message || 'Ürün müşteri ilişkisinden kaldırıldı.';
+        this.loadItems();
+      },
+      error: (error) => {
+        this.isSaving = false;
+        this.errorMessage = error?.error?.message || 'Kaldırma sırasında bir hata oluştu.';
+      }
+    });
+  }
+
+  openRemoveConfirm(item: AdminTenantProductItem): void {
+    this.itemToRemove = item;
+    this.showRemoveConfirm = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+  }
+
+  closeRemoveConfirm(): void {
+    this.showRemoveConfirm = false;
+    this.itemToRemove = null;
+  }
+
+  confirmRemoveItem(): void {
+    if (!this.itemToRemove) return;
+    const item = this.itemToRemove;
+    this.closeRemoveConfirm();
+    this.removeItem(item);
+  }
+
+  private toDateInput(value?: string): string {
+    if (!value) {
+      return '';
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private normalizeText(value: string): string {
+    return (value || '')
+      .toLocaleLowerCase('tr-TR')
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .replace(/\s+/g, ' ');
   }
 
   onSearch(): void {
@@ -124,112 +207,5 @@ export class AssetsComponent implements OnInit {
       pages.push(i);
     }
     return pages;
-  }
-
-  // Create Modal
-  openCreateModal(): void {
-    this.newAsset = {
-      productName: '',
-      serialNumber: '',
-      tenantId: '',
-      warrantyEndDate: this.getDefaultWarrantyDate()
-    };
-    this.showCreateModal = true;
-  }
-
-  closeCreateModal(): void {
-    this.showCreateModal = false;
-  }
-
-  getDefaultWarrantyDate(): string {
-    const date = new Date();
-    date.setFullYear(date.getFullYear() + 2);
-    return date.toISOString().split('T')[0];
-  }
-
-  createAsset(): void {
-    if (!this.newAsset.productName || !this.newAsset.serialNumber || !this.newAsset.tenantId) {
-      this.errorMessage = 'Lütfen tüm zorunlu alanları doldurun.';
-      return;
-    }
-
-    this.isSubmitting = true;
-    this.errorMessage = '';
-    this.assetService.createAsset(this.newAsset).subscribe({
-      next: () => {
-        this.showCreateModal = false;
-        this.loadAssets();
-        this.isSubmitting = false;
-      },
-      error: (error) => {
-        this.isSubmitting = false;
-        if (error.error?.message) {
-          this.errorMessage = error.error.message;
-        } else if (error.error?.success === false && error.error?.message) {
-          this.errorMessage = error.error.message;
-        } else {
-          this.errorMessage = 'Varlık oluşturulurken bir hata oluştu.';
-        }
-      }
-    });
-  }
-
-  // Delete Modal
-  openDeleteModal(asset: Asset): void {
-    this.assetToDelete = asset;
-    this.showDeleteModal = true;
-  }
-
-  closeDeleteModal(): void {
-    this.showDeleteModal = false;
-    this.assetToDelete = null;
-  }
-
-  confirmDelete(): void {
-    if (!this.assetToDelete) return;
-
-    this.isSubmitting = true;
-    this.assetService.deleteAsset(this.assetToDelete.id).subscribe({
-      next: () => {
-        this.showDeleteModal = false;
-        this.assetToDelete = null;
-        this.loadAssets();
-        this.isSubmitting = false;
-      },
-      error: () => {
-        this.errorMessage = 'Varlık silinirken bir hata oluştu.';
-        this.isSubmitting = false;
-      }
-    });
-  }
-
-  getStatusClass(status: string): string {
-    switch (status?.toLowerCase()) {
-      case 'aktif': return 'status-active';
-      case 'pasif': return 'status-inactive';
-      case 'bakımda': return 'status-maintenance';
-      default: return 'status-active';
-    }
-  }
-
-  isWarrantyExpired(asset: Asset): boolean {
-    const warrantyDate = new Date(asset.warrantyEndDate);
-    const now = new Date();
-    return warrantyDate < now;
-  }
-
-  isWarrantyExpiringSoon(asset: Asset): boolean {
-    const warrantyDate = new Date(asset.warrantyEndDate);
-    const now = new Date();
-    if (warrantyDate < now) return false; // Zaten süresi dolmuş
-    
-    const threeMonthsLater = new Date();
-    threeMonthsLater.setMonth(threeMonthsLater.getMonth() + 3);
-    return warrantyDate <= threeMonthsLater;
-  }
-
-  onAssetSelect(assetId: string): void {
-    if (!assetId) return;
-    this.router.navigate(['/admin/assets', assetId]);
   }
 }

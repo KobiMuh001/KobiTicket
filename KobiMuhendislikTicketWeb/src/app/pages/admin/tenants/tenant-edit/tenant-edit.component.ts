@@ -63,7 +63,7 @@ export class TenantEditComponent implements OnInit {
           this.editForm = {
             companyName: this.tenant.companyName,
             email: this.tenant.email,
-            username: this.tenant.username,
+            username: this.extractUsername(this.tenant),
             phoneNumber: this.tenant.phoneNumber
           };
         }
@@ -74,6 +74,17 @@ export class TenantEditComponent implements OnInit {
         this.isLoading = false;
       }
     });
+  }
+
+  private extractUsername(tenantObj: any): string {
+    if (!tenantObj) return '';
+    return (
+      tenantObj.username ||
+      tenantObj.userName ||
+      tenantObj.user?.username ||
+      tenantObj.user?.userName ||
+      ''
+    );
   }
 
   saveChanges(): void {

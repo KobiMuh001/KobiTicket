@@ -86,7 +86,7 @@
           </div>
         </div>
       }
-      <button class="logout-btn" (click)="logout()" title="Çıkış Yap">
+      <button class="logout-btn" (click)="openLogoutConfirm()" title="Çıkış Yap">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
           <polyline points="16 17 21 12 16 7"/>
@@ -109,6 +109,25 @@
             <span class="notification-badge">{{ unreadNotificationsCount }}</span>
           }
         </button>
+
+        <!-- Logout overlay (centered) -->
+        @if (showLogoutConfirm) {
+          <div class="logout-overlay" (click)="closeLogoutConfirm()">
+            <div class="logout-card card" (click)="$event.stopPropagation()">
+              <div class="card-header">
+                <h3>Çıkış Yap</h3>
+                <button class="modal-close" (click)="closeLogoutConfirm()">×</button>
+              </div>
+              <div class="card-body">
+                <p>Oturumdan çıkmak istediğinize emin misiniz?</p>
+              </div>
+              <div class="card-actions">
+                <button class="btn btn-outline" (click)="closeLogoutConfirm()">İptal</button>
+                <button class="btn btn-danger" (click)="confirmLogout()">Çıkış Yap</button>
+              </div>
+            </div>
+          </div>
+        }
 
         @if (showNotificationsDropdown) {
           <div class="notifications-dropdown" (click)="$event.stopPropagation()">

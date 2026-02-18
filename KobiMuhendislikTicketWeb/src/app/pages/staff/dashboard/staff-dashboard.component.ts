@@ -141,4 +141,11 @@ export class StaffDashboardComponent implements OnInit, OnDestroy {
     }
     return Math.round((this.workload.assignedTickets / this.workload.maxConcurrentTickets) * 100);
   }
+
+  onTicketSelect(ticketId: number): void {
+    // Placeholder: called when a ticket row/card is clicked from the dashboard.
+    // Currently navigation is handled by routerLink; this method can be
+    // extended to mark notifications as read or perform analytics.
+    console.log('Dashboard: ticket selected', ticketId);
+  }
 }

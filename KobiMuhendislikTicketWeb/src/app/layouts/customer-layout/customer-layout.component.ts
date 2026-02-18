@@ -180,7 +180,19 @@ export class CustomerLayoutComponent implements OnInit, OnDestroy {
     this.isSidebarCollapsed = !this.isSidebarCollapsed;
   }
 
-  logout(): void {
+  // Logout confirmation modal state and handlers
+  showLogoutConfirm = false;
+
+  openLogoutConfirm(): void {
+    this.showLogoutConfirm = true;
+  }
+
+  closeLogoutConfirm(): void {
+    this.showLogoutConfirm = false;
+  }
+
+  confirmLogout(): void {
+    this.showLogoutConfirm = false;
     this.authService.logout();
   }
 

@@ -185,22 +185,44 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
     this.applyFilters();
   }
 
-  releaseTicket(ticketId: number | string, event: Event): void {
-    event.stopPropagation();
-    if (confirm('Bu ticketı bırakmak istediğinize emin misiniz?')) {
-      this.staffService.releaseTicket(ticketId).subscribe({
-        next: (res) => {
-          if (res.success) {
-            this.successMessage = 'Ticket başarıyla bırakıldı';
-            this.loadTickets();
-            setTimeout(() => this.successMessage = null, 3000);
-          }
-        },
-        error: (err) => {
-          this.error = err.error?.message || 'Ticket bırakılırken hata oluştu';
-        }
-      });
+  // Release (leave) ticket flow now uses a centered confirmation modal.
+  showReleaseConfirm = false;
+  ticketToReleaseId: number | null = null;
+  ticketToReleaseTitle: string | null = null;
+
+  openReleaseConfirm(ticketId: number | string, event?: Event, title?: string): void {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
     }
+    this.ticketToReleaseId = Number(ticketId);
+    this.ticketToReleaseTitle = title || null;
+    this.showReleaseConfirm = true;
+  }
+
+  closeReleaseConfirm(): void {
+    this.ticketToReleaseId = null;
+    this.ticketToReleaseTitle = null;
+    this.showReleaseConfirm = false;
+  }
+
+  confirmRelease(): void {
+    if (!this.ticketToReleaseId) return;
+    const id = this.ticketToReleaseId;
+    this.staffService.releaseTicket(id).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.successMessage = 'Ticket başarıyla bırakıldı';
+          this.loadTickets();
+          setTimeout(() => this.successMessage = null, 3000);
+        }
+        this.closeReleaseConfirm();
+      },
+      error: (err) => {
+        this.error = err.error?.message || 'Ticket bırakılırken hata oluştu';
+        this.closeReleaseConfirm();
+      }
+    });
   }
 
   getStatusText(status: number): string {
