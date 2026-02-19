@@ -42,7 +42,8 @@ namespace KobiMuhendislikTicket.Application.Services
             {
                 TotalTickets = totalTickets,
                 OpenTickets = tickets.Count(t => t.Status == TicketStatus.Open),
-                ProcessingTickets = tickets.Count(t => t.Status == TicketStatus.Processing),
+                // Count as processing any ticket that is not Open, Resolved or Closed
+                ProcessingTickets = tickets.Count(t => t.Status != TicketStatus.Open && t.Status != TicketStatus.Resolved && t.Status != TicketStatus.Closed),
                 ResolvedTickets = tickets.Count(t => t.Status == TicketStatus.Resolved),
                 CriticalTicketCount = tickets.Count(t => t.Priority == TicketPriority.Critical && t.Status != TicketStatus.Resolved),
                 TodayNewTickets = tickets.Count(t => t.CreatedDate.Date == today),

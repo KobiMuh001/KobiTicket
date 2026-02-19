@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { TicketService } from '../../../core/services/ticket.service';
 import { AssetService } from '../../../core/services/asset.service';
+import { ProductService } from '../../../core/services/product.service';
 import { AuthService, User } from '../../../core/services/auth.service';
 import { TenantService } from '../../../core/services/tenant.service';
 import { SystemParameterService } from '../../../core/services/system-parameter.service';
@@ -51,6 +52,7 @@ export class CustomerDashboardComponent implements OnInit {
   constructor(
     private ticketService: TicketService,
     private assetService: AssetService,
+    private productService: ProductService,
     private authService: AuthService,
     private tenantService: TenantService,
     private systemParamSvc: SystemParameterService
@@ -126,9 +128,16 @@ export class CustomerDashboardComponent implements OnInit {
       next: (response: any) => {
         const tickets = response.data || response || [];
         this.stats.totalTickets = tickets.length;
-        this.stats.openTickets = tickets.filter((t: any) => t.status === 'Open' || t.status === 1).length;
-        this.stats.inProgressTickets = tickets.filter((t: any) => t.status === 'InProgress' || t.status === 'Processing' || t.status === 2 || t.status === 3).length;
-        this.stats.closedTickets = tickets.filter((t: any) => t.status === 'Closed' || t.status === 5 || t.status === 'Resolved' || t.status === 4).length;
+        this.stats.openTickets = tickets.filter((t: any) => String(t.status) === 'Open' || Number(t.status) === 1).length;
+        // Treat any status that is NOT Resolved(4) and NOT Closed(5) and NOT Open(1) as in-progress (includes custom DB statuses)
+        this.stats.inProgressTickets = tickets.filter((t: any) => {
+          const s = String(t.status);
+          const n = Number(t.status);
+          if (s === 'Resolved' || s === 'Closed' || n === 4 || n === 5) return false;
+          if (s === 'Open' || n === 1) return false;
+          return true;
+        }).length;
+        this.stats.closedTickets = tickets.filter((t: any) => String(t.status) === 'Resolved' || String(t.status) === 'Closed' || Number(t.status) === 4 || Number(t.status) === 5).length;
         
         // Get recent tickets (last 5)
         this.recentTickets = tickets
@@ -149,14 +158,25 @@ export class CustomerDashboardComponent implements OnInit {
       }
     });
 
-    // Load assets count
-    this.assetService.getMyAssets().subscribe({
-      next: (response: any) => {
-        const assets = response.data || response || [];
-        this.stats.totalAssets = assets.length;
-      },
-      error: () => {}
-    });
+    // Load products (treat tenant products as assets for the dashboard)
+    const tenantId = this.currentUser?.identifier ? Number(this.currentUser.identifier) : null;
+    if (tenantId) {
+      this.productService.getTenantProducts(tenantId).subscribe({
+        next: (response: any) => {
+          const products = response.data || response || [];
+          this.stats.totalAssets = products.length;
+        },
+        error: () => {
+          // Fallback to old asset endpoint if product list fails
+          this.assetService.getMyAssets().subscribe({
+            next: (resp: any) => { const assets = resp.data || resp || []; this.stats.totalAssets = assets.length; },
+            error: () => { this.stats.totalAssets = 0; }
+          });
+        }
+      });
+    } else {
+      this.stats.totalAssets = 0;
+    }
   }
 
   getStatusText(status: string | number): string {

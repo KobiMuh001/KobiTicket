@@ -317,7 +317,8 @@ namespace KobiMuhendislikTicket.Application.Services
                 {
                     TotalTickets = tickets.Count,
                     OpenTickets = tickets.Count(t => t.Status == TicketStatus.Open),
-                    ProcessingTickets = tickets.Count(t => t.Status == TicketStatus.Processing),
+                    // Count any ticket that is NOT Resolved and NOT Closed and NOT Open as processing
+                    ProcessingTickets = tickets.Count(t => t.Status != TicketStatus.Resolved && t.Status != TicketStatus.Closed && t.Status != TicketStatus.Open),
                     ResolvedTickets = tickets.Count(t => t.Status == TicketStatus.Resolved),
                     TotalTenants = totalTenants,
                     TotalAssets = totalAssets,
