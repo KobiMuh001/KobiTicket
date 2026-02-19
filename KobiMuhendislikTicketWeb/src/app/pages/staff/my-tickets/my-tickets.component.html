@@ -25,21 +25,14 @@
       <label>Durum:</label>
       <select (change)="onStatusFilterChange($event)" [value]="selectedStatus">
         <option value="all">Tümü</option>
-        <option value="1">Açık</option>
-        <option value="2">İşlemde</option>
-        <option value="3">Müşteri Bekliyor</option>
-        <option value="4">Çözüldü</option>
-        <option value="5">Kapalı</option>
+        <option *ngFor="let s of statusOptions" [value]="(s.sortOrder ?? s.id) + ''">{{ s.label }}</option>
       </select>
     </div>
     <div class="filter-group">
       <label>Öncelik:</label>
       <select (change)="onPriorityFilterChange($event)" [value]="selectedPriority">
         <option value="all">Tümü</option>
-        <option value="1">Düşük</option>
-        <option value="2">Normal</option>
-        <option value="3">Yüksek</option>
-        <option value="4">Kritik</option>
+        <option *ngFor="let p of priorityOptions" [value]="(p.sortOrder ?? p.id) + ''">{{ p.label }}</option>
       </select>
     </div>
     <div class="filter-group">
@@ -107,12 +100,12 @@
                 </td>
                 <td>{{ ticket.companyName || '-' }}</td>
                 <td>
-                  <span class="status-badge" [class]="getStatusClass(ticket.status)">
+                  <span class="status-badge" [class]="getStatusClass(ticket.status)" [style.background-color]="getStatusColor(ticket.status)" [style.color]="getStatusColor(ticket.status) ? '#fff' : null">
                     {{ getStatusText(ticket.status) }}
                   </span>
                 </td>
                 <td>
-                  <span class="priority-badge" [class]="getPriorityClass(ticket.priority)">
+                  <span class="priority-badge" [class]="getPriorityClass(ticket.priority)" [style.background-color]="getPriorityColor(ticket.priority)" [style.color]="getPriorityColor(ticket.priority) ? '#fff' : null">
                     {{ getPriorityText(ticket.priority) }}
                   </span>
                 </td>
@@ -137,14 +130,14 @@
       <div class="tickets-cards">
         @for (ticket of filteredTickets; track ticket.id) {
           <div class="ticket-card clickable-row" [routerLink]="['/staff/tickets', ticket.id]" (click)="onTicketSelect(ticket.id)" [class.has-notification]="getTicketNotificationCount(ticket.id) > 0">
-            <div class="ticket-card-header">
+              <div class="ticket-card-header">
               <div class="ticket-id-container">
                 <span class="ticket-code">{{ ticket.ticketCode || '#' + ticket.id }}</span>
                 @if (getTicketNotificationCount(ticket.id) > 0) {
                   <span class="notification-badge">{{ getTicketNotificationCount(ticket.id) }}</span>
                 }
               </div>
-              <span class="status-badge" [class]="getStatusClass(ticket.status)">
+              <span class="status-badge" [class]="getStatusClass(ticket.status)" [style.background-color]="getStatusColor(ticket.status)" [style.color]="getStatusColor(ticket.status) ? '#fff' : null">
                 {{ getStatusText(ticket.status) }}
               </span>
             </div>
@@ -163,7 +156,7 @@
               </div>
               <div class="meta-row">
                 <span class="meta-label">Öncelik</span>
-                <span class="priority-badge" [class]="getPriorityClass(ticket.priority)">
+                <span class="priority-badge" [class]="getPriorityClass(ticket.priority)" [style.background-color]="getPriorityColor(ticket.priority)" [style.color]="getPriorityColor(ticket.priority) ? '#fff' : null">
                   {{ getPriorityText(ticket.priority) }}
                 </span>
               </div>

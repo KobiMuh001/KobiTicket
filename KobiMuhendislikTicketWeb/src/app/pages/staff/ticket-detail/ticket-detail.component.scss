@@ -196,6 +196,56 @@
   color: #dc2626;
 }
 
+/* Status dropdown styled like a button */
+.status-select-label {
+  display: inline-block;
+}
+
+.status-select-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.status-pill {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex: 0 0 10px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+.status-dropdown {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background: #fff;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+  padding: 8px 28px 8px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 140px;
+}
+
+.status-caret {
+  position: absolute;
+  right: 10px;
+  pointer-events: none;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+/* Small responsive tweak */
+@media (max-width: 480px) {
+  .status-dropdown { min-width: 110px; }
+}
+
 .btn {
   padding: 10px 20px;
   border: none;

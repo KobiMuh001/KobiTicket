@@ -205,9 +205,8 @@ namespace KobiMuhendislikTicket.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Department")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("DepartmentId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -238,6 +237,8 @@ namespace KobiMuhendislikTicket.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DepartmentId");
+
                     b.HasIndex("Email")
                         .IsUnique();
 
@@ -247,41 +248,328 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Department = "Teknik Destek",
+                            CreatedDate = new DateTime(2026, 2, 17, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DepartmentId = 1,
                             Email = "ahmet.yilmaz@kobi.com",
                             FullName = "Ahmet Yılmaz",
                             IsActive = true,
                             IsDeleted = false,
                             MaxConcurrentTickets = 10,
-                            PasswordHash = "$2a$11$cTwQ.jQm7My6yGwI7wWpU.by5.7kEE9yozJm/zOcSNvq8Y7cbWP1W",
+                            PasswordHash = "$2a$11$7DIIIY4AlStfFiUdADXhc.S2f2GppLRmcnPgcq5.2/M60RepywS/i",
                             Phone = "(532) 111 2233"
                         },
                         new
                         {
                             Id = 2,
-                            CreatedDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Department = "Teknik Destek",
+                            CreatedDate = new DateTime(2026, 2, 17, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DepartmentId = 1,
                             Email = "mehmet.kaya@kobi.com",
                             FullName = "Mehmet Kaya",
                             IsActive = true,
                             IsDeleted = false,
                             MaxConcurrentTickets = 8,
-                            PasswordHash = "$2a$11$YPRdP.qPm9sZ8az/q3HuauBrdMAM6EG2w8PKHwwcpHJE.xFrCG16W",
+                            PasswordHash = "$2a$11$LvTwlIAobuuwQiHTDdJT8O0h7fDcbOivjER0iMQyo//ZTaI14WwYq",
                             Phone = "(533) 222 3344"
                         },
                         new
                         {
                             Id = 3,
-                            CreatedDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Department = "Satış",
+                            CreatedDate = new DateTime(2026, 2, 17, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DepartmentId = 2,
                             Email = "ayse.demir@kobi.com",
                             FullName = "Ayşe Demir",
                             IsActive = true,
                             IsDeleted = false,
                             MaxConcurrentTickets = 5,
-                            PasswordHash = "$2a$11$YDnRiNKcvQQYjM8otdH6CudJstUIIHvaOtDypEFpl4KZ9GE6sY7gC",
+                            PasswordHash = "$2a$11$dTLcDA5HlIwYKZfT3YoCUOaCUfKXGzrHCXhc6S5DwswL.ee86glJ2",
                             Phone = "(534) 333 4455"
+                        });
+                });
+
+            modelBuilder.Entity("KobiMuhendislikTicket.Domain.Entities.System.SystemParameter", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DataType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Group")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Value2")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Group");
+
+                    b.ToTable("SystemParameters");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 100,
+                            CreatedDate = new DateTime(2026, 2, 19, 9, 58, 40, 327, DateTimeKind.Unspecified).AddTicks(223),
+                            DataType = "String",
+                            Description = "Düşük öncelik",
+                            Group = "TicketPriority",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Key = "Low",
+                            SortOrder = 1,
+                            Value = "Low"
+                        },
+                        new
+                        {
+                            Id = 101,
+                            CreatedDate = new DateTime(2026, 2, 19, 9, 58, 40, 327, DateTimeKind.Unspecified).AddTicks(274),
+                            DataType = "String",
+                            Description = "Orta öncelik",
+                            Group = "TicketPriority",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Key = "Medium",
+                            SortOrder = 2,
+                            Value = "Medium"
+                        },
+                        new
+                        {
+                            Id = 102,
+                            CreatedDate = new DateTime(2026, 2, 19, 9, 58, 40, 327, DateTimeKind.Unspecified).AddTicks(278),
+                            DataType = "String",
+                            Description = "Yüksek öncelik",
+                            Group = "TicketPriority",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Key = "High",
+                            SortOrder = 3,
+                            Value = "High"
+                        },
+                        new
+                        {
+                            Id = 103,
+                            CreatedDate = new DateTime(2026, 2, 19, 9, 58, 40, 327, DateTimeKind.Unspecified).AddTicks(281),
+                            DataType = "String",
+                            Description = "Kritik öncelik",
+                            Group = "TicketPriority",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Key = "Critical",
+                            SortOrder = 4,
+                            Value = "Critical"
+                        },
+                        new
+                        {
+                            Id = 110,
+                            CreatedDate = new DateTime(2026, 2, 19, 9, 58, 40, 327, DateTimeKind.Unspecified).AddTicks(283),
+                            DataType = "String",
+                            Description = "Açık",
+                            Group = "TicketStatus",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Key = "Open",
+                            SortOrder = 1,
+                            Value = "Open"
+                        },
+                        new
+                        {
+                            Id = 111,
+                            CreatedDate = new DateTime(2026, 2, 19, 9, 58, 40, 327, DateTimeKind.Unspecified).AddTicks(293),
+                            DataType = "String",
+                            Description = "İşleniyor",
+                            Group = "TicketStatus",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Key = "Processing",
+                            SortOrder = 2,
+                            Value = "Processing"
+                        },
+                        new
+                        {
+                            Id = 112,
+                            CreatedDate = new DateTime(2026, 2, 19, 9, 58, 40, 327, DateTimeKind.Unspecified).AddTicks(295),
+                            DataType = "String",
+                            Description = "Müşteri Bekleniyor",
+                            Group = "TicketStatus",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Key = "WaitingForCustomer",
+                            SortOrder = 3,
+                            Value = "WaitingForCustomer"
+                        },
+                        new
+                        {
+                            Id = 113,
+                            CreatedDate = new DateTime(2026, 2, 19, 9, 58, 40, 327, DateTimeKind.Unspecified).AddTicks(298),
+                            DataType = "String",
+                            Description = "Çözüldü",
+                            Group = "TicketStatus",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Key = "Resolved",
+                            SortOrder = 4,
+                            Value = "Resolved"
+                        },
+                        new
+                        {
+                            Id = 114,
+                            CreatedDate = new DateTime(2026, 2, 19, 9, 58, 40, 327, DateTimeKind.Unspecified).AddTicks(300),
+                            DataType = "String",
+                            Description = "Kapandı",
+                            Group = "TicketStatus",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Key = "Closed",
+                            SortOrder = 5,
+                            Value = "Closed"
+                        },
+                        new
+                        {
+                            Id = 120,
+                            CreatedDate = new DateTime(2026, 2, 19, 9, 58, 40, 327, DateTimeKind.Unspecified).AddTicks(302),
+                            DataType = "String",
+                            Description = "Admin role",
+                            Group = "UserRole",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Key = "Admin",
+                            SortOrder = 1,
+                            Value = "Admin"
+                        },
+                        new
+                        {
+                            Id = 121,
+                            CreatedDate = new DateTime(2026, 2, 19, 9, 58, 40, 327, DateTimeKind.Unspecified).AddTicks(562),
+                            DataType = "String",
+                            Description = "Staff role",
+                            Group = "UserRole",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Key = "Staff",
+                            SortOrder = 2,
+                            Value = "Staff"
+                        },
+                        new
+                        {
+                            Id = 122,
+                            CreatedDate = new DateTime(2026, 2, 19, 9, 58, 40, 327, DateTimeKind.Unspecified).AddTicks(565),
+                            DataType = "String",
+                            Description = "Customer role",
+                            Group = "UserRole",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Key = "Customer",
+                            SortOrder = 3,
+                            Value = "Customer"
+                        },
+                        new
+                        {
+                            Id = 130,
+                            CreatedDate = new DateTime(2026, 2, 19, 9, 58, 40, 327, DateTimeKind.Unspecified).AddTicks(568),
+                            DataType = "String",
+                            Description = "Teknik Destek",
+                            Group = "Department",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Key = "TeknikDestek",
+                            SortOrder = 1,
+                            Value = "Teknik Destek"
+                        },
+                        new
+                        {
+                            Id = 131,
+                            CreatedDate = new DateTime(2026, 2, 19, 9, 58, 40, 327, DateTimeKind.Unspecified).AddTicks(571),
+                            DataType = "String",
+                            Description = "Satış",
+                            Group = "Department",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Key = "Satis",
+                            SortOrder = 2,
+                            Value = "Satış"
+                        },
+                        new
+                        {
+                            Id = 132,
+                            CreatedDate = new DateTime(2026, 2, 19, 9, 58, 40, 327, DateTimeKind.Unspecified).AddTicks(573),
+                            DataType = "String",
+                            Description = "Muhasebe",
+                            Group = "Department",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Key = "Muhasebe",
+                            SortOrder = 3,
+                            Value = "Muhasebe"
+                        },
+                        new
+                        {
+                            Id = 133,
+                            CreatedDate = new DateTime(2026, 2, 19, 9, 58, 40, 327, DateTimeKind.Unspecified).AddTicks(576),
+                            DataType = "String",
+                            Description = "Yönetim",
+                            Group = "Department",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Key = "Yonetim",
+                            SortOrder = 4,
+                            Value = "Yönetim"
+                        },
+                        new
+                        {
+                            Id = 134,
+                            CreatedDate = new DateTime(2026, 2, 19, 9, 58, 40, 327, DateTimeKind.Unspecified).AddTicks(578),
+                            DataType = "String",
+                            Description = "Diğer",
+                            Group = "Department",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Key = "Diger",
+                            SortOrder = 5,
+                            Value = "Diğer"
+                        },
+                        new
+                        {
+                            Id = 200,
+                            CreatedDate = new DateTime(2026, 2, 19, 9, 58, 40, 327, DateTimeKind.Unspecified).AddTicks(580),
+                            DataType = "Int",
+                            Description = "Varsayılan ticket limiti",
+                            Group = "General",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Key = "DefaultTicketLimit",
+                            SortOrder = 1,
+                            Value = "15"
                         });
                 });
 
@@ -543,6 +831,17 @@ namespace KobiMuhendislikTicket.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("KobiMuhendislikTicket.Domain.Entities.Staff", b =>
+                {
+                    b.HasOne("KobiMuhendislikTicket.Domain.Entities.System.SystemParameter", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Department");
                 });
 
             modelBuilder.Entity("KobiMuhendislikTicket.Domain.Entities.Ticket", b =>

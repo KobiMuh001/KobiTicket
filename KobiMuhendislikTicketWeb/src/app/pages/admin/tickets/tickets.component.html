@@ -34,19 +34,12 @@
       <div class="filter-group">
         <select [(ngModel)]="statusFilter" (change)="applyFilters()" class="filter-select">
           <option value="">Tüm Durumlar</option>
-          <option value="1">Açık</option>
-          <option value="2">İşlemde</option>
-          <option value="3">Beklemede</option>
-          <option value="4">Çözüldü</option>
-          <option value="5">Kapalı</option>
+          <option *ngFor="let s of statusOptions" [value]="s.value">{{ s.label }}</option>
         </select>
         
         <select [(ngModel)]="priorityFilter" (change)="applyFilters()" class="filter-select">
           <option value="">Tüm Öncelikler</option>
-          <option value="1">Düşük</option>
-          <option value="2">Orta</option>
-          <option value="3">Yüksek</option>
-          <option value="4">Kritik</option>
+          <option *ngFor="let p of priorityOptions" [value]="p.value">{{ p.label }}</option>
         </select>
 
         <select [(ngModel)]="customerFilter" (change)="applyFilters()" class="filter-select">
@@ -137,13 +130,12 @@
                 <td>{{ ticket.tenantName || '-' }}</td>
                 <td>{{ ticket.productName || ticket.assetName || '-' }}</td>
                 <td>
-                  <span class="badge" [class]="'badge--' + getStatusClass(ticket.status)">
+                  <span class="badge" [class]="'badge--' + getStatusClass(ticket.status)" [style.background-color]="getStatusColor(ticket.status)" [style.color]="getStatusColor(ticket.status) ? '#fff' : null">
                     {{ getStatusText(ticket.status) }}
                   </span>
                 </td>
                 <td>
-                  <span class="priority" [class]="'priority--' + getPriorityClass(ticket.priority)">
-                    <span class="priority-dot"></span>
+                  <span class="badge" [class]="'badge--' + getPriorityClass(ticket.priority)" [style.background-color]="getPriorityColor(ticket.priority)" [style.color]="getPriorityColor(ticket.priority) ? '#fff' : null">
                     {{ getPriorityText(ticket.priority) }}
                   </span>
                 </td>
@@ -193,14 +185,13 @@
               </div>
               <div class="meta-row">
                 <span class="meta-label">Durum</span>
-                <span class="badge" [class]="'badge--' + getStatusClass(ticket.status)">
+                <span class="badge" [class]="'badge--' + getStatusClass(ticket.status)" [style.background-color]="getStatusColor(ticket.status)" [style.color]="getStatusColor(ticket.status) ? '#fff' : null">
                   {{ getStatusText(ticket.status) }}
                 </span>
               </div>
               <div class="meta-row">
                 <span class="meta-label">Öncelik</span>
-                <span class="priority" [class]="'priority--' + getPriorityClass(ticket.priority)">
-                  <span class="priority-dot"></span>
+                <span class="badge" [class]="'badge--' + getPriorityClass(ticket.priority)" [style.background-color]="getPriorityColor(ticket.priority)" [style.color]="getPriorityColor(ticket.priority) ? '#fff' : null">
                   {{ getPriorityText(ticket.priority) }}
                 </span>
               </div>

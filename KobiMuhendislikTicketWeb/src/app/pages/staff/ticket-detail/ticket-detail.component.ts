@@ -3,6 +3,7 @@ import { CommonModule, isPlatformBrowser, Location } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { StaffService } from '../../../core/services/staff.service';
+import { SystemParameterService } from '../../../core/services/system-parameter.service';
 import { SignalRService, CommentMessage } from '../../../core/services/signalr.service';
 import { Subscription } from 'rxjs';
 import { environment } from '../../../../environments/environment';
@@ -36,6 +37,13 @@ export class TicketDetailComponent implements OnInit, OnDestroy, AfterViewChecke
   showResolveModal = false;
   showImagePreview = false;
   selectedImagePath: string | null = null;
+  // Status change confirmation
+  showConfirmStatusModal = false;
+  pendingStatus: number | null = null;
+  pendingStatusLabel: string | null = null;
+  // Release confirmation
+  showReleaseModal = false;
+  releasing = false;
   
   activeTab: 'comments' | 'history' = 'comments';
 
@@ -45,11 +53,14 @@ export class TicketDetailComponent implements OnInit, OnDestroy, AfterViewChecke
   public shouldScrollToBottom = false;
   private isBrowser: boolean;
   private refreshInterval: any;
+  statusOptions: Array<any> = [];
+  priorityOptions: Array<any> = [];
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private staffService: StaffService,
+    private paramSvc: SystemParameterService,
     private signalRService: SignalRService,
     public location: Location,
     @Inject(PLATFORM_ID) platformId: Object
@@ -63,6 +74,7 @@ export class TicketDetailComponent implements OnInit, OnDestroy, AfterViewChecke
     this.loadTicket();
     this.loadComments();
     this.loadHistory();
+    this.loadLookups();
     if (this.isBrowser) {
       this.initSignalR();
     }
@@ -72,6 +84,36 @@ export class TicketDetailComponent implements OnInit, OnDestroy, AfterViewChecke
       console.log('Staff Ticket-Detail: Periodic comments refresh triggered');
       this.loadComments();
     }, 2000);
+  }
+
+  loadLookups(): void {
+    this.paramSvc.getByGroup('TicketStatus').subscribe({
+      next: (res: any) => {
+        const sData = res?.data?.data || res?.data || res || [];
+        this.statusOptions = (Array.isArray(sData) ? sData : []).map((p: any, i: number) => ({ id: p.id, key: p.key, label: p.value, sortOrder: p.sortOrder ?? i + 1, color: p.value2 ?? p.color ?? null }));
+      },
+      error: () => { this.statusOptions = []; }
+    });
+
+    this.paramSvc.getByGroup('TicketPriority').subscribe({
+      next: (res: any) => {
+        const pData = res?.data?.data || res?.data || res || [];
+        this.priorityOptions = (Array.isArray(pData) ? pData : []).map((p: any, i: number) => ({ id: p.id, key: p.key, label: p.value, sortOrder: p.sortOrder ?? i + 1, color: p.value2 ?? p.color ?? null }));
+      },
+      error: () => { this.priorityOptions = []; }
+    });
+  }
+
+  getStatusColor(status: number): string | null {
+    const n = Number(status);
+    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
+    return found?.color ?? null;
+  }
+
+  getPriorityColor(priority: number): string | null {
+    const n = Number(priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    return found?.color ?? null;
   }
 
   ngOnDestroy(): void {
@@ -300,22 +342,123 @@ export class TicketDetailComponent implements OnInit, OnDestroy, AfterViewChecke
     });
   }
 
-  releaseTicket(): void {
-    if (confirm('Bu ticketı bırakmak istediğinize emin misiniz?')) {
-      this.staffService.releaseTicket(this.ticketId).subscribe({
-        next: (res) => {
-          if (res.success) {
-            this.router.navigate(['/staff/my-tickets']);
-          }
-        },
-        error: (err) => {
-          this.error = err.error?.message || 'Ticket bırakılırken hata oluştu';
-        }
-      });
+  // Safe handler for status dropdown changes
+  onStatusSelect(event: Event): void {
+    const target = event.target as HTMLSelectElement | null;
+    const val = target?.value;
+    if (val === undefined || val === null) return;
+    // Find the selected option object from loaded lookups
+    const selected = this.statusOptions.find((s: any) =>
+      String(s.sortOrder ?? s.id) === String(val) || String(s.id) === String(val) || String(s.key) === String(val)
+    );
+    if (!selected) {
+      this.error = 'Geçersiz durum değeri';
+      // revert UI
+      if (target) target.value = (this.ticket?.status ?? '') + '';
+      console.debug('Status select - selected not found. statusOptions=', this.statusOptions, 'value=', val);
+      return;
     }
+
+    // Determine numeric status to send to API. Prefer numeric `key`, then `sortOrder`, then `id`.
+    let sendValue: number | null = null;
+    if (selected.key !== undefined && selected.key !== null && !isNaN(Number(selected.key))) {
+      sendValue = Number(selected.key);
+    } else if (selected.sortOrder !== undefined && selected.sortOrder !== null && !isNaN(Number(selected.sortOrder))) {
+      sendValue = Number(selected.sortOrder);
+    } else if (selected.id !== undefined && selected.id !== null && !isNaN(Number(selected.id))) {
+      sendValue = Number(selected.id);
+    }
+
+    if (sendValue === null) {
+      this.error = 'Geçersiz durum değeri';
+      if (target) target.value = (this.ticket?.status ?? '') + '';
+      console.debug('Status select - resolved selected but no numeric sendValue. selected=', selected);
+      return;
+    }
+
+    // Prepare confirmation modal with resolved numeric value
+    this.pendingStatus = sendValue;
+    this.pendingStatusLabel = selected.label || String(sendValue);
+    this.showConfirmStatusModal = true;
+    // Revert select UI to actual ticket.status so the displayed status stays accurate until confirmed
+    try { if (target) target.value = (this.ticket?.status ?? '') + ''; } catch (e) {}
+  }
+
+  // Log before sending to server and after response to help debug 400
+  changeTicketStatus(ticketId: number, newStatus: number): void {
+    console.debug('Attempting status change', { ticketId, newStatus });
+    this.staffService.updateTicketStatus(String(ticketId), newStatus).subscribe({
+      next: (res: any) => {
+        console.debug('Status change response', res);
+        if (res && res.success) {
+          const t = this.ticket; // if on detail view
+          if (t && t.id === ticketId) {
+            t.status = Number(newStatus);
+            this.loadTicket();
+          }
+          this.successMessage = 'Ticket durumu başarıyla güncellendi';
+          setTimeout(() => this.successMessage = null, 3000);
+        } else if (res && res.message) {
+          this.error = res.message;
+        }
+      },
+      error: (err) => {
+        console.debug('Status change error', err);
+        this.error = err.error?.message || 'Ticket durumu güncellenirken hata oluştu';
+      }
+    });
+  }
+
+  confirmStatusChange(): void {
+    if (this.pendingStatus === null) return;
+    const ns = this.pendingStatus;
+    this.showConfirmStatusModal = false;
+    this.pendingStatus = null;
+    this.pendingStatusLabel = null;
+    this.updateStatus(ns);
+  }
+
+  cancelStatusChange(): void {
+    this.showConfirmStatusModal = false;
+    this.pendingStatus = null;
+    this.pendingStatusLabel = null;
+    // ticket remains unchanged; view will update to current ticket.status
+  }
+
+  releaseTicket(): void {
+    // show centered confirmation modal instead of native confirm
+    this.showReleaseModal = true;
+  }
+
+  confirmRelease(): void {
+    this.releasing = true;
+    this.staffService.releaseTicket(this.ticketId).subscribe({
+      next: (res) => {
+        this.releasing = false;
+        this.showReleaseModal = false;
+        if (res.success) {
+          this.router.navigate(['/staff/my-tickets']);
+        } else {
+          this.error = res.message || 'Ticket bırakılırken hata oluştu';
+        }
+      },
+      error: (err) => {
+        this.releasing = false;
+        this.showReleaseModal = false;
+        this.error = err.error?.message || 'Ticket bırakılırken hata oluştu';
+      }
+    });
+  }
+
+  cancelRelease(): void {
+    this.showReleaseModal = false;
   }
 
   getStatusText(status: number): string {
+    const n = Number(status);
+    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
+    if (found) return found.label || 'Bilinmiyor';
+
     switch (status) {
       case 1: return 'Açık';
       case 2: return 'İşlemde';
@@ -327,6 +470,19 @@ export class TicketDetailComponent implements OnInit, OnDestroy, AfterViewChecke
   }
 
   getStatusClass(status: number): string {
+    const n = Number(status);
+    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
+    if (found) {
+      const num = Number(found.sortOrder ?? found.id);
+      switch (num) {
+        case 1: return 'status-open';
+        case 2: return 'status-processing';
+        case 3: return 'status-waiting';
+        case 4: return 'status-resolved';
+        case 5: return 'status-closed';
+        default: return '';
+      }
+    }
     switch (status) {
       case 1: return 'status-open';
       case 2: return 'status-processing';
@@ -338,6 +494,10 @@ export class TicketDetailComponent implements OnInit, OnDestroy, AfterViewChecke
   }
 
   getPriorityText(priority: number): string {
+    const n = Number(priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    if (found) return found.label || 'Normal';
+
     switch (priority) {
       case 1: return 'Düşük';
       case 2: return 'Normal';
@@ -348,6 +508,18 @@ export class TicketDetailComponent implements OnInit, OnDestroy, AfterViewChecke
   }
 
   getPriorityClass(priority: number): string {
+    const n = Number(priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    if (found) {
+      const num = Number(found.sortOrder ?? found.id);
+      switch (num) {
+        case 1: return 'priority-low';
+        case 2: return 'priority-normal';
+        case 3: return 'priority-high';
+        case 4: return 'priority-critical';
+        default: return 'priority-normal';
+      }
+    }
     switch (priority) {
       case 1: return 'priority-low';
       case 2: return 'priority-normal';

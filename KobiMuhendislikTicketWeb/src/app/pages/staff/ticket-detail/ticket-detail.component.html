@@ -32,8 +32,8 @@
         <h1>{{ ticket.title }}</h1>
         <div class="ticket-meta">
           <span class="ticket-id">{{ ticket.ticketCode || '#' + ticket.id }}</span>
-          <span class="badge" [ngClass]="getStatusClass(ticket.status)">{{ getStatusText(ticket.status) }}</span>
-          <span class="badge" [ngClass]="getPriorityClass(ticket.priority)">{{ getPriorityText(ticket.priority) }}</span>
+          <span class="badge" [ngClass]="getStatusClass(ticket.status)" [style.background-color]="getStatusColor(ticket.status)" [style.color]="getStatusColor(ticket.status) ? '#fff' : null">{{ getStatusText(ticket.status) }}</span>
+          <span class="badge" [ngClass]="getPriorityClass(ticket.priority)" [style.background-color]="getPriorityColor(ticket.priority)" [style.color]="getPriorityColor(ticket.priority) ? '#fff' : null">{{ getPriorityText(ticket.priority) }}</span>
         </div>
       </div>
       <div class="header-actions">
@@ -44,23 +44,44 @@
           </button>
         </ng-container>
         
-        <!-- My ticket - Show action buttons -->
+        <!-- My ticket - Show action buttons (replace fixed buttons with status selector) -->
         <ng-container *ngIf="isMyTicket && ticket.status !== 4 && ticket.status !== 5">
-          <button *ngIf="ticket.status === 1" (click)="updateStatus(2)" class="btn btn-primary">
-            İşleme Al
-          </button>
-          <button *ngIf="ticket.status === 2" (click)="updateStatus(3)" class="btn btn-secondary">
-            Müşteri Bekliyor
-          </button>
-          <button *ngIf="ticket.status === 3" (click)="updateStatus(2)" class="btn btn-primary">
-            İşleme Al
-          </button>
-          <button *ngIf="ticket.status === 2 || ticket.status === 3" (click)="showResolveModal = true" class="btn btn-success">
-            Çözüldü Olarak İşaretle
-          </button>
-          <button (click)="releaseTicket()" class="btn btn-secondary">
-            Ticketı Bırak
-          </button>
+          <!-- Status selector: shows all statuses from DB; selecting one calls updateStatus -->
+          <label class="status-select-label">
+            <div class="status-select-wrap">
+              <span class="status-pill" [style.background-color]="getStatusColor(ticket.status)"></span>
+              <select class="status-dropdown" [value]="ticket.status + ''" (change)="onStatusSelect($event)">
+                <option *ngFor="let s of statusOptions" [value]="(s.sortOrder ?? s.id) + ''"
+                  [selected]="((s.sortOrder ?? s.id) + '') === (ticket.status + '') || (s.id + '') === (ticket.status + '') || (s.key + '') === (ticket.status + '')">
+                  {{ s.label }}
+                </option>
+              </select>
+              <span class="status-caret">▾</span>
+            </div>
+          </label>
+
+          <!-- Resolve and Release actions remain -->
+          
+            <button (click)="releaseTicket()" class="btn btn-secondary">
+              Ticketı Bırak
+            </button>
+          
+            <!-- Release Confirmation Modal -->
+            <div *ngIf="showReleaseModal" class="modal-overlay" (click)="cancelRelease()">
+              <div class="modal-content" (click)="$event.stopPropagation()">
+                <div class="modal-header">
+                  <h3>Ticketı Bırak</h3>
+                  <button (click)="cancelRelease()" class="close-btn">×</button>
+                </div>
+                <div class="modal-body">
+                  <p>Bu ticketı bırakmak istediğinize emin misiniz?</p>
+                </div>
+                <div class="modal-footer">
+                  <button (click)="cancelRelease()" class="btn btn-secondary">İptal</button>
+                  <button (click)="confirmRelease()" class="btn btn-primary" [disabled]="releasing">@if (releasing) { <span class="spinner-sm"></span> } Evet, Bırak</button>
+                </div>
+              </div>
+            </div>
         </ng-container>
         
         <!-- Assigned to someone else -->
@@ -79,6 +100,23 @@
           <div class="detail-row">
             <label>Açıklama:</label>
             <p class="description">{{ ticket.description }}</p>
+
+        <!-- Confirm Status Change Modal -->
+        <div *ngIf="showConfirmStatusModal" class="modal-overlay" (click)="cancelStatusChange()">
+          <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h3>Durumu Değiştir</h3>
+              <button (click)="cancelStatusChange()" class="close-btn">×</button>
+            </div>
+            <div class="modal-body">
+              <p>Bu ticketin durumunu <strong>{{ pendingStatusLabel }}</strong> olarak değiştirmek istediğinize emin misiniz?</p>
+            </div>
+            <div class="modal-footer">
+              <button (click)="cancelStatusChange()" class="btn btn-secondary">İptal</button>
+              <button (click)="confirmStatusChange()" class="btn btn-primary">Evet, Değiştir</button>
+            </div>
+          </div>
+        </div>
           </div>
           <div class="detail-row">
             <label>Oluşturan:</label>

@@ -103,8 +103,8 @@
               </div>
             </div>
             <div class="ticket-badges">
-              <span class="badge" [ngClass]="getStatusClass(ticket.status)">{{ ticket.status }}</span>
-              <span class="badge" [ngClass]="getPriorityClass(ticket.priority)">{{ ticket.priority }}</span>
+              <span class="badge" [ngClass]="getStatusClass(ticket.status)" [style.background-color]="getStatusColor(ticket.status)" [style.color]="getStatusColor(ticket.status) ? '#fff' : null">{{ ticket.status }}</span>
+              <span class="badge" [ngClass]="getPriorityClass(ticket.priority)" [style.background-color]="getPriorityColor(ticket.priority)" [style.color]="getPriorityColor(ticket.priority) ? '#fff' : null">{{ ticket.priority }}</span>
             </div>
           </div>
 

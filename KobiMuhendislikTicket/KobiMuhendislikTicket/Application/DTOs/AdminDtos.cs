@@ -182,8 +182,8 @@ namespace KobiMuhendislikTicket.Application.DTOs
         public string? TicketCode { get; set; }
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public string Status { get; set; } = string.Empty;
-        public string Priority { get; set; } = string.Empty;
+        public int Status { get; set; }
+        public int Priority { get; set; }
         public string? AssignedPerson { get; set; }
         public string? ImagePath { get; set; }
         public List<string> ImagePaths { get; set; } = new();

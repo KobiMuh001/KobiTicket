@@ -318,13 +318,13 @@
             />
           </div>
           <div class="form-group">
-            <label for="department">Departman</label>
-            <select id="department" [(ngModel)]="newStaff.department" class="form-select">
-              @for (dept of departmentOptions; track dept) {
-                <option [value]="dept">{{ dept }}</option>
-              }
-            </select>
-          </div>
+              <label for="department">Departman</label>
+              <select id="department" [(ngModel)]="newStaff.departmentId" class="form-select">
+                @for (dept of departmentOptions; track dept) {
+                  <option [value]="dept.id">{{ dept.label }}</option>
+                }
+              </select>
+            </div>
         </div>
         <div class="form-group">
           <label for="maxTickets">Maksimum Eşzamanlı Ticket</label>

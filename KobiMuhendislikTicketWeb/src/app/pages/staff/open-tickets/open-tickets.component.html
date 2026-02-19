@@ -21,14 +21,12 @@
 
   <!-- Filters -->
   <div class="filters-bar">
+    
     <div class="filter-group">
       <label>Öncelik:</label>
       <select (change)="onPriorityFilterChange($event)" [value]="selectedPriority">
         <option value="all">Tümü</option>
-        <option value="4">Kritik</option>
-        <option value="3">Yüksek</option>
-        <option value="2">Normal</option>
-        <option value="1">Düşük</option>
+        <option *ngFor="let p of priorityOptions" [value]="(p.sortOrder ?? p.id) + ''">{{ p.label }}</option>
       </select>
     </div>
     <div class="results-count">
@@ -61,7 +59,7 @@
         @for (ticket of filteredTickets; track ticket.id) {
           <div class="ticket-card" [class]="'priority-border-' + getPriorityClass(ticket.priority)">
             <div class="ticket-header">
-              <span class="priority-badge" [class]="getPriorityClass(ticket.priority)">
+              <span class="priority-badge" [class]="getPriorityClass(ticket.priority)" [style.background-color]="getPriorityColor(ticket.priority)" [style.color]="getPriorityColor(ticket.priority) ? '#fff' : null">
                 {{ getPriorityText(ticket.priority) }}
               </span>
               <span class="time-ago">{{ getTimeAgo(ticket.createdDate) }}</span>

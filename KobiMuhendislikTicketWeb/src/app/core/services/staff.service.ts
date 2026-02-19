@@ -34,7 +34,7 @@ export interface CreateStaffDto {
   email: string;
   password: string;
   phone?: string;
-  department: string;
+  departmentId?: number;
   maxConcurrentTickets: number;
 }
 
@@ -153,7 +153,8 @@ export class StaffService {
 
   // Update ticket status
   updateTicketStatus(ticketId: string, newStatus: number): Observable<any> {
-    return this.http.put(`${this.apiUrl}/staff/tickets/${ticketId}/status`, { newStatus });
+    // send both PascalCase and camelCase keys to be resilient to server JSON naming
+    return this.http.put(`${this.apiUrl}/staff/tickets/${ticketId}/status`, { NewStatus: newStatus, newStatus: newStatus });
   }
 
   // Resolve ticket

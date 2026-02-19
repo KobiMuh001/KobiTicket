@@ -11,10 +11,16 @@
       @if (ticket) {
         <div class="ticket-info">
           <h1>Talep {{ formatTicketId(ticket.id, ticket.ticketCode) }}</h1>
-          <span class="status-badge {{ getStatusClass(ticket.status) }}">
+          <span 
+            class="status-badge {{ getStatusClass(ticket.status) }}"
+            [style.background-color]="getStatusColor(ticket.status)"
+            [style.color]="getStatusColor(ticket.status) ? '#fff' : null">
             {{ getStatusLabel(ticket.status) }}
           </span>
-          <span class="priority-badge {{ getPriorityClass(ticket.priority) }}">
+          <span 
+            class="priority-badge {{ getPriorityClass(ticket.priority) }}"
+            [style.background-color]="getPriorityColor(ticket.priority)"
+            [style.color]="getPriorityColor(ticket.priority) ? '#fff' : null">
             {{ getPriorityLabel(ticket.priority) }}
           </span>
         </div>
@@ -186,46 +192,6 @@
 
           <!-- Sidebar -->
           <div class="sidebar">
-            <!-- Status Card -->
-            <div class="card">
-              <div class="card-header">
-                <h2>Durum Değiştir</h2>
-              </div>
-              <div class="card-body">
-                <div class="status-options">
-                  @for (status of statusOptions; track status.value) {
-                    <button 
-                      class="status-btn {{ status.class }}"
-                      [class.active]="ticket.status === status.value"
-                      [disabled]="saving"
-                      (click)="updateStatus(status.value)">
-                      {{ status.label }}
-                    </button>
-                  }
-                </div>
-              </div>
-            </div>
-
-            <!-- Priority Card -->
-            <div class="card">
-              <div class="card-header">
-                <h2>Öncelik Değiştir</h2>
-              </div>
-              <div class="card-body">
-                <div class="priority-options">
-                  @for (priority of priorityOptions; track priority.value) {
-                    <button 
-                      class="priority-btn {{ priority.class }}"
-                      [class.active]="ticket.priority === priority.value"
-                      [disabled]="saving"
-                      (click)="updatePriority(priority.value)">
-                      {{ priority.label }}
-                    </button>
-                  }
-                </div>
-              </div>
-            </div>
-
             <!-- Assign Card -->
             <div class="card">
               <div class="card-header">
@@ -278,6 +244,49 @@
                 </button>
               </div>
             </div>
+            <!-- Status Card -->
+            <div class="card">
+              <div class="card-header">
+                <h2>Durum Değiştir</h2>
+              </div>
+              <div class="card-body">
+                <div class="status-options">
+                  <select
+                    [(ngModel)]="ticket.status"
+                    class="form-control"
+                    [disabled]="saving"
+                    (ngModelChange)="updateStatus($event)">
+                    <option value="">-- Durum Seçin --</option>
+                    @for (status of statusOptions; track status.value) {
+                      <option [value]="status.value">{{ status.label }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Priority Card -->
+            <div class="card">
+              <div class="card-header">
+                <h2>Öncelik Değiştir</h2>
+              </div>
+              <div class="card-body">
+                <div class="priority-options">
+                  <select
+                    [(ngModel)]="ticket.priority"
+                    class="form-control"
+                    [disabled]="saving"
+                    (ngModelChange)="updatePriority($event)">
+                    <option value="">-- Öncelik Seçin --</option>
+                    @for (priority of priorityOptions; track priority.value) {
+                      <option [value]="priority.value">{{ priority.label }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            
           </div>
         </div>
       }

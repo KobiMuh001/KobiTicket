@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TicketService } from '../../../core/services/ticket.service';
+import { SystemParameterService } from '../../../core/services/system-parameter.service';
 import { ProductService, TenantProductItem } from '../../../core/services/product.service';
 import { AuthService } from '../../../core/services/auth.service';
 
@@ -17,7 +18,7 @@ export class CustomerTicketCreateComponent implements OnInit {
   ticket = {
     title: '',
     description: '',
-    priority: 2, // Orta default
+    priority: 2 as number | string, // Orta default (will be replaced by DB value if available)
     productId: null as number | null
   };
 
@@ -32,23 +33,28 @@ export class CustomerTicketCreateComponent implements OnInit {
   selectedFileName: string = '';
   imagePreviewUrl: string | null = null;
 
-  priorities = [
+  priorities: { value: number | string; label: string }[] = [
     { value: 1, label: 'Düşük' },
     { value: 2, label: 'Orta' },
     { value: 3, label: 'Yüksek' },
     { value: 4, label: 'Kritik' }
   ];
 
+  // Will be populated from DB (TicketPriority group). Keep default above for fallback.
+  priorityOptions: { value: number | string; label: string }[] = [];
+
   constructor(
     private ticketService: TicketService,
     private productService: ProductService,
     private authService: AuthService,
+    private systemParameterService: SystemParameterService,
     private router: Router,
     private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
     this.getTenantId();
+    this.loadLookups();
     if (this.tenantId) {
       this.loadProducts();
     }
@@ -58,6 +64,30 @@ export class CustomerTicketCreateComponent implements OnInit {
       if (params['productId']) {
         this.ticket.productId = parseInt(params['productId'], 10);
       }
+    });
+  }
+
+  loadLookups(): void {
+    this.systemParameterService.getByGroup('TicketPriority').subscribe({
+      next: (res: any) => {
+        const data = res.data || res || [];
+        this.priorityOptions = (data || []).map((p: any) => ({
+          value: Number(p.sortOrder ?? p.id),
+          label: p.value ?? p.description ?? p.key
+        }));
+
+        if (this.priorityOptions.length) {
+          // Replace the displayed priorities (used by template) with DB-driven ones
+          this.priorities = this.priorityOptions.map(p => ({ value: p.value, label: p.label }));
+
+          // If current default priority isn't present in options, set to first option
+          const hasDefault = this.priorities.some(pr => Number(pr.value) === Number(this.ticket.priority));
+          if (!hasDefault) {
+            this.ticket.priority = Number(this.priorities[0].value);
+          }
+        }
+      },
+      error: () => {}
     });
   }
 
@@ -106,7 +136,7 @@ export class CustomerTicketCreateComponent implements OnInit {
     const ticketData = {
       title: this.ticket.title,
       description: this.ticket.description,
-      priority: this.ticket.priority,
+      priority: Number(this.ticket.priority),
       productId: this.ticket.productId || undefined
     };
 

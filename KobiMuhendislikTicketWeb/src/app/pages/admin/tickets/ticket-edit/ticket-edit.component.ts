@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { TicketService } from '../../../../core/services/ticket.service';
 import { StaffService, Staff } from '../../../../core/services/staff.service';
 import { SignalRService, CommentMessage } from '../../../../core/services/signalr.service';
+import { SystemParameterService } from '../../../../core/services/system-parameter.service';
 import { environment } from '../../../../../environments/environment';
 import { Subscription } from 'rxjs';
 
@@ -81,14 +82,10 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
   showImagePreview = false;
   selectedImagePath: string | null = null;
   private refreshInterval: any;
+  showStatusOptions = false;
+  showPriorityOptions = false;
 
-  statusOptions = [
-    { value: 1, label: 'Açık', class: 'open' },
-    { value: 2, label: 'İşlemde', class: 'processing' },
-    { value: 3, label: 'Müşteri Bekleniyor', class: 'waiting' },
-    { value: 4, label: 'Çözüldü', class: 'resolved' },
-    { value: 5, label: 'Kapatıldı', class: 'closed' }
-  ];
+  statusOptions: { value: number; label: string; class?: string; key?: string; color?: string | null }[] = [];
 
   statusValueMap: { [key: number]: number } = {
     1: 1,
@@ -135,7 +132,7 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
     4: 'critical'
   };
 
-  priorityOptions = [
+  priorityOptions: { value: number; label: string; class?: string; key?: string; color?: string | null }[] = [
     { value: 1, label: 'Düşük', class: 'low' },
     { value: 2, label: 'Orta', class: 'medium' },
     { value: 3, label: 'Yüksek', class: 'high' },
@@ -172,6 +169,7 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
     private ticketService: TicketService,
     private staffService: StaffService,
     private signalRService: SignalRService,
+    private paramSvc: SystemParameterService,
     @Inject(PLATFORM_ID) platformId: Object
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
@@ -190,6 +188,81 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
       }, 2000);
     }
     this.loadStaff();
+    this.loadDynamicFilters();
+  }
+
+  private loadDynamicFilters(): void {
+    // status
+    this.paramSvc.getByGroup('TicketStatus').subscribe({
+      next: (res: any) => {
+        let list = res.data || res || [];
+        list = list.slice().sort((a: any, b: any) => {
+          const sa = (a.sortOrder ?? null);
+          const sb = (b.sortOrder ?? null);
+          if (sa !== null && sb !== null) return sa - sb;
+          if (sa !== null) return -1;
+          if (sb !== null) return 1;
+          const order = ['Open', 'Processing', 'WaitingForCustomer', 'Resolved', 'Closed'];
+          const ia = order.indexOf(a.key ?? a.Key ?? a.value ?? '');
+          const ib = order.indexOf(b.key ?? b.Key ?? b.value ?? '');
+          return ia - ib;
+        });
+        this.statusOptions = list.map((p: any, i: number) => {
+          const val = Number(p.sortOrder ?? (i + 1));
+          return { value: val, label: p.value || p.key || p.description, class: this.getStatusClass(val), key: p.key, color: p.value2 ?? p.color ?? null };
+        });
+        this.reconcileTicketStatusPriority();
+      },
+      error: () => { this.statusOptions = []; }
+    });
+
+    // priority
+    this.paramSvc.getByGroup('TicketPriority').subscribe({
+      next: (res: any) => {
+        let list = res.data || res || [];
+        list = list.slice().sort((a: any, b: any) => {
+          const sa = (a.sortOrder ?? null);
+          const sb = (b.sortOrder ?? null);
+          if (sa !== null && sb !== null) return sa - sb;
+          if (sa !== null) return -1;
+          if (sb !== null) return 1;
+          const order = ['Low', 'Medium', 'High', 'Critical'];
+          const ia = order.indexOf(a.key ?? a.Key ?? a.value ?? '');
+          const ib = order.indexOf(b.key ?? b.Key ?? b.value ?? '');
+          return ia - ib;
+        });
+        this.priorityOptions = list.map((p: any, i: number) => {
+          const val = Number(p.sortOrder ?? (i + 1));
+          return { value: val, label: p.value || p.key || p.description, class: this.getPriorityClass(val), key: p.key, color: p.value2 ?? p.color ?? null };
+        });
+        this.reconcileTicketStatusPriority();
+      },
+      error: () => { this.priorityOptions = []; }
+    });
+  }
+
+  private reconcileTicketStatusPriority(): void {
+    if (!this.ticket) return;
+    // Try to find matching status option by value/key/label and normalize to numeric value
+    try {
+      const sVal = String(this.ticket.status ?? '');
+      const sFound = this.statusOptions.find(o => String(o.value) === sVal || String(o.key) === sVal || o.label === sVal);
+      if (sFound) {
+        this.ticket.status = sFound.value;
+      } else if (typeof this.ticket.status === 'string') {
+        this.ticket.status = this.statusStringToNumber[sVal] ?? this.ticket.status;
+      }
+
+      const pVal = String(this.ticket.priority ?? '');
+      const pFound = this.priorityOptions.find(o => String(o.value) === pVal || String(o.key) === pVal || o.label === pVal);
+      if (pFound) {
+        this.ticket.priority = pFound.value;
+      } else if (typeof this.ticket.priority === 'string') {
+        this.ticket.priority = this.priorityStringToNumber[pVal] ?? this.ticket.priority;
+      }
+    } catch (err) {
+      // ignore
+    }
   }
 
   ngOnDestroy(): void {
@@ -277,6 +350,8 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
           this.shouldScrollToBottom = true;
         }
         this.comments = newComments;
+        // Ensure ticket status/priority align with dynamic options
+        this.reconcileTicketStatusPriority();
       },
       error: () => {
         this.error = 'Talep yuklenirken bir hata olustu';
@@ -321,12 +396,15 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
     if (!this.ticket) return;
 
     this.saving = true;
-    this.ticketService.updateTicketStatus(this.ticket.id, statusValue).subscribe({
+    const val = Number(statusValue);
+    console.log('TicketEdit.updateStatus -> sending', val, { statusOptions: this.statusOptions });
+    this.ticketService.updateTicketStatus(this.ticket.id, val).subscribe({
       next: () => {
         if (this.ticket) {
           this.ticket.status = statusValue;
         }
         this.saving = false;
+        this.showStatusOptions = false;
         this.loadTicket(this.ticket!.id);
       },
       error: () => {
@@ -339,18 +417,29 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
     if (!this.ticket) return;
 
     this.saving = true;
-    this.ticketService.updateTicketPriority(this.ticket.id, priorityValue).subscribe({
+    const val = Number(priorityValue);
+    console.log('TicketEdit.updatePriority -> sending', val, { priorityOptions: this.priorityOptions });
+    this.ticketService.updateTicketPriority(this.ticket.id, val).subscribe({
       next: () => {
         if (this.ticket) {
           this.ticket.priority = priorityValue;
         }
         this.saving = false;
+        this.showPriorityOptions = false;
         this.loadTicket(this.ticket!.id);
       },
       error: () => {
         this.saving = false;
       }
     });
+  }
+
+  toggleStatusOptions(): void {
+    this.showStatusOptions = !this.showStatusOptions;
+  }
+
+  togglePriorityOptions(): void {
+    this.showPriorityOptions = !this.showPriorityOptions;
   }
 
   assignTicket(): void {
@@ -456,10 +545,16 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
   }
 
   getStatusLabel(status: string | number): string {
+    const n = Number(status);
+    const found = this.statusOptions.find(o => Number(o.value) === n);
+    if (found) return found.label;
     return this.statusDisplayMap[status] ?? 'Bilinmiyor';
   }
 
   getStatusClass(status: string | number): string {
+    const n = Number(status);
+    const found = this.statusOptions.find(o => Number(o.value) === n);
+    if (found && found.class) return found.class;
     const statusMap: { [key: string]: string; [key: number]: string } = {
       'Open': 'open',
       'Processing': 'processing',
@@ -478,11 +573,29 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
   }
 
   getPriorityLabel(priority: string | number): string {
+    const n = Number(priority);
+    const found = this.priorityOptions.find(o => Number(o.value) === n);
+    if (found) return found.label;
     return this.priorityDisplayMap[priority] ?? 'Normal';
   }
 
   getPriorityClass(priority: string | number): string {
+    const n = Number(priority);
+    const found = this.priorityOptions.find(o => Number(o.value) === n);
+    if (found && found.class) return found.class;
     return this.priorityClassMap[priority] ?? 'normal';
+  }
+
+  getStatusColor(status: string | number): string | null {
+    const n = Number(status);
+    const found = this.statusOptions.find(o => Number(o.value) === n || String(o.key) === String(status));
+    return found?.color ?? null;
+  }
+
+  getPriorityColor(priority: string | number): string | null {
+    const n = Number(priority);
+    const found = this.priorityOptions.find(o => Number(o.value) === n || String(o.key) === String(priority));
+    return found?.color ?? null;
   }
 
   formatDate(date: string): string {
@@ -497,5 +610,9 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
 
   goBack(): void {
     this.router.navigate(['/admin/tickets']);
+  }
+
+  compareValues(a: any, b: any): boolean {
+    return String(a) === String(b);
   }
 }

@@ -3,6 +3,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { DashboardService, DashboardStats, TicketListItem } from '../../../core/services/dashboard.service';
+import { SystemParameterService } from '../../../core/services/system-parameter.service';
 import { SignalRService, TicketUpdateMessage, DashboardStats as SignalRDashboardStats } from '../../../core/services/signalr.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -41,16 +42,47 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private isBrowser: boolean;
   private refreshInterval: any;
+  statusOptions: Array<any> = [];
+  priorityOptions: Array<any> = [];
 
   constructor(
     private dashboardService: DashboardService,
     private signalRService: SignalRService,
+    private paramSvc: SystemParameterService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
   }
 
   ngOnInit(): void {
+    // Load DB-driven lookup options first (best-effort)
+    this.paramSvc.getByGroup('TicketStatus').subscribe({
+      next: (res: any) => {
+        const sData = res?.data?.data || res?.data || res || [];
+        this.statusOptions = (Array.isArray(sData) ? sData : []).map((p: any, i: number) => ({
+          id: p.id,
+          key: p.key,
+          label: p.value,
+          sortOrder: p.sortOrder ?? i + 1,
+          color: p.value2 ?? p.color ?? null
+        }));
+      },
+      error: () => { this.statusOptions = []; }
+    });
+    this.paramSvc.getByGroup('TicketPriority').subscribe({
+      next: (res: any) => {
+        const pData = res?.data?.data || res?.data || res || [];
+        this.priorityOptions = (Array.isArray(pData) ? pData : []).map((p: any, i: number) => ({
+          id: p.id,
+          key: p.key,
+          label: p.value,
+          sortOrder: p.sortOrder ?? i + 1,
+          color: p.value2 ?? p.color ?? null
+        }));
+      },
+      error: () => { this.priorityOptions = []; }
+    });
+
     this.loadDashboardData();
     this.loadChartData();
     this.initSignalR();
@@ -256,6 +288,10 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   getStatusText(status: number): string {
+    const n = Number(status);
+    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
+    if (found) return found.label || 'Bilinmiyor';
+
     const statusMap: Record<number, string> = {
       1: 'Açık',
       2: 'İşlemde',
@@ -267,6 +303,19 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   getStatusClass(status: number): string {
+    const n = Number(status);
+    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
+    if (found) {
+      const num = Number(found.sortOrder ?? found.id);
+      const statusMap: { [key: string]: string; [key: number]: string } = {
+        1: 'open',
+        2: 'in-progress',
+        3: 'waiting',
+        4: 'resolved',
+        5: 'closed'
+      };
+      return statusMap[num] ?? 'open';
+    }
     const classMap: Record<number, string> = {
       1: 'open',
       2: 'in-progress',
@@ -278,6 +327,10 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   getPriorityText(priority: number): string {
+    const n = Number(priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    if (found) return found.label || 'Bilinmiyor';
+
     const priorityMap: Record<number, string> = {
       1: 'Düşük',
       2: 'Orta',
@@ -288,6 +341,18 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   getPriorityClass(priority: number): string {
+    const n = Number(priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    if (found) {
+      const num = Number(found.sortOrder ?? found.id);
+      const map: { [key: string]: string; [key: number]: string } = {
+        1: 'low',
+        2: 'medium',
+        3: 'high',
+        4: 'critical'
+      };
+      return map[num] ?? 'low';
+    }
     const classMap: Record<number, string> = {
       1: 'low',
       2: 'medium',
@@ -567,5 +632,18 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   getWeeklyPixelPerUnit(): number {
     return 150 / this.weeklyMaxValue;
+  }
+
+  // Helpers to get raw DB color (value2) for templates
+  getStatusColor(status: number): string | null {
+    const n = Number(status);
+    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
+    return found?.color ?? null;
+  }
+
+  getPriorityColor(priority: number): string | null {
+    const n = Number(priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    return found?.color ?? null;
   }
 }

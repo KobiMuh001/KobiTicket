@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { StaffService, StaffWorkload, StaffTicket } from '../../../core/services/staff.service';
+import { SystemParameterService } from '../../../core/services/system-parameter.service';
 
 @Component({
   selector: 'app-staff-dashboard',
@@ -17,12 +18,31 @@ export class StaffDashboardComponent implements OnInit, OnDestroy {
   isLoading = true;
   error: string | null = null;
   private refreshInterval: any;
+  statusOptions: Array<any> = [];
+  priorityOptions: Array<any> = [];
 
   constructor(
-    private staffService: StaffService
+    private staffService: StaffService,
+    private paramSvc: SystemParameterService
   ) {}
 
   ngOnInit(): void {
+    // Load DB-driven lookup options (best-effort)
+    this.paramSvc.getByGroup('TicketStatus').subscribe({
+      next: (res: any) => {
+        const sData = res?.data?.data || res?.data || res || [];
+        this.statusOptions = (Array.isArray(sData) ? sData : []).map((p: any, i: number) => ({ id: p.id, key: p.key, label: p.value, sortOrder: p.sortOrder ?? i + 1, color: p.value2 ?? p.color ?? null }));
+      },
+      error: () => { this.statusOptions = []; }
+    });
+    this.paramSvc.getByGroup('TicketPriority').subscribe({
+      next: (res: any) => {
+        const pData = res?.data?.data || res?.data || res || [];
+        this.priorityOptions = (Array.isArray(pData) ? pData : []).map((p: any, i: number) => ({ id: p.id, key: p.key, label: p.value, sortOrder: p.sortOrder ?? i + 1, color: p.value2 ?? p.color ?? null }));
+      },
+      error: () => { this.priorityOptions = []; }
+    });
+
     this.loadDashboardData();
     
     // Dashboard'ı 30 saniyede bir yenile (polling)
@@ -94,6 +114,10 @@ export class StaffDashboardComponent implements OnInit, OnDestroy {
   }
 
   getStatusText(status: number): string {
+    const n = Number(status);
+    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
+    if (found) return found.label || 'Bilinmiyor';
+
     switch (status) {
       case 1: return 'Açık';
       case 2: return 'İşlemde';
@@ -105,6 +129,19 @@ export class StaffDashboardComponent implements OnInit, OnDestroy {
   }
 
   getStatusClass(status: number): string {
+    const n = Number(status);
+    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
+    if (found) {
+      const num = Number(found.sortOrder ?? found.id);
+      switch (num) {
+        case 1: return 'status-open';
+        case 2: return 'status-processing';
+        case 3: return 'status-waiting';
+        case 4: return 'status-resolved';
+        case 5: return 'status-closed';
+        default: return '';
+      }
+    }
     switch (status) {
       case 1: return 'status-open';
       case 2: return 'status-processing';
@@ -116,6 +153,10 @@ export class StaffDashboardComponent implements OnInit, OnDestroy {
   }
 
   getPriorityText(priority: number): string {
+    const n = Number(priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    if (found) return found.label || 'Normal';
+
     switch (priority) {
       case 1: return 'Düşük';
       case 2: return 'Normal';
@@ -126,6 +167,18 @@ export class StaffDashboardComponent implements OnInit, OnDestroy {
   }
 
   getPriorityClass(priority: number): string {
+    const n = Number(priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    if (found) {
+      const num = Number(found.sortOrder ?? found.id);
+      switch (num) {
+        case 1: return 'priority-low';
+        case 2: return 'priority-normal';
+        case 3: return 'priority-high';
+        case 4: return 'priority-critical';
+        default: return 'priority-normal';
+      }
+    }
     switch (priority) {
       case 1: return 'priority-low';
       case 2: return 'priority-normal';
@@ -133,6 +186,18 @@ export class StaffDashboardComponent implements OnInit, OnDestroy {
       case 4: return 'priority-critical';
       default: return 'priority-normal';
     }
+  }
+
+  getStatusColor(status: string | number): string | null {
+    const s = String(status ?? '');
+    const found = this.statusOptions.find((o: any) => String(o.sortOrder ?? o.id) === s || String(o.id) === s || String(o.key) === s || o.label === status || String(o.label) === s);
+    return found?.color ?? null;
+  }
+
+  getPriorityColor(priority: string | number): string | null {
+    const p = String(priority ?? '');
+    const found = this.priorityOptions.find((o: any) => String(o.sortOrder ?? o.id) === p || String(o.id) === p || String(o.key) === p || o.label === priority || String(o.label) === p);
+    return found?.color ?? null;
   }
 
   getWorkloadPercentage(): number {

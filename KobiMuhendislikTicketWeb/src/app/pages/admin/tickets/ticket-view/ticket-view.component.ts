@@ -5,7 +5,9 @@ import { FormsModule } from '@angular/forms';
 import { TicketService } from '../../../../core/services/ticket.service';
 import { SignalRService, CommentMessage } from '../../../../core/services/signalr.service';
 import { environment } from '../../../../../environments/environment';
-import { Subscription } from 'rxjs';
+import { Subscription, forkJoin } from 'rxjs';
+import { SystemParameterService } from '../../../../core/services/system-parameter.service';
+import { StaffService, Staff } from '../../../../core/services/staff.service';
 
 interface TicketComment {
   id: string;
@@ -74,6 +76,12 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
   selectedImagePath: string | null = null;
   private refreshInterval: any;
 
+  // Admin assign helpers (match ticket-edit design)
+  staffList: Staff[] = [];
+  selectedStaffId: any = '';
+  assigning = false;
+  loadingStaff = false;
+
   statusDisplayMap: { [key: string]: string; [key: number]: string } = {
     'Open': 'Açık',
     'Processing': 'İşlemde',
@@ -127,11 +135,17 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
     'Critical': 4
   };
 
+  // Dynamic options loaded from DB (prefers using sortOrder as numeric value)
+  statusOptions: Array<any> = [];
+  priorityOptions: Array<any> = [];
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private ticketService: TicketService,
     private signalRService: SignalRService,
+    private staffService: StaffService,
+    private systemParameterService: SystemParameterService,
     @Inject(PLATFORM_ID) platformId: Object
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
@@ -140,15 +154,55 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.loadTicket(id);
-      if (this.isBrowser) {
-        this.initSignalR(id);
-      }
+      const status$ = this.systemParameterService.getByGroup('TicketStatus');
+      const priority$ = this.systemParameterService.getByGroup('TicketPriority');
 
-      this.refreshInterval = setInterval(() => {
-        this.refreshCommentsAndHistory(id);
-      }, 2000);
+      forkJoin([status$, priority$]).subscribe({
+        next: ([sRes, pRes]: any) => {
+          const sData = sRes?.data?.data || sRes?.data || sRes || [];
+          const pData = pRes?.data?.data || pRes?.data || pRes || [];
+          this.statusOptions = (Array.isArray(sData) ? sData : []).map((p: any, i: number) => ({ id: p.id, key: p.key, label: p.value, sortOrder: p.sortOrder ?? i + 1, color: p.value2 ?? p.color ?? null }));
+          this.priorityOptions = (Array.isArray(pData) ? pData : []).map((p: any, i: number) => ({ id: p.id, key: p.key, label: p.value, sortOrder: p.sortOrder ?? i + 1, color: p.value2 ?? p.color ?? null }));
+
+          this.loadTicket(id);
+          if (this.isBrowser) {
+            this.initSignalR(id);
+          }
+
+          // load staff list for admin assign control
+          this.loadStaff();
+
+          this.refreshInterval = setInterval(() => {
+            this.refreshCommentsAndHistory(id);
+          }, 2000);
+        },
+        error: () => {
+          // Fallback: still load ticket even if lookups fail
+          this.loadTicket(id);
+          if (this.isBrowser) {
+            this.initSignalR(id);
+          }
+          this.refreshInterval = setInterval(() => {
+            this.refreshCommentsAndHistory(id);
+          }, 2000);
+          // still attempt loading staff list
+          this.loadStaff();
+        }
+      });
     }
+  }
+  private loadStaff(): void {
+    this.loadingStaff = true;
+    this.staffService.getAllStaff(true).subscribe({
+      next: (response: any) => {
+        const data = response?.data?.$values || response?.data || response || [];
+        this.staffList = Array.isArray(data) ? data : [];
+        this.loadingStaff = false;
+      },
+      error: () => {
+        this.loadingStaff = false;
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -192,14 +246,19 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
     this.ticketService.getTicketById(id).subscribe({
       next: (response: any) => {
         const data = response?.data?.data || response?.data || response;
-        
+        // Normalize status: prefer mapping from DB-driven options (using sortOrder),
+        // otherwise fall back to legacy string→number map
         if (typeof data.status === 'string') {
-          data.status = this.statusStringToNumber[data.status] || 1;
+          let mapped = this.statusOptions.find((s: any) => s.key === data.status || s.label === data.status);
+          if (mapped) data.status = mapped.sortOrder ?? mapped.id ?? 1;
+          else data.status = this.statusStringToNumber[data.status] || 1;
         }
+
         if (typeof data.priority === 'string') {
-          data.priority = this.priorityStringToNumber[data.priority] || 1;
+          let mappedP = this.priorityOptions.find((p: any) => p.key === data.priority || p.label === data.priority);
+          if (mappedP) data.priority = mappedP.sortOrder ?? mappedP.id ?? 1;
+          else data.priority = this.priorityStringToNumber[data.priority] || 1;
         }
-        
         this.ticket = data;
         
         // Process comments to mark staff messages
@@ -257,11 +316,35 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
   }
 
   getStatusLabel(status: string | number): string {
+    const n = Number(status);
+    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
+    if (found) return found.label || this.statusDisplayMap[status] || 'Bilinmiyor';
     return this.statusDisplayMap[status] ?? 'Bilinmiyor';
   }
 
   getStatusClass(status: string | number): string {
-    const statusMap: { [key: string]: string; [key: number]: string } = {
+    const n = Number(status);
+    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
+    if (found) {
+      const num = Number(found.sortOrder ?? found.id);
+      const statusMap: { [key: string]: string; [key: number]: string } = {
+        1: 'open',
+        2: 'processing',
+        3: 'waiting',
+        4: 'resolved',
+        5: 'closed',
+        'Open': 'open',
+        'Processing': 'processing',
+        'InProgress': 'processing',
+        'WaitingForCustomer': 'waiting',
+        'Waiting': 'waiting',
+        'Resolved': 'resolved',
+        'Closed': 'closed'
+      };
+      return statusMap[num] ?? statusMap[found.key ?? found.label] ?? '';
+    }
+
+    const statusMapFallback: { [key: string]: string; [key: number]: string } = {
       'Open': 'open',
       'Processing': 'processing',
       'InProgress': 'processing',
@@ -275,15 +358,47 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
       4: 'resolved',
       5: 'closed'
     };
-    return statusMap[status] ?? '';
+    return statusMapFallback[status] ?? '';
   }
 
   getPriorityLabel(priority: string | number): string {
+    const n = Number(priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    if (found) return found.label || this.priorityDisplayMap[priority] || 'Normal';
     return this.priorityDisplayMap[priority] ?? 'Normal';
   }
 
   getPriorityClass(priority: string | number): string {
+    const n = Number(priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    if (found) {
+      const num = Number(found.sortOrder ?? found.id);
+      const map: { [key: string]: string; [key: number]: string } = {
+        1: 'low',
+        2: 'normal',
+        3: 'high',
+        4: 'critical',
+        'Low': 'low',
+        'Medium': 'normal',
+        'High': 'high',
+        'Critical': 'critical'
+      };
+      return map[num] ?? map[found.key ?? found.label] ?? 'normal';
+    }
     return this.priorityClassMap[priority] ?? 'normal';
+  }
+
+  // Return raw DB color (value2) if provided
+  getStatusColor(status: string | number): string | null {
+    const n = Number(status);
+    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
+    return found?.color ?? null;
+  }
+
+  getPriorityColor(priority: string | number): string | null {
+    const n = Number(priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    return found?.color ?? null;
   }
 
   formatDate(date: string): string {
@@ -384,5 +499,30 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
       this.isSignalRConnected = false;
       console.warn('SignalR: Real-time updates disabled. Comments will appear after refresh.');
     }
+  }
+
+  assignTicket(): void {
+    if (!this.ticket || !this.selectedStaffId) return;
+
+    const selectedId = typeof this.selectedStaffId === 'number' ? this.selectedStaffId : Number(this.selectedStaffId);
+    const selectedStaff = this.staffList.find(s => Number(s.id) === selectedId);
+    if (!selectedStaff) return;
+
+    this.assigning = true;
+    this.ticketService.assignTicket(this.ticket.id, selectedStaff.fullName).subscribe({
+      next: () => {
+        if (this.ticket) this.ticket.assignedPerson = selectedStaff.fullName;
+        this.assigning = false;
+        this.ticketService.getTicketById(this.ticket!.id).subscribe({
+          next: (response: any) => {
+            const data = response?.data?.data || response?.data || response;
+            this.history = data.history?.$values || data.history || [];
+          }
+        });
+      },
+      error: () => {
+        this.assigning = false;
+      }
+    });
   }
 }

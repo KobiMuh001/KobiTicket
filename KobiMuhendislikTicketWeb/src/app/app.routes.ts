@@ -80,6 +80,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/admin/staff/staff.component').then(m => m.StaffComponent)
       },
       {
+        path: 'settings',
+        loadComponent: () => import('./pages/admin/settings/settings.component').then(m => m.SettingsComponent)
+      },
+      {
         path: 'staff/:id',
         loadComponent: () => import('./pages/admin/staff/staff-edit.component').then(m => m.StaffEditComponent)
       }

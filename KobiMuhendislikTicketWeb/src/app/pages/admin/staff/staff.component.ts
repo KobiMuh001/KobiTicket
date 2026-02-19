@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { StaffService, Staff, StaffWorkload, CreateStaffDto } from '../../../core/services/staff.service';
+import { SystemParameterService } from '../../../core/services/system-parameter.service';
 
 @Component({
   selector: 'app-staff',
@@ -32,22 +33,84 @@ export class StaffComponent implements OnInit {
     email: '',
     password: '',
     phone: '',
-    department: 'Teknik Destek',
+    departmentId: 1,
     maxConcurrentTickets: 10
   };
 
-  departmentOptions = ['Teknik Destek', 'Satış', 'Muhasebe', 'Yönetim', 'Diğer'];
+  defaultMaxConcurrentTickets = 10;
+
+  // department options now hold { id, label } so we can send numeric departmentId
+  departmentOptions: { id: number; label: string }[] = [
+    { id: 1, label: 'Teknik Destek' },
+    { id: 2, label: 'Satış' },
+    { id: 3, label: 'Muhasebe' },
+    { id: 4, label: 'Yönetim' },
+    { id: 5, label: 'Diğer' }
+  ];
 
   // Pagination
   currentPage = 1;
   itemsPerPage = 10;
   totalPages = 1;
 
-  constructor(private staffService: StaffService) {}
+  constructor(private staffService: StaffService, private paramSvc: SystemParameterService) {}
 
   ngOnInit(): void {
     this.loadStaff();
     this.loadWorkloads();
+    this.loadDefaultMaxConcurrentTickets();
+    this.loadDepartments();
+  }
+
+  private loadDepartments(): void {
+    // Try common group names, fallback to existing static list
+    this.paramSvc.getByGroup('Department').subscribe({
+      next: (res: any) => {
+        const data = res?.data || res || [];
+        if (Array.isArray(data) && data.length) {
+          this.departmentOptions = data.map((d: any) => ({
+            id: Number(d.id ?? d.key ?? 0) || 0,
+            label: (d.value ?? d.description ?? d.key ?? String(d.id)).toString()
+          }));
+          return;
+        }
+        // try plural
+        this.paramSvc.getByGroup('Departments').subscribe({
+          next: (res2: any) => {
+            const data2 = res2?.data || res2 || [];
+            if (Array.isArray(data2) && data2.length) {
+              this.departmentOptions = data2.map((d: any) => ({
+                id: Number(d.id ?? d.key ?? 0) || 0,
+                label: (d.value ?? d.description ?? d.key ?? String(d.id)).toString()
+              }));
+            }
+          },
+          error: () => {}
+        });
+      },
+      error: () => {
+        // keep defaults
+      }
+    });
+  }
+
+  private loadDefaultMaxConcurrentTickets(): void {
+    this.paramSvc.getByGroup('General').subscribe({
+      next: (res: any) => {
+        const data = res?.data?.data || res?.data || res || [];
+        const list = Array.isArray(data) ? data : [];
+        const found = list.find((p: any) => (p.key || p.Key || '').toLowerCase() === 'defaultticketlimit'.toLowerCase());
+        if (found && found.value != null) {
+          const v = Number(found.value);
+          if (!Number.isNaN(v) && v > 0) {
+            this.defaultMaxConcurrentTickets = v;
+          }
+        }
+      },
+      error: () => {
+        // keep default
+      }
+    });
   }
 
   loadStaff(): void {
@@ -147,8 +210,8 @@ export class StaffComponent implements OnInit {
       email: '',
       password: '',
       phone: '',
-      department: 'Teknik Destek',
-      maxConcurrentTickets: 10
+      departmentId: this.departmentOptions && this.departmentOptions.length ? this.departmentOptions[0].id : 1,
+      maxConcurrentTickets: this.defaultMaxConcurrentTickets
     };
     this.showCreateModal = true;
   }

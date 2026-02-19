@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TicketService } from '../../../core/services/ticket.service';
+import { SystemParameterService } from '../../../core/services/system-parameter.service';
+import { forkJoin } from 'rxjs';
 
 interface Ticket {
   id: number;
@@ -32,10 +34,47 @@ export class CustomerTicketsComponent implements OnInit {
   statusFilter = '';
   priorityFilter = '';
 
-  constructor(private ticketService: TicketService) {}
+  statusOptions: any[] = [];
+  priorityOptions: any[] = [];
+
+  constructor(private ticketService: TicketService, private systemParameterService: SystemParameterService) {}
 
   ngOnInit(): void {
-    this.loadTickets();
+    this.loadLookups();
+  }
+
+  loadLookups(): void {
+    forkJoin([
+      this.systemParameterService.getByGroup('TicketStatus'),
+      this.systemParameterService.getByGroup('TicketPriority')
+    ]).subscribe({
+      next: ([sRes, pRes]: any) => {
+        const sData = sRes.data || sRes || [];
+        const pData = pRes.data || pRes || [];
+
+        this.statusOptions = (sData || []).map((s: any) => ({
+          id: s.id,
+          key: s.key,
+          label: s.value ?? s.description ?? s.key,
+          sortOrder: s.sortOrder,
+          color: s.value2 ?? s.color ?? null
+        }));
+
+        this.priorityOptions = (pData || []).map((p: any) => ({
+          id: p.id,
+          key: p.key,
+          label: p.value ?? p.description ?? p.key,
+          sortOrder: p.sortOrder,
+          color: p.value2 ?? p.color ?? null
+        }));
+
+        this.loadTickets();
+      },
+      error: () => {
+        // fallback: still load tickets even if lookups fail
+        this.loadTickets();
+      }
+    });
   }
 
   loadTickets(): void {
@@ -86,6 +125,11 @@ export class CustomerTicketsComponent implements OnInit {
   }
 
   getStatusText(status: string | number): string {
+    const opt = this.statusOptions.find((o: any) =>
+      Number(o.sortOrder ?? o.id) === Number(status) || o.key === status || String(o.id) === String(status)
+    );
+    if (opt) return opt.label;
+
     const statusMap: { [key: string]: string; [key: number]: string } = {
       'Open': 'Açık',
       'Processing': 'İşlemde',
@@ -104,6 +148,11 @@ export class CustomerTicketsComponent implements OnInit {
   }
 
   getPriorityText(priority: string | number): string {
+    const opt = this.priorityOptions.find((o: any) =>
+      Number(o.sortOrder ?? o.id) === Number(priority) || o.key === priority || String(o.id) === String(priority)
+    );
+    if (opt) return opt.label;
+
     const priorityMap: { [key: string]: string; [key: number]: string } = {
       'Low': 'Düşük',
       'Medium': 'Orta',
@@ -136,5 +185,17 @@ export class CustomerTicketsComponent implements OnInit {
       'Kritik': 'priority-critical'
     };
     return classMap[priority] || '';
+  }
+
+  getStatusColor(status: string | number): string | null {
+    const s = String(status ?? '');
+    const found = this.statusOptions.find((o: any) => String(o.sortOrder ?? o.id) === s || String(o.id) === s || String(o.key) === s || o.label === status || String(o.label) === s);
+    return found?.color ?? null;
+  }
+
+  getPriorityColor(priority: string | number): string | null {
+    const p = String(priority ?? '');
+    const found = this.priorityOptions.find((o: any) => String(o.sortOrder ?? o.id) === p || String(o.id) === p || String(o.key) === p || o.label === priority || String(o.label) === p);
+    return found?.color ?? null;
   }
 }

@@ -5,6 +5,7 @@ import { TicketService } from '../../../core/services/ticket.service';
 import { AssetService } from '../../../core/services/asset.service';
 import { AuthService, User } from '../../../core/services/auth.service';
 import { TenantService } from '../../../core/services/tenant.service';
+import { SystemParameterService } from '../../../core/services/system-parameter.service';
 import { environment } from '../../../../environments/environment';
 
 interface DashboardStats {
@@ -44,18 +45,53 @@ export class CustomerDashboardComponent implements OnInit {
   currentUser: User | null = null;
   companyLogoUrl: string | null = null;
   private readonly apiOrigin = new URL(environment.apiUrl).origin;
+  statusOptions: Array<any> = [];
+  priorityOptions: Array<any> = [];
 
   constructor(
     private ticketService: TicketService,
     private assetService: AssetService,
     private authService: AuthService,
-    private tenantService: TenantService
+    private tenantService: TenantService,
+    private systemParamSvc: SystemParameterService
   ) {}
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
     this.loadCompanyLogo();
+    this.loadLookups();
     this.loadDashboardData();
+  }
+
+  loadLookups(): void {
+    if (!this.systemParamSvc) return;
+    this.systemParamSvc.getByGroup('TicketStatus').subscribe({
+      next: (res: any) => {
+        const sData = res?.data?.data || res?.data || res || [];
+        this.statusOptions = (Array.isArray(sData) ? sData : []).map((p: any, i: number) => ({ id: p.id, key: p.key, label: p.value, sortOrder: p.sortOrder ?? i + 1, color: p.value2 ?? p.color ?? null }));
+      },
+      error: () => { this.statusOptions = []; }
+    });
+
+    this.systemParamSvc.getByGroup('TicketPriority').subscribe({
+      next: (res: any) => {
+        const pData = res?.data?.data || res?.data || res || [];
+        this.priorityOptions = (Array.isArray(pData) ? pData : []).map((p: any, i: number) => ({ id: p.id, key: p.key, label: p.value, sortOrder: p.sortOrder ?? i + 1, color: p.value2 ?? p.color ?? null }));
+      },
+      error: () => { this.priorityOptions = []; }
+    });
+  }
+
+  getStatusColor(status: string | number): string | null {
+    const s = String(status ?? '');
+    const found = this.statusOptions.find((o: any) => String(o.sortOrder ?? o.id) === s || String(o.id) === s || String(o.key) === s || o.label === status || String(o.label) === s);
+    return found?.color ?? null;
+  }
+
+  getPriorityColor(priority: string | number): string | null {
+    const p = String(priority ?? '');
+    const found = this.priorityOptions.find((o: any) => String(o.sortOrder ?? o.id) === p || String(o.id) === p || String(o.key) === p || o.label === priority || String(o.label) === p);
+    return found?.color ?? null;
   }
 
   private loadCompanyLogo(): void {
@@ -124,6 +160,10 @@ export class CustomerDashboardComponent implements OnInit {
   }
 
   getStatusText(status: string | number): string {
+    const n = Number(status);
+    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
+    if (found) return found.label || 'Bilinmiyor';
+
     const statusMap: { [key: string]: string; [key: number]: string } = {
       'Open': 'Açık',
       'Processing': 'İşlemde',
@@ -142,6 +182,10 @@ export class CustomerDashboardComponent implements OnInit {
   }
 
   getPriorityText(priority: string | number): string {
+    const n = Number(priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    if (found) return found.label || 'Normal';
+
     const priorityMap: { [key: string]: string; [key: number]: string } = {
       'Low': 'Düşük',
       'Medium': 'Orta',
@@ -156,6 +200,19 @@ export class CustomerDashboardComponent implements OnInit {
   }
 
   getStatusClass(status: string): string {
+    const n = Number(status as any);
+    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
+    if (found) {
+      const num = Number(found.sortOrder ?? found.id);
+      switch (num) {
+        case 1: return 'status-open';
+        case 2: return 'status-progress';
+        case 3: return 'status-waiting';
+        case 4: return 'status-resolved';
+        case 5: return 'status-closed';
+        default: return '';
+      }
+    }
     const classMap: { [key: string]: string } = {
       'Açık': 'status-open',
       'İşlemde': 'status-progress',
@@ -167,6 +224,18 @@ export class CustomerDashboardComponent implements OnInit {
   }
 
   getPriorityClass(priority: string): string {
+    const n = Number(priority as any);
+    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    if (found) {
+      const num = Number(found.sortOrder ?? found.id);
+      switch (num) {
+        case 1: return 'priority-low';
+        case 2: return 'priority-medium';
+        case 3: return 'priority-high';
+        case 4: return 'priority-critical';
+        default: return '';
+      }
+    }
     const classMap: { [key: string]: string } = {
       'Düşük': 'priority-low',
       'Orta': 'priority-medium',
