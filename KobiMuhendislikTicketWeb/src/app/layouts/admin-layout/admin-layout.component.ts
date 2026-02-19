@@ -52,17 +52,17 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
       active: false
     },
     {
-      title: 'Personel',
-      icon: 'staff',
-      route: '/admin/staff',
-      active: false
-    },
-    {
       title: 'Müşteri Ürün',
       icon: 'assets',
       route: '/admin/assets',
       active: false
     },
+    {
+      title: 'Personel',
+      icon: 'staff',
+      route: '/admin/staff',
+      active: false
+    },   
     {
       title: 'Ayarlar',
       icon: 'settings',

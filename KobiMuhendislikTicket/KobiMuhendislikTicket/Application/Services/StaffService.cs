@@ -135,8 +135,9 @@ namespace KobiMuhendislikTicket.Application.Services
                     return Result.Failure("�al��an bulunamad�.");
 
                 // Atanm�� a��k biletleri kontrol et
+                var normalizedName = (staff.FullName ?? string.Empty).Trim().ToLower();
                 var assignedTickets = await _context.Tickets
-                    .CountAsync(t => t.AssignedPerson == staff.FullName && t.Status != TicketStatus.Resolved);
+                    .CountAsync(t => !string.IsNullOrEmpty(t.AssignedPerson) && t.AssignedPerson.Trim().ToLower() == normalizedName && t.Status != TicketStatus.Resolved && t.Status != TicketStatus.Closed);
 
                 if (assignedTickets > 0)
                     return Result.Failure($"Bu �al��an�n {assignedTickets} adet a��k ticket'� var. �nce ticket'lar� ba�ka birine atay�n.");
@@ -210,10 +211,12 @@ namespace KobiMuhendislikTicket.Application.Services
 
             var workloads = staffList.Select(staff =>
             {
-                var staffTickets = tickets.Where(t => t.AssignedPerson == staff.FullName).ToList();
+                var normalizedName = (staff.FullName ?? string.Empty).Trim().ToLower();
+                var staffTickets = tickets.Where(t => !string.IsNullOrEmpty(t.AssignedPerson) && t.AssignedPerson.Trim().ToLower() == normalizedName).ToList();
                 var openTickets = staffTickets.Count(t => t.Status == TicketStatus.Open);
                 var processingTickets = staffTickets.Count(t => t.Status == TicketStatus.Processing);
-                var activeTickets = openTickets + processingTickets;
+                // Consider any status that is not Resolved or Closed as active so new DB-added statuses are included
+                var activeTickets = staffTickets.Count(t => t.Status != TicketStatus.Resolved && t.Status != TicketStatus.Closed);
 
                     return new StaffWorkloadDto
                     {
@@ -254,9 +257,10 @@ namespace KobiMuhendislikTicket.Application.Services
                     return Result.Failure("Bu �al��an aktif de�il.");
 
                 
+                var normalizedName = (staff.FullName ?? string.Empty).Trim().ToLower();
                 var currentTickets = await _context.Tickets
-                    .CountAsync(t => t.AssignedPerson == staff.FullName && 
-                                    (t.Status == TicketStatus.Open || t.Status == TicketStatus.Processing));
+                    .CountAsync(t => !string.IsNullOrEmpty(t.AssignedPerson) && t.AssignedPerson.Trim().ToLower() == normalizedName && 
+                                    (t.Status != TicketStatus.Resolved && t.Status != TicketStatus.Closed));
 
                 if (currentTickets >= staff.MaxConcurrentTickets)
                     return Result.Failure($"{staff.FullName} maksimum ticket kapasitesine ula�m�� ({currentTickets}/{staff.MaxConcurrentTickets}).");
@@ -456,10 +460,11 @@ namespace KobiMuhendislikTicket.Application.Services
             if (staff == null)
                 return new List<TicketDto>();
 
+            var normalizedName = (staff.FullName ?? string.Empty).Trim().ToLower();
             var tickets = await _context.Tickets
                 .Include(t => t.Tenant)
                 .Include(t => t.Product)
-                .Where(t => t.AssignedPerson == staff.FullName)
+                .Where(t => !string.IsNullOrEmpty(t.AssignedPerson) && t.AssignedPerson.Trim().ToLower() == normalizedName)
                 .OrderByDescending(t => t.CreatedDate)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -492,10 +497,11 @@ namespace KobiMuhendislikTicket.Application.Services
             if (staff == null)
                 return new List<TicketDto>();
 
+            var normalizedName = (staff.FullName ?? string.Empty).Trim().ToLower();
             var tickets = await _context.Tickets
                 .Include(t => t.Tenant)
                 .Include(t => t.Product)
-                .Where(t => t.AssignedPerson == staff.FullName)
+                .Where(t => !string.IsNullOrEmpty(t.AssignedPerson) && t.AssignedPerson.Trim().ToLower() == normalizedName)
                 .OrderByDescending(t => t.CreatedDate)
                 .Select(t => new TicketDto
                 {
@@ -572,7 +578,7 @@ namespace KobiMuhendislikTicket.Application.Services
                 // Kapasite kontrolü
                 var currentTickets = await _context.Tickets
                     .CountAsync(t => t.AssignedPerson == staff.FullName && 
-                                    (t.Status == TicketStatus.Open || t.Status == TicketStatus.Processing));
+                                    (t.Status != TicketStatus.Resolved && t.Status != TicketStatus.Closed));
 
                 if (currentTickets >= staff.MaxConcurrentTickets)
                     return Result.Failure($"Maksimum ticket kapasitesine ulaştınız ({currentTickets}/{staff.MaxConcurrentTickets}).");
@@ -677,7 +683,8 @@ namespace KobiMuhendislikTicket.Application.Services
 
             var openTickets = staffTickets.Count(t => t.Status == TicketStatus.Open);
             var processingTickets = staffTickets.Count(t => t.Status == TicketStatus.Processing);
-            var activeTickets = openTickets + processingTickets;
+            // Treat any status that is not Resolved or Closed as active so DB-added statuses are included
+            var activeTickets = staffTickets.Count(t => t.Status != TicketStatus.Resolved && t.Status != TicketStatus.Closed);
 
             return new StaffWorkloadDto
             {
