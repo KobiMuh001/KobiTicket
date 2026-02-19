@@ -90,6 +90,12 @@ builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<ProductService>();
 #endregion
 
+// Lookup / SystemParameter service
+builder.Services.AddScoped<KobiMuhendislikTicket.Application.Interfaces.ILookupService, KobiMuhendislikTicket.Application.Services.LookupService>();
+// SystemParameter CRUD service
+builder.Services.AddScoped<KobiMuhendislikTicket.Application.Interfaces.ISystemParameterService, KobiMuhendislikTicket.Application.Services.SystemParameterService>();
+ 
+
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ITokenBlacklistService, TokenBlacklistService>();
 

@@ -3,6 +3,7 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TicketService } from '../../../core/services/ticket.service';
+import { SystemParameterService } from '../../../core/services/system-parameter.service';
 import { SignalRService, CommentMessage } from '../../../core/services/signalr.service';
 import { Subscription, forkJoin } from 'rxjs';
 import { environment } from '../../../../environments/environment';
@@ -34,6 +35,8 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
   newComment = '';
   errorMessage = '';
   baseUrl = environment.baseUrl;
+  statusOptions: any[] = [];
+  priorityOptions: any[] = [];
   selectedFiles: File[] = [];
   isUploadingFile = false;
   uploadSuccessMessage = '';
@@ -51,6 +54,7 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
   constructor(
     private ticketService: TicketService,
     private signalRService: SignalRService,
+    private systemParameterService: SystemParameterService,
     private route: ActivatedRoute,
     @Inject(PLATFORM_ID) platformId: Object
   ) {
@@ -61,6 +65,7 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.ticketId = id;
+      this.loadLookups();
       this.loadTicket(id);
       this.loadComments(id);
       this.loadImages(id);
@@ -74,6 +79,42 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
         this.loadComments(id);
       }, 2000);
     }
+  }
+
+  loadLookups(): void {
+    this.systemParameterService.getByGroup('TicketStatus').subscribe({
+      next: (res: any) => {
+        const data = res.data || res || [];
+        this.statusOptions = (data || []).map((s: any) => ({
+          id: s.id,
+          key: s.key,
+          label: s.value ?? s.description ?? s.key,
+          sortOrder: s.sortOrder,
+          color: s.value2 ?? s.color ?? null
+        }));
+        if (this.ticket) {
+          this.ticket.statusText = this.getStatusText(this.ticket.status);
+        }
+      },
+      error: () => {}
+    });
+
+    this.systemParameterService.getByGroup('TicketPriority').subscribe({
+      next: (res: any) => {
+        const data = res.data || res || [];
+        this.priorityOptions = (data || []).map((p: any) => ({
+          id: p.id,
+          key: p.key,
+          label: p.value ?? p.description ?? p.key,
+          sortOrder: p.sortOrder,
+          color: p.value2 ?? p.color ?? null
+        }));
+        if (this.ticket) {
+          this.ticket.priorityText = this.getPriorityText(this.ticket.priority);
+        }
+      },
+      error: () => {}
+    });
   }
 
   ngOnDestroy(): void {
@@ -234,6 +275,11 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
   }
 
   getStatusText(status: string | number): string {
+    const opt = this.statusOptions.find((o: any) =>
+      Number(o.sortOrder ?? o.id) === Number(status) || o.key === status || String(o.id) === String(status)
+    );
+    if (opt) return opt.label;
+
     const statusMap: { [key: string]: string; [key: number]: string } = {
       'Open': 'Açık',
       'Processing': 'İşlemde',
@@ -252,6 +298,11 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
   }
 
   getPriorityText(priority: string | number): string {
+    const opt = this.priorityOptions.find((o: any) =>
+      Number(o.sortOrder ?? o.id) === Number(priority) || o.key === priority || String(o.id) === String(priority)
+    );
+    if (opt) return opt.label;
+
     const priorityMap: { [key: string]: string; [key: number]: string } = {
       'Low': 'Düşük',
       'Medium': 'Orta',
@@ -286,6 +337,18 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
       'Kritik': 'priority-critical'
     };
     return classMap[priorityText] || '';
+  }
+
+  getStatusColor(status: string | number): string | null {
+    const s = String(status ?? '');
+    const found = this.statusOptions.find((o: any) => String(o.sortOrder ?? o.id) === s || String(o.id) === s || String(o.key) === s || o.label === status || String(o.label) === s);
+    return found?.color ?? null;
+  }
+
+  getPriorityColor(priority: string | number): string | null {
+    const p = String(priority ?? '');
+    const found = this.priorityOptions.find((o: any) => String(o.sortOrder ?? o.id) === p || String(o.id) === p || String(o.key) === p || o.label === priority || String(o.label) === p);
+    return found?.color ?? null;
   }
 
   isTicketClosed(): boolean {

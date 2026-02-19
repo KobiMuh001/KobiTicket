@@ -94,10 +94,10 @@
                   <span class="ticket-company">{{ ticket.companyName }}</span>
                 </div>
                 <div class="ticket-meta">
-                  <span class="status" [class]="getStatusClass(ticket.status)">
+                  <span class="status" [class]="getStatusClass(ticket.status)" [style.background-color]="getStatusColor(ticket.status)" [style.color]="getStatusColor(ticket.status) ? '#fff' : null">
                     {{ getStatusText(ticket.status) }}
                   </span>
-                  <span class="priority" [class]="getPriorityClass(ticket.priority)">
+                  <span class="priority" [class]="getPriorityClass(ticket.priority)" [style.background-color]="getPriorityColor(ticket.priority)" [style.color]="getPriorityColor(ticket.priority) ? '#fff' : null">
                     {{ getPriorityText(ticket.priority) }}
                   </span>
                 </div>
@@ -130,7 +130,7 @@
                     <span class="ticket-company">{{ ticket.companyName }}</span>
                   </div>
                   <div class="ticket-actions">
-                    <span class="priority" [class]="getPriorityClass(ticket.priority)">
+                    <span class="priority" [class]="getPriorityClass(ticket.priority)" [style.background-color]="getPriorityColor(ticket.priority)" [style.color]="getPriorityColor(ticket.priority) ? '#fff' : null">
                       {{ getPriorityText(ticket.priority) }}
                     </span>
                     <button class="claim-btn" (click)="$event.preventDefault(); $event.stopPropagation(); claimTicket(ticket.id)" 

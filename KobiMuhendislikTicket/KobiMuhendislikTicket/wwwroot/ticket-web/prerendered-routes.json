@@ -4,6 +4,7 @@
     "/admin/assets",
     "/admin/dashboard",
     "/admin/products",
+    "/admin/settings",
     "/admin/staff",
     "/admin/tenants",
     "/admin/tickets",

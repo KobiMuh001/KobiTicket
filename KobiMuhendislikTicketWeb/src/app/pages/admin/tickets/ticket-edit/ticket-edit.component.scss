@@ -463,56 +463,66 @@ textarea.form-control {
 .status-options {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+
+  .status-current {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    width: 100%;
+    justify-content: flex-start;
+    border-radius: 10px;
+
+    svg {
+      margin-left: auto;
+      color: #94a3b8;
+    }
+  }
+
+  .options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
 
   .status-btn {
     padding: 8px 12px;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
+    border: none;
+    border-radius: 999px;
     background: #fff;
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
     text-align: left;
+    box-shadow: 0 1px 2px rgba(16,24,40,0.04);
 
     &:hover:not(:disabled) {
-      border-color: #cbd5e1;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 12px rgba(16,24,40,0.08);
     }
 
     &.active {
-      border-width: 2px;
-    }
-
-    &.open {
-      color: #1d4ed8;
-      &.active { background: #dbeafe; border-color: #1d4ed8; }
-    }
-
-    &.processing {
-      color: #b45309;
-      &.active { background: #fef3c7; border-color: #b45309; }
-    }
-
-    &.pending {
-      color: #4338ca;
-      &.active { background: #e0e7ff; border-color: #4338ca; }
-    }
-
-    &.resolved {
-      color: #047857;
-      &.active { background: #d1fae5; border-color: #047857; }
-    }
-
-    &.closed {
-      color: #64748b;
-      &.active { background: #f1f5f9; border-color: #64748b; }
+      box-shadow: inset 0 0 0 2px rgba(0,0,0,0.06);
     }
 
     &:disabled {
-      opacity: 0.6;
+      opacity: 0.65;
       cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
     }
+
+    /* color-specific text color preserved, background applied via inline style when DB color exists */
+    &.open { color: #ffffff; }
+    &.processing { color: #ffffff; }
+    &.pending { color: #ffffff; }
+    &.resolved { color: #ffffff; }
+    &.closed { color: #ffffff; }
   }
 }
 
@@ -520,50 +530,62 @@ textarea.form-control {
 .priority-options {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+
+  .priority-current {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    width: 100%;
+    justify-content: flex-start;
+    border-radius: 10px;
+
+    svg {
+      margin-left: auto;
+      color: #94a3b8;
+    }
+  }
+
+  .options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
 
   .priority-btn {
     padding: 8px 12px;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
+    border: none;
+    border-radius: 999px;
     background: #fff;
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
     text-align: left;
+    box-shadow: 0 1px 2px rgba(16,24,40,0.04);
 
     &:hover:not(:disabled) {
-      border-color: #cbd5e1;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 12px rgba(16,24,40,0.08);
     }
 
     &.active {
-      border-width: 2px;
-    }
-
-    &.low {
-      color: #64748b;
-      &.active { background: #f1f5f9; border-color: #64748b; }
-    }
-
-    &.medium {
-      color: #1d4ed8;
-      &.active { background: #dbeafe; border-color: #1d4ed8; }
-    }
-
-    &.high {
-      color: #c2410c;
-      &.active { background: #fed7aa; border-color: #c2410c; }
-    }
-
-    &.critical {
-      color: #b91c1c;
-      &.active { background: #fecaca; border-color: #b91c1c; }
+      box-shadow: inset 0 0 0 2px rgba(0,0,0,0.06);
     }
 
     &:disabled {
-      opacity: 0.6;
+      opacity: 0.65;
       cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    &.low, &.medium, &.high, &.critical {
+      color: #ffffff;
     }
   }
 }

@@ -165,10 +165,8 @@ namespace KobiMuhendislikTicket.Application.Services
                 if (ticket == null)
                     return Result.Failure("Ticket bulunamadı");
 
-                if (!Enum.IsDefined(typeof(TicketStatus), newStatus))
-                    return Result.Failure("Geçersiz durum değeri");
-
                 var oldStatus = ticket.Status;
+                // Allow numeric values from DB-driven lists; cast even if not defined in enum
                 var newStatusEnum = (TicketStatus)newStatus;
 
                 await _ticketRepository.UpdateStatusDirectlyAsync(ticketId, newStatusEnum);
@@ -206,10 +204,8 @@ namespace KobiMuhendislikTicket.Application.Services
                 if (ticket == null)
                     return Result.Failure("Ticket bulunamadı");
 
-                if (!Enum.IsDefined(typeof(TicketPriority), newPriority))
-                    return Result.Failure("Geçersiz öncelik değeri");
-
                 var oldPriority = ticket.Priority;
+                // Allow numeric values from DB-driven lists; cast even if not defined in enum
                 var newPriorityEnum = (TicketPriority)newPriority;
 
                 await _ticketRepository.UpdatePriorityDirectlyAsync(ticketId, newPriorityEnum);
@@ -490,9 +486,7 @@ namespace KobiMuhendislikTicket.Application.Services
                 if (ticket == null)
                     return Result.Failure("Ticket bulunamadı");
 
-                if (!Enum.IsDefined(typeof(TicketStatus), dto.NewStatus))
-                    return Result.Failure("Geçersiz durum değeri");
-
+                // Allow numeric values from DB-driven lists; cast even if not defined in enum
                 var oldStatus = ticket.Status;
                 var newStatusEnum = (TicketStatus)dto.NewStatus;
 

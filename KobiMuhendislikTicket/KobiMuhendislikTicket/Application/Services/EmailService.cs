@@ -226,7 +226,7 @@ namespace KobiMuhendislikTicket.Application.Services
                             <h2 style='margin:10px 0 0 0; color: #2196F3;'>Sistem Bildirimi</h2>
                         </div>
                         <div class='content'>
-                            <span class='admin-alert'>🆕 Yeni Destek Talebi</span>
+                            <span class='admin-alert'>Yeni Destek Talebi</span>
                             <p>Sisteme yeni bir talep düştü. Lütfen personellere atama yapmak için paneli kontrol edin.</p>
                             
                             <div class='ticket-card'>

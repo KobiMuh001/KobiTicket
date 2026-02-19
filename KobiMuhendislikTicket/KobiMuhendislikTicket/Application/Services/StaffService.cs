@@ -54,7 +54,7 @@ namespace KobiMuhendislikTicket.Application.Services
                     Email = dto.Email,
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                     Phone = dto.Phone,
-                    Department = dto.Department,
+                    DepartmentId = dto.DepartmentId,
                     MaxConcurrentTickets = dto.MaxConcurrentTickets,
                     IsActive = true
                 };
@@ -94,8 +94,14 @@ namespace KobiMuhendislikTicket.Application.Services
                 if (!string.IsNullOrWhiteSpace(dto.Phone) && dto.Phone != "string")
                     staff.Phone = dto.Phone;
 
-                if (!string.IsNullOrWhiteSpace(dto.Department) && dto.Department != "string")
-                    staff.Department = dto.Department;
+                if (dto.DepartmentId.HasValue)
+                    staff.DepartmentId = dto.DepartmentId.Value;
+                else if (!string.IsNullOrWhiteSpace(dto.Department) && dto.Department != "string")
+                {
+                    var param = await _context.SystemParameters.FirstOrDefaultAsync(p => p.Group == "Department" && (p.Key == dto.Department || p.Value == dto.Department));
+                    if (param != null)
+                        staff.DepartmentId = param.Id;
+                }
 
                 if (dto.IsActive.HasValue)
                     staff.IsActive = dto.IsActive.Value;
@@ -157,7 +163,7 @@ namespace KobiMuhendislikTicket.Application.Services
             if (activeOnly.HasValue)
                 query = query.Where(s => s.IsActive == activeOnly.Value);
 
-            return await query
+                return await query
                 .OrderBy(s => s.FullName)
                 .Select(s => new StaffDto
                 {
@@ -165,7 +171,8 @@ namespace KobiMuhendislikTicket.Application.Services
                     FullName = s.FullName,
                     Email = s.Email,
                     Phone = s.Phone,
-                    Department = s.Department,
+                    DepartmentId = s.DepartmentId,
+                    Department = s.Department != null ? s.Department.Value ?? string.Empty : string.Empty,
                     IsActive = s.IsActive,
                     MaxConcurrentTickets = s.MaxConcurrentTickets,
                     CreatedDate = s.CreatedDate
@@ -183,7 +190,8 @@ namespace KobiMuhendislikTicket.Application.Services
                     FullName = s.FullName,
                     Email = s.Email,
                     Phone = s.Phone,
-                    Department = s.Department,
+                    DepartmentId = s.DepartmentId,
+                    Department = s.Department != null ? s.Department.Value ?? string.Empty : string.Empty,
                     IsActive = s.IsActive,
                     MaxConcurrentTickets = s.MaxConcurrentTickets,
                     CreatedDate = s.CreatedDate
@@ -207,23 +215,24 @@ namespace KobiMuhendislikTicket.Application.Services
                 var processingTickets = staffTickets.Count(t => t.Status == TicketStatus.Processing);
                 var activeTickets = openTickets + processingTickets;
 
-                return new StaffWorkloadDto
-                {
-                    Id = staff.Id,
-                    FullName = staff.FullName,
-                    Department = staff.Department,
-                    IsActive = staff.IsActive,
-                    MaxConcurrentTickets = staff.MaxConcurrentTickets,
-                    AssignedTickets = activeTickets,
-                    OpenTickets = openTickets,
-                    ProcessingTickets = processingTickets,
-                    ResolvedToday = staffTickets.Count(t => t.Status == TicketStatus.Resolved && t.UpdatedDate?.Date == today),
-                    ResolvedThisWeek = staffTickets.Count(t => t.Status == TicketStatus.Resolved && t.UpdatedDate >= weekAgo),
-                    IsAvailable = activeTickets < staff.MaxConcurrentTickets,
-                    WorkloadPercentage = staff.MaxConcurrentTickets > 0 
-                        ? Math.Round((double)activeTickets / staff.MaxConcurrentTickets * 100, 1) 
-                        : 0
-                };
+                    return new StaffWorkloadDto
+                    {
+                        Id = staff.Id,
+                        FullName = staff.FullName,
+                        DepartmentId = staff.DepartmentId,
+                        Department = staff.Department != null ? staff.Department.Value ?? string.Empty : string.Empty,
+                        IsActive = staff.IsActive,
+                        MaxConcurrentTickets = staff.MaxConcurrentTickets,
+                        AssignedTickets = activeTickets,
+                        OpenTickets = openTickets,
+                        ProcessingTickets = processingTickets,
+                        ResolvedToday = staffTickets.Count(t => t.Status == TicketStatus.Resolved && t.UpdatedDate?.Date == today),
+                        ResolvedThisWeek = staffTickets.Count(t => t.Status == TicketStatus.Resolved && t.UpdatedDate >= weekAgo),
+                        IsAvailable = activeTickets < staff.MaxConcurrentTickets,
+                        WorkloadPercentage = staff.MaxConcurrentTickets > 0 
+                            ? Math.Round((double)activeTickets / staff.MaxConcurrentTickets * 100, 1) 
+                            : 0
+                    };
             })
             .OrderBy(w => w.WorkloadPercentage)
             .ToList();
@@ -643,7 +652,8 @@ namespace KobiMuhendislikTicket.Application.Services
                     FullName = s.FullName,
                     Email = s.Email,
                     Phone = s.Phone,
-                    Department = s.Department,
+                    DepartmentId = s.DepartmentId,
+                    Department = s.Department != null ? s.Department.Value ?? string.Empty : string.Empty,
                     IsActive = s.IsActive,
                     MaxConcurrentTickets = s.MaxConcurrentTickets,
                     CreatedDate = s.CreatedDate
@@ -673,7 +683,8 @@ namespace KobiMuhendislikTicket.Application.Services
             {
                 Id = staff.Id,
                 FullName = staff.FullName,
-                Department = staff.Department,
+                DepartmentId = staff.DepartmentId,
+                Department = staff.Department != null ? staff.Department.Value ?? string.Empty : string.Empty,
                 IsActive = staff.IsActive,
                 MaxConcurrentTickets = staff.MaxConcurrentTickets,
                 AssignedTickets = activeTickets,
@@ -703,8 +714,14 @@ namespace KobiMuhendislikTicket.Application.Services
                 if (!string.IsNullOrWhiteSpace(dto.Phone) && dto.Phone != "string")
                     staff.Phone = dto.Phone;
 
-                if (!string.IsNullOrWhiteSpace(dto.Department) && dto.Department != "string")
-                    staff.Department = dto.Department;
+                if (dto.DepartmentId.HasValue)
+                    staff.DepartmentId = dto.DepartmentId.Value;
+                else if (!string.IsNullOrWhiteSpace(dto.Department) && dto.Department != "string")
+                {
+                    var param = await _context.SystemParameters.FirstOrDefaultAsync(p => p.Group == "Department" && (p.Key == dto.Department || p.Value == dto.Department));
+                    if (param != null)
+                        staff.DepartmentId = param.Id;
+                }
 
                 await _context.SaveChangesAsync();
                 _logger.LogInformation("Çalışan profili güncellendi: {StaffId}", staffId);

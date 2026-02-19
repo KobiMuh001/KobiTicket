@@ -11,10 +11,10 @@
       @if (ticket) {
         <div class="ticket-info">
           <h1>Talep {{ formatTicketId(ticket.id, ticket.ticketCode) }}</h1>
-          <span class="status-badge {{ getStatusClass(ticket.status) }}">
+          <span class="badge" [class]="'badge--' + getStatusClass(ticket.status)" [style.background-color]="getStatusColor(ticket.status)" [style.color]="getStatusColor(ticket.status) ? '#fff' : null">
             {{ getStatusLabel(ticket.status) }}
           </span>
-          <span class="priority-badge {{ getPriorityClass(ticket.priority) }}">
+          <span class="badge" [class]="'badge--' + getPriorityClass(ticket.priority)" [style.background-color]="getPriorityColor(ticket.priority)" [style.color]="getPriorityColor(ticket.priority) ? '#fff' : null">
             {{ getPriorityLabel(ticket.priority) }}
           </span>
         </div>
@@ -181,30 +181,6 @@
 
           <!-- Sidebar -->
           <div class="sidebar">
-            <!-- Status Card -->
-            <div class="card">
-              <div class="card-header">
-                <h2>Durum</h2>
-              </div>
-              <div class="card-body">
-                <div class="status-display {{ getStatusClass(ticket.status) }}">
-                  {{ getStatusLabel(ticket.status) }}
-                </div>
-              </div>
-            </div>
-
-            <!-- Priority Card -->
-            <div class="card">
-              <div class="card-header">
-                <h2>Öncelik</h2>
-              </div>
-              <div class="card-body">
-                <div class="priority-display {{ getPriorityClass(ticket.priority) }}">
-                  {{ getPriorityLabel(ticket.priority) }}
-                </div>
-              </div>
-            </div>
-
             <!-- Assignee Card -->
             <div class="card">
               <div class="card-header">
@@ -212,15 +188,49 @@
               </div>
               <div class="card-body">
                 @if (ticket.assignedPerson) {
-                  <div class="assignee-info">
-                    <div class="assignee-avatar">
-                      {{ ticket.assignedPerson.charAt(0).toUpperCase() }}
+                  <div class="current-assignee">
+                    <label>Şu an atanan</label>
+                    <div class="assignee-info">
+                      <div class="assignee-avatar">
+                        {{ ticket.assignedPerson.charAt(0).toUpperCase() }}
+                      </div>
+                      <span>{{ ticket.assignedPerson }}</span>
                     </div>
-                    <span>{{ ticket.assignedPerson }}</span>
                   </div>
-                } @else {
-                  <p class="no-assignee">Henüz atanmadı</p>
                 }
+                <div class="form-group">
+                  <label>Personel Seç</label>
+                  @if (loadingStaff) {
+                    <div class="loading-staff">
+                      <span class="spinner-sm"></span> Personeller yükleniyor...
+                    </div>
+                  } @else if (staffList.length === 0) {
+                    <p class="no-staff">Aktif personel bulunamadı</p>
+                  } @else {
+                    <select 
+                      [(ngModel)]="selectedStaffId" 
+                      class="form-control">
+                      <option value="">-- Personel Seçin --</option>
+                      @for (staff of staffList; track staff.id) {
+                        <option [value]="staff.id">
+                          {{ staff.fullName }} 
+                          @if (staff.department) {
+                            ({{ staff.department }})
+                          }
+                        </option>
+                      }
+                    </select>
+                  }
+                </div>
+                <button 
+                  class="btn btn-primary full-width" 
+                  [disabled]="assigning || !selectedStaffId || loadingStaff"
+                  (click)="assignTicket()">
+                  @if (assigning) {
+                    <span class="spinner-sm"></span>
+                  }
+                  Ata
+                </button>
               </div>
             </div>
           </div>

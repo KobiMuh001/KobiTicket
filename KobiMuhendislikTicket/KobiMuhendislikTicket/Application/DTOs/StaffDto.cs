@@ -8,6 +8,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
         public string FullName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string? Phone { get; set; }
+        public int DepartmentId { get; set; }
         public string Department { get; set; } = string.Empty;
         public bool IsActive { get; set; }
         public int MaxConcurrentTickets { get; set; }
@@ -20,7 +21,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
         public string? Phone { get; set; }
-        public string Department { get; set; } = "Teknik Destek";
+        public int DepartmentId { get; set; } = 1;
         public int MaxConcurrentTickets { get; set; } = 10;
     }
 
@@ -29,6 +30,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
         public string? FullName { get; set; }
         public string? Email { get; set; }
         public string? Phone { get; set; }
+        public int? DepartmentId { get; set; }
         public string? Department { get; set; }
         public bool? IsActive { get; set; }
         public int? MaxConcurrentTickets { get; set; }
@@ -50,6 +52,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
     {
         public string? FullName { get; set; }
         public string? Phone { get; set; }
+        public int? DepartmentId { get; set; }
         public string? Department { get; set; }
     }
 
@@ -57,6 +60,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
     {
         public int Id { get; set; }
         public string FullName { get; set; } = string.Empty;
+        public int DepartmentId { get; set; }
         public string Department { get; set; } = string.Empty;
         public bool IsActive { get; set; }
         public int MaxConcurrentTickets { get; set; }

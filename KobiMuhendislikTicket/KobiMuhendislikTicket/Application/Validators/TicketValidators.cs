@@ -16,7 +16,7 @@ namespace KobiMuhendislikTicket.Application.Validators
                 .MinimumLength(10).WithMessage("Açıklama en az 10 karakter olmalıdır");
 
             RuleFor(x => x.Priority)
-                .InclusiveBetween(1, 4).WithMessage("Öncelik 1-4 arasında olmalıdır");
+                .GreaterThanOrEqualTo(0).WithMessage("Öncelik sıfır veya daha büyük bir sayı olmalıdır");
 
             RuleFor(x => x.ProductId)
                 .NotNull().WithMessage("Ürün seçimi zorunludur")

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DashboardService, TicketListItem } from '../../../core/services/dashboard.service';
+import { SystemParameterService } from '../../../core/services/system-parameter.service';
 import { NotificationService, Notification } from '../../../core/services/notification.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -32,6 +33,12 @@ export class TicketsComponent implements OnInit {
   priorityFilter = '';
   customerFilter = '';
   customers: string[] = [];
+  // dynamic options (include DB color and key)
+  statusOptions: { value: string; label: string; key?: string; color?: string | null }[] = [];
+  priorityOptions: { value: string; label: string; key?: string; color?: string | null }[] = [];
+  // desired stable order (matches legacy enum mapping)
+  private statusKeyOrder = ['Open', 'Processing', 'WaitingForCustomer', 'Resolved', 'Closed'];
+  private priorityKeyOrder = ['Low', 'Medium', 'High', 'Critical'];
 
   // Notifications
   notifications: Notification[] = [];
@@ -42,11 +49,57 @@ export class TicketsComponent implements OnInit {
     private dashboardService: DashboardService,
     private notificationService: NotificationService,
     private router: Router
+    , private paramSvc: SystemParameterService
   ) {}
 
   ngOnInit(): void {
     this.loadTickets();
     this.subscribeToNotifications();
+    this.loadDynamicFilters();
+  }
+
+  private loadDynamicFilters(): void {
+    // Load TicketStatus and TicketPriority from system parameters and map to numeric option values
+    this.paramSvc.getByGroup('TicketStatus').subscribe({
+      next: (res: any) => {
+        let list = res.data || res || [];
+        // prefer sortOrder when present, otherwise fallback to stable key order
+        list = list.slice().sort((a: any, b: any) => {
+          const sa = (a.sortOrder ?? null);
+          const sb = (b.sortOrder ?? null);
+          if (sa !== null && sb !== null) return sa - sb;
+          if (sa !== null) return -1;
+          if (sb !== null) return 1;
+          const ia = this.statusKeyOrder.indexOf(a.key ?? a.Key ?? a.value ?? '');
+          const ib = this.statusKeyOrder.indexOf(b.key ?? b.Key ?? b.value ?? '');
+          return ia - ib;
+        });
+        this.statusOptions = list.map((p: any, i: number) => ({ value: String(p.sortOrder ?? (i + 1)), label: p.value || p.key || p.description, key: p.key, color: p.value2 ?? p.color ?? null }));
+      },
+      error: () => {
+        this.statusOptions = [];
+      }
+    });
+
+    this.paramSvc.getByGroup('TicketPriority').subscribe({
+      next: (res: any) => {
+        let list = res.data || res || [];
+        list = list.slice().sort((a: any, b: any) => {
+          const sa = (a.sortOrder ?? null);
+          const sb = (b.sortOrder ?? null);
+          if (sa !== null && sb !== null) return sa - sb;
+          if (sa !== null) return -1;
+          if (sb !== null) return 1;
+          const ia = this.priorityKeyOrder.indexOf(a.key ?? a.Key ?? a.value ?? '');
+          const ib = this.priorityKeyOrder.indexOf(b.key ?? b.Key ?? b.value ?? '');
+          return ia - ib;
+        });
+        this.priorityOptions = list.map((p: any, i: number) => ({ value: String(p.sortOrder ?? (i + 1)), label: p.value || p.key || p.description, key: p.key, color: p.value2 ?? p.color ?? null }));
+      },
+      error: () => {
+        this.priorityOptions = [];
+      }
+    });
   }
 
   private subscribeToNotifications(): void {
@@ -190,6 +243,8 @@ export class TicketsComponent implements OnInit {
   }
 
   getStatusText(status: number): string {
+    const found = this.statusOptions.find(s => s.value === String(status));
+    if (found) return found.label;
     const statusMap: Record<number, string> = {
       1: 'Açık',
       2: 'İşlemde',
@@ -212,6 +267,8 @@ export class TicketsComponent implements OnInit {
   }
 
   getPriorityText(priority: number): string {
+    const found = this.priorityOptions.find(p => p.value === String(priority));
+    if (found) return found.label;
     const priorityMap: Record<number, string> = {
       1: 'Düşük',
       2: 'Orta',
@@ -229,6 +286,17 @@ export class TicketsComponent implements OnInit {
       4: 'critical'
     };
     return classMap[priority] || 'low';
+  }
+
+  // Return DB-provided color (value2) for status/priority or null
+  getStatusColor(status: number): string | null {
+    const found = this.statusOptions.find((o: any) => Number(o.value) === Number(status) || String(o.value) === String(status) || String(o.key) === String(status) || o.label === status);
+    return found?.color ?? null;
+  }
+
+  getPriorityColor(priority: number): string | null {
+    const found = this.priorityOptions.find((o: any) => Number(o.value) === Number(priority) || String(o.value) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    return found?.color ?? null;
   }
 
   formatDate(dateString: string): string {

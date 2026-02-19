@@ -1,0 +1,156 @@
+<div class="page-header">
+  <div class="header-content">
+    <h1 class="page-title">Ayarlar</h1>
+    <p class="page-subtitle">Sistem parametrelerini ve genel ayarları yönetin</p>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-secondary" (click)="loadGroup(selectedGroup)" title="Yenile">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 2v6h-6"></path>
+        <path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path>
+      </svg>
+      Yenile
+    </button>
+    <ng-container *ngIf="!newGroupMode">
+      <button class="btn btn-primary" (click)="newGroupMode = true" title="Yeni Grup">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Yeni Grup
+      </button>
+    </ng-container>
+    <ng-container *ngIf="newGroupMode">
+      <input class="form-input" placeholder="Yeni grup adı" [(ngModel)]="newGroupName" />
+      <button class="btn btn-primary" (click)="addGroup()">Ekle</button>
+      <button class="btn btn-secondary" (click)="newGroupMode = false">İptal</button>
+    </ng-container>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal (rendered at top for visibility) -->
+<div *ngIf="showDeleteModal" class="modal-overlay" (click)="cancelDelete()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Silme Onayı</h3>
+      <button (click)="cancelDelete()" class="close-btn">×</button>
+    </div>
+    <div class="modal-body">
+      <p>Bu öğeyi silmek istediğinizden emin misiniz?</p>
+    </div>
+    <div class="modal-footer">
+      <button (click)="cancelDelete()" class="btn btn-secondary">İptal</button>
+      <button (click)="confirmDelete()" class="btn btn-danger">Evet, Sil</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .modal-overlay{
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:1200;
+  }
+  .modal-content{background:#fff;border-radius:10px;max-width:480px;width:90%;box-shadow:0 10px 30px rgba(0,0,0,0.3);overflow:hidden}
+  .modal-header{padding:16px 20px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between}
+  .modal-body{padding:18px 20px}
+  .modal-footer{padding:12px 20px;display:flex;gap:8px;justify-content:flex-end}
+  .close-btn{background:none;border:none;font-size:20px;cursor:pointer}
+</style>
+
+<div class="settings-layout">
+  <aside class="settings-sidebar">
+    <ul>
+      <li *ngFor="let g of groups" [class.active]="g === selectedGroup" (click)="selectGroup(g)">{{ g }}</li>
+    </ul>
+  </aside>
+
+  <section class="settings-content">
+    <h2 class="section-title">{{ selectedGroup }}</h2>
+
+    <div *ngIf="loading" class="loading">Yükleniyor...</div>
+
+    <div *ngIf="!loading">
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Value</th>
+              <th *ngIf="selectedGroup === 'TicketPriority' || selectedGroup === 'TicketStatus'">Value2</th>
+              <th>Description</th>
+              <th>DataType</th>
+              <th>Active</th>
+              <th style="width:200px">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of items">
+              <td>{{ item.key }}</td>
+
+              <!-- Value column (plain text) -->
+              <td *ngIf="!editing[item.id]">{{ item.value }}</td>
+              <td *ngIf="editing[item.id]"><input class="form-input" [(ngModel)]="item.value" /></td>
+
+              <!-- Value2 column (color) -->
+              <ng-container *ngIf="selectedGroup === 'TicketPriority' || selectedGroup === 'TicketStatus'">
+                <td *ngIf="!editing[item.id]" class="value-cell">
+                  <span class="swatch" *ngIf="item.value2 && item.value2.startsWith('#')" [style.background]="item.value2"></span>
+                  <span>{{ item.value2 }}</span>
+                </td>
+                <td *ngIf="editing[item.id]">
+                  <ng-container *ngIf="colorInputSupported; else textValue2Edit">
+                    <input type="color" [(ngModel)]="item.value2" />
+                  </ng-container>
+                  <ng-template #textValue2Edit>
+                    <input class="form-input" [(ngModel)]="item.value2" />
+                  </ng-template>
+                </td>
+              </ng-container>
+
+              <td *ngIf="!editing[item.id]">{{ item.description }}</td>
+              <td *ngIf="editing[item.id]"><input class="form-input" [(ngModel)]="item.description" /></td>
+
+              <td *ngIf="!editing[item.id]">{{ item.dataType }}</td>
+              <td *ngIf="editing[item.id]"><input class="form-input" [(ngModel)]="item.dataType" /></td>
+
+              <td *ngIf="!editing[item.id]">{{ item.isActive ? 'Evet' : 'Hayır' }}</td>
+              <td *ngIf="editing[item.id]"><input type="checkbox" [(ngModel)]="item.isActive" /></td>
+
+              <td class="actions">
+                <button class="btn btn-secondary" *ngIf="!editing[item.id]" (click)="startEdit(item.id)">Düzenle</button>
+                <button class="btn btn-primary" *ngIf="editing[item.id]" (click)="saveItem(item)">Kaydet</button>
+                <button class="btn btn-secondary" *ngIf="editing[item.id]" (click)="cancelEdit(item.id)">İptal</button>
+                <button class="btn btn-danger" (click)="deleteItem(item.id)">Sil</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="create-form card">
+        <h3>Yeni Parametre Oluştur</h3>
+        <div class="form-row">
+          <input class="form-input" placeholder="Key" [(ngModel)]="newKey" />
+          <div class="value-create">
+            <input class="form-input" placeholder="Value" [(ngModel)]="newValue" />
+          </div>
+          <div *ngIf="selectedGroup === 'TicketPriority' || selectedGroup === 'TicketStatus'" class="value-create">
+            <input class="form-input" placeholder="Value2 (Renk)" [(ngModel)]="newValue2" />
+            <input *ngIf="colorInputSupported" type="color" [(ngModel)]="newValue2" title="Renk seç" />
+            <span class="swatch" *ngIf="newValue2 && newValue2.startsWith('#')" [style.background]="newValue2"></span>
+          </div>
+          <input class="form-input" placeholder="Description" [(ngModel)]="newDescription" />
+          <select class="form-input" [(ngModel)]="newDataType">
+            <option *ngFor="let t of availableDataTypes" [value]="t">{{ t }}</option>
+          </select>
+          <button class="btn btn-primary" (click)="createItem()">Oluştur</button>
+        </div>
+      </div>
+
+      <style>
+        .swatch { display:inline-block; width:18px; height:18px; border:1px solid rgba(0,0,0,0.15); margin-right:8px; vertical-align:middle; }
+        .value-cell { display:flex; align-items:center; gap:8px; }
+        .value-create { display:flex; align-items:center; gap:8px; }
+      </style>
+    </div>
+  </section>
+</div>

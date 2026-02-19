@@ -335,12 +335,12 @@
                   <td>{{ ticket.title }}</td>
                   <td>{{ ticket.tenantName || 'Bilinmiyor' }}</td>
                   <td>
-                    <span class="badge" [class]="'badge--' + getStatusClass(ticket.status)">
+                    <span class="badge" [class]="'badge--' + getStatusClass(ticket.status)" [style.background-color]="getStatusColor(ticket.status)" [style.color]="getStatusColor(ticket.status) ? '#fff' : null">
                       {{ getStatusText(ticket.status) }}
                     </span>
                   </td>
                   <td>
-                    <span class="priority" [class]="'priority--' + getPriorityClass(ticket.priority)">
+                    <span class="badge" [class]="'badge--' + getPriorityClass(ticket.priority)" [style.background-color]="getPriorityColor(ticket.priority)" [style.color]="getPriorityColor(ticket.priority) ? '#fff' : null">
                       {{ getPriorityText(ticket.priority) }}
                     </span>
                   </td>
@@ -360,7 +360,7 @@
               <div class="recent-ticket-card">
                 <div class="recent-ticket-card__header">
                   <span class="ticket-id">{{ formatTicketId(ticket.id, ticket.ticketCode) }}</span>
-                  <span class="badge" [class]="'badge--' + getStatusClass(ticket.status)">
+                  <span class="badge" [class]="'badge--' + getStatusClass(ticket.status)" [style.background-color]="getStatusColor(ticket.status)" [style.color]="getStatusColor(ticket.status) ? '#fff' : null">
                     {{ getStatusText(ticket.status) }}
                   </span>
                 </div>
@@ -374,7 +374,7 @@
                   </div>
                   <div class="meta-row">
                     <span class="meta-label">Öncelik</span>
-                    <span class="priority" [class]="'priority--' + getPriorityClass(ticket.priority)">
+                    <span class="badge" [class]="'badge--' + getPriorityClass(ticket.priority)" [style.background-color]="getPriorityColor(ticket.priority)" [style.color]="getPriorityColor(ticket.priority) ? '#fff' : null">
                       {{ getPriorityText(ticket.priority) }}
                     </span>
                   </div>

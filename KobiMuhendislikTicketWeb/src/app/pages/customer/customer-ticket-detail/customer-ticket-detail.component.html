@@ -36,8 +36,8 @@
           </div>
           <div class="header-actions">
             <div class="ticket-badges">
-              <span class="badge" [ngClass]="getStatusClass(ticket.status)">{{ ticket.statusText }}</span>
-              <span class="badge" [ngClass]="getPriorityClass(ticket.priority)">{{ ticket.priorityText }}</span>
+              <span class="badge" [ngClass]="getStatusClass(ticket.status)" [style.background-color]="getStatusColor(ticket.status)" [style.color]="getStatusColor(ticket.status) ? '#fff' : null">{{ ticket.statusText }}</span>
+              <span class="badge" [ngClass]="getPriorityClass(ticket.priority)" [style.background-color]="getPriorityColor(ticket.priority)" [style.color]="getPriorityColor(ticket.priority) ? '#fff' : null">{{ ticket.priorityText }}</span>
             </div>
             <button class="btn-toggle-chat-header" (click)="toggleChat()" [class.active]="showChat">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
