@@ -70,10 +70,33 @@ export class CustomerTicketCreateComponent implements OnInit {
   loadLookups(): void {
     this.systemParameterService.getByGroup('TicketPriority').subscribe({
       next: (res: any) => {
-        const data = res.data || res || [];
-        this.priorityOptions = (data || []).map((p: any) => ({
-          value: Number(p.sortOrder ?? p.id),
-          label: p.value ?? p.description ?? p.key
+        // Normalize possible response shapes (res.data.items, res.data.$values, res.data, res)
+        let list: any[] = [];
+        if (res) {
+          const d = res.data ?? res;
+          if (d) {
+            if (Array.isArray(d)) list = d;
+            else if (Array.isArray(d.items)) list = d.items;
+            else if (Array.isArray(d.$values)) list = d.$values;
+            else list = Array.isArray(d) ? d : (d.items || d.$values || []);
+          }
+        }
+
+        list = list || [];
+
+        // Sort by admin-provided sortOrder, then numericKey/id
+        list = list.slice().sort((a: any, b: any) => {
+          const sa = (a.sortOrder ?? a.numericKey ?? a.id ?? null);
+          const sb = (b.sortOrder ?? b.numericKey ?? b.id ?? null);
+          if (sa !== null && sb !== null) return sa - sb;
+          if (sa !== null) return -1;
+          if (sb !== null) return 1;
+          return 0;
+        });
+
+        this.priorityOptions = list.map((p: any) => ({
+          value: p.numericKey != null ? String(p.numericKey) : (p.key ?? p.id),
+          label: p.value ?? p.description ?? p.key ?? String(p.id)
         }));
 
         if (this.priorityOptions.length) {
@@ -81,9 +104,9 @@ export class CustomerTicketCreateComponent implements OnInit {
           this.priorities = this.priorityOptions.map(p => ({ value: p.value, label: p.label }));
 
           // If current default priority isn't present in options, set to first option
-          const hasDefault = this.priorities.some(pr => Number(pr.value) === Number(this.ticket.priority));
+          const hasDefault = this.priorities.some(pr => String(pr.value) === String(this.ticket.priority));
           if (!hasDefault) {
-            this.ticket.priority = Number(this.priorities[0].value);
+            this.ticket.priority = this.priorities[0].value;
           }
         }
       },

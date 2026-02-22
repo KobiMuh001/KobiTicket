@@ -116,10 +116,10 @@
   border-radius: var(--radius-md);
   margin-bottom: 1rem;
 
-  &-error {
-    background: #fef2f2;
-    color: #dc2626;
-    border: 1px solid #fecaca;
+  .actions {
+    display: flex;
+    gap: 0.5rem;
+    white-space: nowrap;
   }
 
   .alert-close {
@@ -131,6 +131,70 @@
     color: inherit;
     opacity: 0.7;
   }
+}
+
+/* Responsive card layout for small screens (top-level) */
+.product-cards {
+  display: none;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.product-card {
+
+  /* Ticket-like card design */
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  border-left: 4px solid var(--border-light);
+  transition: all 0.18s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: pointer;
+
+  &:hover {
+    box-shadow: 0 6px 20px rgba(2,6,23,0.08);
+    transform: translateY(-4px);
+  }
+
+  &:focus {
+    outline: 2px solid rgba(0,123,255,0.15);
+    outline-offset: 2px;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .card-title { font-weight: 700; font-size: 16px; color: #0f1724; }
+
+  .card-badge {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    flex-shrink: 0;
+  }
+
+  .card-desc { margin: 0; color: #475569; font-size: 14px; line-height: 1.4; }
+
+  .card-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 6px; }
+
+  .detail-btn { padding: 8px 12px; border-radius: 8px; background: #f8fafc; border: 1px solid #eef2f6; color: #334155; font-weight: 600; cursor: pointer; }
+  .detail-btn:hover { background: #eef2f6; }
+
+}
+
+@media (max-width: 768px) {
+  .table-container { display: none; }
+  .product-cards { display: grid; grid-template-columns: 1fr; }
 }
 
 .loading-container,
@@ -236,10 +300,19 @@
   }
 }
 
+.action-btn--edit,
+.action-btn--danger {
+  /* Neutral / colorless appearance to match other buttons */
+  background: var(--bg-primary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.action-btn--edit:hover,
 .action-btn--danger:hover {
-  background: #fef2f2;
-  border-color: #dc2626;
-  color: #dc2626;
+  background: var(--bg-secondary);
+  border-color: var(--primary-color);
+  color: var(--text-primary);
 }
 
 .btn-sm {

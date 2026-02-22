@@ -56,7 +56,7 @@ interface TicketDetail {
 })
 export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked {
   @ViewChild('commentsContainer') private commentsContainer!: ElementRef;
-  
+
   ticket: TicketDetail | null = null;
   comments: TicketComment[] = [];
   history: TicketHistoryItem[] = [];
@@ -82,7 +82,7 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
   assigning = false;
   loadingStaff = false;
 
-  statusDisplayMap: { [key: string]: string; [key: number]: string } = {
+  statusDisplayMap: { [key: string]: string;[key: number]: string } = {
     'Open': 'Açık',
     'Processing': 'İşlemde',
     'InProgress': 'İşlemde',
@@ -97,7 +97,7 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
     5: 'Kapatıldı'
   };
 
-  priorityDisplayMap: { [key: string]: string; [key: number]: string } = {
+  priorityDisplayMap: { [key: string]: string;[key: number]: string } = {
     'Low': 'Düşük',
     'Medium': 'Orta',
     'High': 'Yüksek',
@@ -108,7 +108,7 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
     4: 'Kritik'
   };
 
-  priorityClassMap: { [key: string]: string; [key: number]: string } = {
+  priorityClassMap: { [key: string]: string;[key: number]: string } = {
     'Low': 'low',
     'Medium': 'normal',
     'High': 'high',
@@ -161,8 +161,22 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
         next: ([sRes, pRes]: any) => {
           const sData = sRes?.data?.data || sRes?.data || sRes || [];
           const pData = pRes?.data?.data || pRes?.data || pRes || [];
-          this.statusOptions = (Array.isArray(sData) ? sData : []).map((p: any, i: number) => ({ id: p.id, key: p.key, label: p.value, sortOrder: p.sortOrder ?? i + 1, color: p.value2 ?? p.color ?? null }));
-          this.priorityOptions = (Array.isArray(pData) ? pData : []).map((p: any, i: number) => ({ id: p.id, key: p.key, label: p.value, sortOrder: p.sortOrder ?? i + 1, color: p.value2 ?? p.color ?? null }));
+          this.statusOptions = (Array.isArray(sData) ? sData : []).map((p: any, i: number) => ({
+            id: p.id,
+            key: p.key,
+            numericKey: p.numericKey ?? (typeof p.key === 'number' ? p.key : (Number.isFinite(Number(p.key)) ? Number(p.key) : null)),
+            label: (p.numericKey != null) ? (p.value || p.key || p.description) : '',
+            sortOrder: p.sortOrder ?? i + 1,
+            color: (p.numericKey != null) ? (p.value2 ?? p.color ?? null) : null
+          }));
+          this.priorityOptions = (Array.isArray(pData) ? pData : []).map((p: any, i: number) => ({
+            id: p.id,
+            key: p.key,
+            numericKey: p.numericKey ?? (typeof p.key === 'number' ? p.key : (Number.isFinite(Number(p.key)) ? Number(p.key) : null)),
+            label: (p.numericKey != null) ? (p.value || p.key || p.description) : '',
+            sortOrder: p.sortOrder ?? i + 1,
+            color: (p.numericKey != null) ? (p.value2 ?? p.color ?? null) : null
+          }));
 
           this.loadTicket(id);
           if (this.isBrowser) {
@@ -234,7 +248,7 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
       if (this.commentsContainer) {
         this.commentsContainer.nativeElement.scrollTop = this.commentsContainer.nativeElement.scrollHeight;
       }
-    } catch (err) {}
+    } catch (err) { }
   }
 
   public scrollToCommentsBottom(): void {
@@ -249,18 +263,20 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
         // Normalize status: prefer mapping from DB-driven options (using sortOrder),
         // otherwise fall back to legacy string→number map
         if (typeof data.status === 'string') {
-          let mapped = this.statusOptions.find((s: any) => s.key === data.status || s.label === data.status);
-          if (mapped) data.status = mapped.sortOrder ?? mapped.id ?? 1;
-          else data.status = this.statusStringToNumber[data.status] || 1;
+          const sVal = String(data.status);
+          const mapped = this.statusOptions.find((s: any) => String(s.key) === sVal || s.label === sVal || String(s.numericKey) === sVal);
+          if (mapped) data.status = mapped.numericKey ?? mapped.sortOrder ?? mapped.id ?? 1;
+          else data.status = this.statusStringToNumber[sVal] || 1;
         }
 
         if (typeof data.priority === 'string') {
-          let mappedP = this.priorityOptions.find((p: any) => p.key === data.priority || p.label === data.priority);
-          if (mappedP) data.priority = mappedP.sortOrder ?? mappedP.id ?? 1;
-          else data.priority = this.priorityStringToNumber[data.priority] || 1;
+          const pVal = String(data.priority);
+          const mappedP = this.priorityOptions.find((p: any) => String(p.key) === pVal || p.label === pVal || String(p.numericKey) === pVal);
+          if (mappedP) data.priority = mappedP.numericKey ?? mappedP.sortOrder ?? mappedP.id ?? 1;
+          else data.priority = this.priorityStringToNumber[pVal] || 1;
         }
         this.ticket = data;
-        
+
         // Process comments to mark staff messages
         let comments = data.comments?.$values || data.comments || [];
         comments = comments.map((c: TicketComment) => {
@@ -271,7 +287,7 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
           return c;
         });
         this.comments = comments;
-        
+
         this.history = data.history?.$values || data.history || [];
         this.loading = false;
         this.shouldScrollToBottom = true;
@@ -317,17 +333,17 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
 
   getStatusLabel(status: string | number): string {
     const n = Number(status);
-    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
+    const found = this.statusOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
     if (found) return found.label || this.statusDisplayMap[status] || 'Bilinmiyor';
     return this.statusDisplayMap[status] ?? 'Bilinmiyor';
   }
 
   getStatusClass(status: string | number): string {
     const n = Number(status);
-    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
+    const found = this.statusOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
     if (found) {
-      const num = Number(found.sortOrder ?? found.id);
-      const statusMap: { [key: string]: string; [key: number]: string } = {
+      const num = Number(found.numericKey ?? found.sortOrder ?? found.id);
+      const statusMap: { [key: string]: string;[key: number]: string } = {
         1: 'open',
         2: 'processing',
         3: 'waiting',
@@ -344,7 +360,7 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
       return statusMap[num] ?? statusMap[found.key ?? found.label] ?? '';
     }
 
-    const statusMapFallback: { [key: string]: string; [key: number]: string } = {
+    const statusMapFallback: { [key: string]: string;[key: number]: string } = {
       'Open': 'open',
       'Processing': 'processing',
       'InProgress': 'processing',
@@ -363,17 +379,17 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
 
   getPriorityLabel(priority: string | number): string {
     const n = Number(priority);
-    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
     if (found) return found.label || this.priorityDisplayMap[priority] || 'Normal';
     return this.priorityDisplayMap[priority] ?? 'Normal';
   }
 
   getPriorityClass(priority: string | number): string {
     const n = Number(priority);
-    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
     if (found) {
-      const num = Number(found.sortOrder ?? found.id);
-      const map: { [key: string]: string; [key: number]: string } = {
+      const num = Number(found.numericKey ?? found.sortOrder ?? found.id);
+      const map: { [key: string]: string;[key: number]: string } = {
         1: 'low',
         2: 'normal',
         3: 'high',
@@ -391,13 +407,13 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
   // Return raw DB color (value2) if provided
   getStatusColor(status: string | number): string | null {
     const n = Number(status);
-    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
+    const found = this.statusOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
     return found?.color ?? null;
   }
 
   getPriorityColor(priority: string | number): string | null {
     const n = Number(priority);
-    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
     return found?.color ?? null;
   }
 
@@ -423,7 +439,7 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
 
   addComment(): void {
     if (!this.ticket || !this.newComment.trim()) return;
-    
+
     this.addingComment = true;
     this.ticketService.addAdminComment(this.ticket.id, this.newComment.trim(), 'Admin', true).subscribe({
       next: () => {
@@ -431,7 +447,7 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
         this.newComment = '';
         this.addingComment = false;
         this.shouldScrollToBottom = true;
-        
+
         // Reload history
         const id = this.ticket!.id;
         this.ticketService.getTicketById(id).subscribe({
@@ -455,7 +471,7 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
 
     // Check both localStorage and sessionStorage (token can be in either depending on "Remember Me" setting)
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-    
+
     if (!token) {
       console.warn('SignalR: No token found. User may not be authenticated.');
       this.error = 'Oturum süresi dolmuş, lütfen sayfayı yenileyin';
@@ -465,7 +481,7 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
     try {
       console.log('SignalR: Attempting to start connection with token');
       await this.signalRService.startConnection(token);
-      
+
       console.log('SignalR: Joining ticket group', ticketId);
       await this.signalRService.joinTicketGroup(ticketId);
       this.isSignalRConnected = true;
@@ -509,7 +525,7 @@ export class TicketViewComponent implements OnInit, OnDestroy, AfterViewChecked 
     if (!selectedStaff) return;
 
     this.assigning = true;
-    this.ticketService.assignTicket(this.ticket.id, selectedStaff.fullName).subscribe({
+    this.ticketService.assignTicket(this.ticket.id, selectedId).subscribe({
       next: () => {
         if (this.ticket) this.ticket.assignedPerson = selectedStaff.fullName;
         this.assigning = false;

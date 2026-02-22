@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { StaffService, Staff, UpdateStaffDto, StaffWorkload } from '../../../core/services/staff.service';
+import { SystemParameterService } from '../../../core/services/system-parameter.service';
 
 @Component({
   selector: 'app-staff-edit',
@@ -31,28 +32,25 @@ export class StaffEditComponent implements OnInit {
     email: '',
     phone: '',
     department: '',
+    departmentId: undefined,
     isActive: true,
     maxConcurrentTickets: 5
   };
 
-  departmentOptions = [
-    'Teknik Destek',
-    'Satış',
-    'Muhasebe',
-    'Yönetim',
-    'Diğer'
-  ];
+  departmentOptions: { id: number; label: string }[] = [];
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private staffService: StaffService
+    private staffService: StaffService,
+    private paramSvc: SystemParameterService
   ) {}
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.staffId = id;
+      this.loadDepartments();
       this.loadStaff();
     }
   }
@@ -71,9 +69,21 @@ export class StaffEditComponent implements OnInit {
           email: staffData.email,
           phone: staffData.phone || '',
           department: staffData.department || '',
+          departmentId: (staffData as any).departmentId ?? undefined,
           isActive: staffData.isActive,
           maxConcurrentTickets: staffData.maxConcurrentTickets
         };
+        // If departmentOptions already loaded, resolve numeric id for current staff
+        if (Array.isArray(this.departmentOptions) && this.departmentOptions.length) {
+          // prefer numeric departmentId from server if present
+          const srvDeptId = (staffData as any).departmentId;
+          if (srvDeptId !== undefined && srvDeptId !== null) {
+            this.formData.departmentId = Number(srvDeptId);
+          } else if (staffData.department) {
+            const match = this.departmentOptions.find(o => (o.label || '').toString() === (staffData.department || '').toString());
+            if (match) this.formData.departmentId = match.id;
+          }
+        }
         this.loadWorkload();
         this.isLoading = false;
       },
@@ -98,19 +108,59 @@ export class StaffEditComponent implements OnInit {
     });
   }
 
+  private loadDepartments(): void {
+    this.paramSvc.getByGroup('Department').subscribe({
+      next: (res: any) => {
+        const data = res?.data || res || [];
+        if (Array.isArray(data) && data.length) {
+          this.departmentOptions = data.map((d: any) => ({
+            id: (typeof d.numericKey === 'number' && !Number.isNaN(d.numericKey)) ? d.numericKey : (Number(d.id ?? d.key ?? 0) || 0),
+            label: (d.value ?? d.description ?? d.key ?? String(d.numericKey ?? d.id ?? '')).toString()
+          }));
+          // If staff already loaded, try to resolve its current department to numeric id
+          if (this.staff && this.staff.department) {
+            const match = this.departmentOptions.find(o => o.label === this.staff!.department);
+            if (match) this.formData.departmentId = match.id;
+          }
+          return;
+        }
+      },
+      error: () => {
+        // keep empty list
+      }
+    });
+  }
+
   saveStaff(): void {
     if (!this.isFormValid()) return;
+
+    // Phone validation: if provided, must be exactly 11 digits (Turkish format)
+    const phoneDigits = (this.formData.phone || '').toString().replace(/\D/g, '');
+    if (phoneDigits && phoneDigits.length !== 11) {
+      this.error = 'Lütfen geçerli ve eksiksiz bir telefon numarası girin.';
+      return;
+    }
+
+    // Ensure phone is consistently formatted before sending (if provided)
+    if (phoneDigits && phoneDigits.length === 11) {
+      const v = phoneDigits;
+      this.formData.phone = v.substring(0, 1) + ' (' + v.substring(1, 4) + ') ' + v.substring(4, 7) + ' ' + v.substring(7, 9) + ' ' + v.substring(9, 11);
+    }
 
     this.isSaving = true;
     this.error = null;
     this.successMessage = null;
 
-    this.staffService.updateStaff(this.staffId, this.formData).subscribe({
-      next: (updatedStaff) => {
-        this.staff = updatedStaff;
+    // Ensure we send numeric departmentId when available
+    const payload: any = { ...this.formData };
+    if (this.formData.departmentId !== undefined && this.formData.departmentId !== null) payload.departmentId = this.formData.departmentId;
+
+    this.staffService.updateStaff(this.staffId, payload).subscribe({
+      next: () => {
         this.successMessage = 'Personel başarıyla güncellendi.';
         this.isSaving = false;
-        
+        // Reload staff to get fresh DTO (including DepartmentId)
+        this.loadStaff();
         // Auto-hide success message
         setTimeout(() => {
           this.successMessage = null;
@@ -161,21 +211,45 @@ export class StaffEditComponent implements OnInit {
 
   formatPhoneNumber(event: Event): void {
     const input = event.target as HTMLInputElement;
-    let value = input.value.replace(/\D/g, '');
-    
-    if (value.length > 10) {
-      value = value.substring(0, 10);
+
+    // Only allow up to 11 digits (Turkish format: leading 0 + 10 digits)
+    let digits = (input.value || '').toString().replace(/\D/g, '').slice(0, 11);
+
+    // If user entered 10 digits without leading zero, prepend a 0 to form 11
+    if (digits.length === 10 && digits[0] !== '0') {
+      digits = '0' + digits;
     }
-    
-    if (value.length >= 7) {
-      value = `(${value.substring(0, 3)}) ${value.substring(3, 6)} ${value.substring(6)}`;
-    } else if (value.length >= 4) {
-      value = `(${value.substring(0, 3)}) ${value.substring(3)}`;
-    } else if (value.length >= 1) {
-      value = `(${value}`;
+
+    if (digits.length === 0) {
+      this.formData.phone = '';
+      try { input.value = ''; } catch (e) {}
+      return;
     }
-    
-    this.formData.phone = value;
+
+    // Build formatted string progressively but never exceed 11 digits
+    const v = digits;
+    let formatted = '';
+    if (v.length > 0) formatted += v.substring(0, 1);
+    if (v.length > 1) formatted += ' (' + v.substring(1, Math.min(4, v.length));
+    if (v.length > 4) formatted += ') ' + v.substring(4, Math.min(7, v.length));
+    if (v.length > 7) formatted += ' ' + v.substring(7, Math.min(9, v.length));
+    if (v.length > 9) formatted += ' ' + v.substring(9, Math.min(11, v.length));
+
+    this.formData.phone = formatted;
+
+    // Force the input element's displayed value to the formatted value
+    try {
+      if (input) {
+        input.value = formatted;
+        // Move caret to the end so user cannot continue typing past the format
+        const endPos = input.value.length;
+        if (typeof input.setSelectionRange === 'function') {
+          input.setSelectionRange(endPos, endPos);
+        }
+      }
+    } catch (e) {
+      // ignore if not applicable
+    }
   }
 
   dismissError(): void {

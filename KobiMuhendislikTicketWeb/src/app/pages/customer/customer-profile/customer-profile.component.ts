@@ -145,8 +145,8 @@ export class CustomerProfileComponent implements OnInit {
 
   isPhoneValid(): boolean {
     const phone = (this.editForm.phoneNumber || '').trim();
-    // Strict format: 0(5xx) xxx xx xx
-    const re = /^0\(5\d{2}\) \d{3} \d{2} \d{2}$/;
+    // Strict format (match admin): 0 (5xx) xxx xx xx
+    const re = /^0 \(5\d{2}\) \d{3} \d{2} \d{2}$/;
     return re.test(phone);
   }
 
@@ -219,35 +219,39 @@ export class CustomerProfileComponent implements OnInit {
 
   formatPhoneNumber(event: Event): void {
     const input = event.target as HTMLInputElement;
-    let value = input.value.replace(/\D/g, ''); // Sadece rakamları al
-    
-    // Maksimum 11 karakter
-    if (value.length > 11) {
-      value = value.substring(0, 11);
+    let digits = (input.value || '').toString().replace(/\D/g, '').slice(0, 11);
+
+    // If user pasted/entered 10 digits without leading zero, prepend a 0
+    if (digits.length === 10 && digits[0] !== '0') {
+      digits = '0' + digits;
     }
-    
-    // Format: 0(XXX) XXX XX XX
+
+    if (digits.length === 0) {
+      this.editForm.phoneNumber = '';
+      try { input.value = ''; } catch (e) {}
+      return;
+    }
+
+    const v = digits;
     let formatted = '';
-    if (value.length > 0) {
-      formatted = value.substring(0, 1); // 0
-    }
-    if (value.length > 1) {
-      formatted += '(' + value.substring(1, 4); // (XXX
-    }
-    if (value.length >= 4) {
-      formatted += ') '; // )
-    }
-    if (value.length > 4) {
-      formatted += value.substring(4, 7); // XXX
-    }
-    if (value.length > 7) {
-      formatted += ' ' + value.substring(7, 9); // XX
-    }
-    if (value.length > 9) {
-      formatted += ' ' + value.substring(9, 11); // XX
-    }
-    
+    if (v.length > 0) formatted += v.substring(0, 1);
+    if (v.length > 1) formatted += ' (' + v.substring(1, Math.min(4, v.length));
+    if (v.length > 4) formatted += ') ' + v.substring(4, Math.min(7, v.length));
+    if (v.length > 7) formatted += ' ' + v.substring(7, Math.min(9, v.length));
+    if (v.length > 9) formatted += ' ' + v.substring(9, Math.min(11, v.length));
+
     this.editForm.phoneNumber = formatted;
+
+    // Force displayed input value and move caret to end to prevent extra typing
+    try {
+      input.value = formatted;
+      const endPos = input.value.length;
+      if (typeof input.setSelectionRange === 'function') {
+        input.setSelectionRange(endPos, endPos);
+      }
+    } catch (e) {
+      // ignore
+    }
   }
 
   validatePassword(): void {

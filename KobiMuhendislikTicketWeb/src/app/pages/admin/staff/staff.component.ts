@@ -58,6 +58,7 @@ export class StaffComponent implements OnInit {
   ngOnInit(): void {
     this.loadStaff();
     this.loadWorkloads();
+    // Temporarily avoid reading default ticket limit from DB so we can test manual input
     this.loadDefaultMaxConcurrentTickets();
     this.loadDepartments();
   }
@@ -99,11 +100,64 @@ export class StaffComponent implements OnInit {
       next: (res: any) => {
         const data = res?.data?.data || res?.data || res || [];
         const list = Array.isArray(data) ? data : [];
-        const found = list.find((p: any) => (p.key || p.Key || '').toLowerCase() === 'defaultticketlimit'.toLowerCase());
-        if (found && found.value != null) {
-          const v = Number(found.value);
+
+        // Helper to read candidate text fields
+        const textOf = (p: any) => {
+          return [p.key, p.Key, p.numericKey, p.value, p.value2, p.description, p.dataType, p.group]
+            .filter(x => x !== undefined && x !== null)
+            .map(x => String(x).toLowerCase())
+            .join(' ');
+        };
+
+        // potential names we accept (case-insensitive, substring match)
+        const candidates = ['defaultticketlimit', 'default_ticket_limit', 'maxconcurrenttickets', 'max_concurrent_tickets', 'maxconcurrent', 'defaultticket', 'defaultticketlimit'];
+
+        let found: any = null;
+        for (const p of list) {
+          const txt = textOf(p);
+          if (!txt) continue;
+          for (const c of candidates) {
+            if (txt.indexOf(c) !== -1) {
+              found = p;
+              break;
+            }
+          }
+          if (found) break;
+        }
+
+        // fallback: look for an explicit param named exactly DefaultTicketLimit (case-insensitive)
+        if (!found) {
+          found = list.find((p: any) => {
+            const k = (p.key || p.Key || p.name || '').toString().toLowerCase();
+            return k === 'defaultticketlimit';
+          });
+        }
+
+        if (found) {
+          const raw = found.value ?? found.value2 ?? found.description ?? found.key ?? found.Key ?? '';
+          const v = Number(raw);
           if (!Number.isNaN(v) && v > 0) {
             this.defaultMaxConcurrentTickets = v;
+            // If the create modal is already open, update the form value immediately
+            if (this.showCreateModal && this.newStaff) {
+              this.newStaff.maxConcurrentTickets = v;
+            }
+            return;
+          }
+        }
+
+        // Additional fallback: look for rows where description mentions ticket and limit (Turkish or English)
+        const descCandidates = list.filter((p: any) => p.description || p.value || p.value2);
+        for (const p of descCandidates) {
+          const desc = (p.description || p.value || p.value2 || '').toString().toLowerCase();
+          if (desc.indexOf('ticket') !== -1 && (desc.indexOf('limit') !== -1 || desc.indexOf('limiti') !== -1 || desc.indexOf('varsayılan') !== -1)) {
+            const raw2 = p.value ?? p.value2 ?? p.description ?? p.key ?? p.Key ?? '';
+            const v2 = Number(raw2);
+            if (!Number.isNaN(v2) && v2 > 0) {
+              this.defaultMaxConcurrentTickets = v2;
+              if (this.showCreateModal && this.newStaff) this.newStaff.maxConcurrentTickets = v2;
+              break;
+            }
           }
         }
       },
@@ -221,25 +275,43 @@ export class StaffComponent implements OnInit {
   }
 
   formatPhoneNumber(event: any): void {
-    let value = event.target.value.replace(/\D/g, '');
-    
-    if (value.length > 0) {
-      if (value.startsWith('0')) {
-        value = value.substring(0, 11);
-      } else {
-        value = '0' + value.substring(0, 10);
-      }
-      
-      let formatted = '';
-      if (value.length > 0) formatted += value.substring(0, 1);
-      if (value.length > 1) formatted += ' (' + value.substring(1, 4);
-      if (value.length > 4) formatted += ') ' + value.substring(4, 7);
-      if (value.length > 7) formatted += ' ' + value.substring(7, 9);
-      if (value.length > 9) formatted += ' ' + value.substring(9, 11);
-      
-      this.newStaff.phone = formatted;
-    } else {
+    // Only allow up to 11 digits (Turkish format: leading 0 + 10 digits)
+    let digits = (event.target.value || '').toString().replace(/\D/g, '').slice(0, 11);
+
+    // If user entered 10 digits without leading zero, prepend a 0 to form 11
+    if (digits.length === 10 && digits[0] !== '0') {
+      digits = '0' + digits;
+    }
+
+    if (digits.length === 0) {
       this.newStaff.phone = '';
+      return;
+    }
+
+    // Build formatted string progressively but never exceed 11 digits
+    const v = digits;
+    let formatted = '';
+    if (v.length > 0) formatted += v.substring(0, 1);
+    if (v.length > 1) formatted += ' (' + v.substring(1, Math.min(4, v.length));
+    if (v.length > 4) formatted += ') ' + v.substring(4, Math.min(7, v.length));
+    if (v.length > 7) formatted += ' ' + v.substring(7, Math.min(9, v.length));
+    if (v.length > 9) formatted += ' ' + v.substring(9, Math.min(11, v.length));
+
+    this.newStaff.phone = formatted;
+
+    // Force the input element's displayed value to the formatted value
+    try {
+      const input = event.target as HTMLInputElement;
+      if (input) {
+        input.value = formatted;
+        // Move caret to the end so user cannot continue typing past the format
+        const endPos = input.value.length;
+        if (typeof input.setSelectionRange === 'function') {
+          input.setSelectionRange(endPos, endPos);
+        }
+      }
+    } catch (e) {
+      // ignore if not applicable
     }
   }
 
@@ -260,6 +332,19 @@ export class StaffComponent implements OnInit {
     if (this.newStaff.password.length < 6) {
       this.errorMessage = 'Şifre en az 6 karakter olmalıdır.';
       return;
+    }
+
+    // Phone validation: if provided, must be exactly 11 digits (Turkish format)
+    const phoneDigits = (this.newStaff.phone || '').toString().replace(/\D/g, '');
+    if (phoneDigits && phoneDigits.length !== 11) {
+      this.errorMessage = 'Lütfen geçerli ve eksiksiz bir telefon numarası girin.';
+      return;
+    }
+
+    // Ensure phone is consistently formatted before sending (if provided)
+    if (phoneDigits && phoneDigits.length === 11) {
+      const v = phoneDigits;
+      this.newStaff.phone = v.substring(0, 1) + ' (' + v.substring(1, 4) + ') ' + v.substring(4, 7) + ' ' + v.substring(7, 9) + ' ' + v.substring(9, 11);
     }
 
     this.isSubmitting = true;

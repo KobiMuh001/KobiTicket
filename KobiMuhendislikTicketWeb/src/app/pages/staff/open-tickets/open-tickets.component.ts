@@ -18,8 +18,8 @@ export class OpenTicketsComponent implements OnInit {
   error: string | null = null;
   successMessage: string | null = null;
   
-  selectedStatus: string = 'all';
-  selectedPriority: string = 'all';
+  selectedStatus: string = '';
+  selectedPriority: string = '';
   statusOptions: Array<any> = [];
   priorityOptions: Array<any> = [];
 
@@ -33,16 +33,48 @@ export class OpenTicketsComponent implements OnInit {
   loadLookups(): void {
     this.paramSvc.getByGroup('TicketStatus').subscribe({
       next: (res: any) => {
-        const sData = res?.data?.data || res?.data || res || [];
-        this.statusOptions = (Array.isArray(sData) ? sData : []).map((p: any, i: number) => ({ id: p.id, key: p.key, label: p.value, sortOrder: p.sortOrder ?? i + 1, color: p.value2 ?? p.color ?? null }));
+        let list = res?.data?.data || res?.data || res || [];
+        list = (Array.isArray(list) ? list.slice() : []).sort((a: any, b: any) => {
+          const sa = (a.sortOrder ?? a.numericKey ?? null);
+          const sb = (b.sortOrder ?? b.numericKey ?? null);
+          if (sa !== null && sb !== null) return sa - sb;
+          if (sa !== null) return -1;
+          if (sb !== null) return 1;
+          return 0;
+        });
+        this.statusOptions = list.map((p: any, i: number) => ({
+          id: p.id,
+          value: p.numericKey != null ? String(p.numericKey) : '',
+          key: p.numericKey ?? p.key,
+          numericKey: p.numericKey ?? (typeof p.key === 'number' ? p.key : (Number.isFinite(Number(p.key)) ? Number(p.key) : null)),
+          label: (p.numericKey != null) ? (p.value || p.key || p.description) : '',
+          sortOrder: p.sortOrder ?? i + 1,
+          color: (p.numericKey != null) ? (p.value2 ?? p.color ?? null) : null
+        }));
       },
       error: () => { this.statusOptions = []; }
     });
 
     this.paramSvc.getByGroup('TicketPriority').subscribe({
       next: (res: any) => {
-        const pData = res?.data?.data || res?.data || res || [];
-        this.priorityOptions = (Array.isArray(pData) ? pData : []).map((p: any, i: number) => ({ id: p.id, key: p.key, label: p.value, sortOrder: p.sortOrder ?? i + 1, color: p.value2 ?? p.color ?? null }));
+        let list = res?.data?.data || res?.data || res || [];
+        list = (Array.isArray(list) ? list.slice() : []).sort((a: any, b: any) => {
+          const sa = (a.sortOrder ?? a.numericKey ?? null);
+          const sb = (b.sortOrder ?? b.numericKey ?? null);
+          if (sa !== null && sb !== null) return sa - sb;
+          if (sa !== null) return -1;
+          if (sb !== null) return 1;
+          return 0;
+        });
+        this.priorityOptions = list.map((p: any, i: number) => ({
+          id: p.id,
+          value: p.numericKey != null ? String(p.numericKey) : '',
+          key: p.numericKey ?? p.key,
+          numericKey: p.numericKey ?? (typeof p.key === 'number' ? p.key : (Number.isFinite(Number(p.key)) ? Number(p.key) : null)),
+          label: (p.numericKey != null) ? (p.value || p.key || p.description) : '',
+          sortOrder: p.sortOrder ?? i + 1,
+          color: (p.numericKey != null) ? (p.value2 ?? p.color ?? null) : null
+        }));
       },
       error: () => { this.priorityOptions = []; }
     });
@@ -79,8 +111,8 @@ export class OpenTicketsComponent implements OnInit {
 
   applyFilters(): void {
     this.filteredTickets = this.tickets.filter(ticket => {
-      const statusMatch = this.selectedStatus === 'all' || ticket.status.toString() === this.selectedStatus;
-      const priorityMatch = this.selectedPriority === 'all' || ticket.priority.toString() === this.selectedPriority;
+      const statusMatch = !this.selectedStatus || ticket.status.toString() === this.selectedStatus;
+      const priorityMatch = !this.selectedPriority || ticket.priority.toString() === this.selectedPriority;
       return statusMatch && priorityMatch;
     });
   }
@@ -112,7 +144,7 @@ export class OpenTicketsComponent implements OnInit {
 
   getPriorityText(priority: number): string {
     const n = Number(priority);
-    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
     if (found) return found.label || 'Normal';
 
     switch (priority) {
@@ -126,9 +158,9 @@ export class OpenTicketsComponent implements OnInit {
 
   getPriorityClass(priority: number): string {
     const n = Number(priority);
-    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
     if (found) {
-      const num = Number(found.sortOrder ?? found.id);
+      const num = Number(found.numericKey ?? found.sortOrder ?? found.id);
       switch (num) {
         case 1: return 'priority-low';
         case 2: return 'priority-normal';
@@ -148,7 +180,7 @@ export class OpenTicketsComponent implements OnInit {
 
   getStatusText(status: number): string {
     const n = Number(status);
-    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
+    const found = this.statusOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
     if (found) return found.label || 'Bilinmiyor';
 
     switch (status) {
@@ -163,9 +195,9 @@ export class OpenTicketsComponent implements OnInit {
 
   getStatusClass(status: number): string {
     const n = Number(status);
-    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
+    const found = this.statusOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
     if (found) {
-      const num = Number(found.sortOrder ?? found.id);
+      const num = Number(found.numericKey ?? found.sortOrder ?? found.id);
       switch (num) {
         case 1: return 'status-open';
         case 2: return 'status-processing';

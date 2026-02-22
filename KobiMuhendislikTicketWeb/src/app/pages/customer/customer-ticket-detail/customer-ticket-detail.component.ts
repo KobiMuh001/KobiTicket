@@ -25,7 +25,7 @@ interface TicketComment {
 })
 export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterViewChecked {
   @ViewChild('commentsContainer') private commentsContainer!: ElementRef;
-  
+
   ticket: any = null;
   comments: TicketComment[] = [];
   ticketImages: string[] = [];
@@ -42,7 +42,7 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
   uploadSuccessMessage = '';
   showImagePreview = false;
   selectedImagePath: string | null = null;
-  
+
   // SignalR
   private ticketId: string = '';
   private commentSubscription?: Subscription;
@@ -72,7 +72,7 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
       if (this.isBrowser) {
         this.initSignalR();
       }
-      
+
       // Commentsları 2 saniyede bir otomatik yenile (polling)
       this.refreshInterval = setInterval(() => {
         console.log('Customer-Detail: Periodic comments refresh triggered');
@@ -88,15 +88,16 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
         this.statusOptions = (data || []).map((s: any) => ({
           id: s.id,
           key: s.key,
-          label: s.value ?? s.description ?? s.key,
+          numericKey: s.numericKey ?? (typeof s.key === 'number' ? s.key : (Number.isFinite(Number(s.key)) ? Number(s.key) : null)),
+          label: (s.numericKey != null) ? (s.value ?? s.description ?? s.key) : '',
           sortOrder: s.sortOrder,
-          color: s.value2 ?? s.color ?? null
+          color: (s.numericKey != null) ? (s.value2 ?? s.color ?? null) : null
         }));
         if (this.ticket) {
           this.ticket.statusText = this.getStatusText(this.ticket.status);
         }
       },
-      error: () => {}
+      error: () => { }
     });
 
     this.systemParameterService.getByGroup('TicketPriority').subscribe({
@@ -105,15 +106,16 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
         this.priorityOptions = (data || []).map((p: any) => ({
           id: p.id,
           key: p.key,
-          label: p.value ?? p.description ?? p.key,
+          numericKey: p.numericKey ?? (typeof p.key === 'number' ? p.key : (Number.isFinite(Number(p.key)) ? Number(p.key) : null)),
+          label: (p.numericKey != null) ? (p.value ?? p.description ?? p.key) : '',
           sortOrder: p.sortOrder,
-          color: p.value2 ?? p.color ?? null
+          color: (p.numericKey != null) ? (p.value2 ?? p.color ?? null) : null
         }));
         if (this.ticket) {
           this.ticket.priorityText = this.getPriorityText(this.ticket.priority);
         }
       },
-      error: () => {}
+      error: () => { }
     });
   }
 
@@ -139,7 +141,7 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
       if (this.commentsContainer) {
         this.commentsContainer.nativeElement.scrollTop = this.commentsContainer.nativeElement.scrollHeight;
       }
-    } catch (err) {}
+    } catch (err) { }
   }
 
   openImagePreview(imagePath: string): void {
@@ -155,7 +157,7 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
 
     // Check both localStorage and sessionStorage (token can be in either depending on "Remember Me" setting)
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-    
+
     if (!token) {
       console.warn('SignalR: No token found. User may not be authenticated.');
       return;
@@ -164,7 +166,7 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
     try {
       console.log('SignalR: Customer - Attempting to start connection');
       await this.signalRService.startConnection(token);
-      
+
       console.log('SignalR: Customer - Joining ticket group', this.ticketId);
       await this.signalRService.joinTicketGroup(this.ticketId);
       this.isSignalRConnected = true;
@@ -200,7 +202,7 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
 
   loadTicket(id: string): void {
     this.isLoading = true;
-    
+
     this.ticketService.getMyTickets().subscribe({
       next: (response: any) => {
         const data = response.data || response || [];
@@ -228,7 +230,7 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
         this.comments = response.data || response || [];
         this.shouldScrollToBottom = true;
       },
-      error: () => {}
+      error: () => { }
     });
   }
 
@@ -237,30 +239,32 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
       next: (response: any) => {
         this.ticketImages = response.data || response || [];
       },
-      error: () => {}
+      error: () => { }
     });
   }
 
   addComment(): void {
     if (!this.newComment.trim() || !this.ticket) return;
 
-    // Prevent adding comments when ticket is closed
+    // Kapalı ticket kontrolü
     if (this.isTicketClosed()) {
       this.errorMessage = 'Bu destek talebi üzerinde artık yorum yapılamaz.';
       return;
     }
 
+    const commentText = this.newComment;
+    this.newComment = ''; // UX için hemen temizle
     this.isSubmittingComment = true;
-    
-    this.ticketService.addComment(this.ticket.id, this.newComment).subscribe({
+
+    this.ticketService.addComment(this.ticket.id, commentText).subscribe({
       next: () => {
-        this.newComment = '';
         this.isSubmittingComment = false;
         this.shouldScrollToBottom = true;
-        // Yorumu hemen yükle ve scroll et
+        // Yorum listesini yenile
         this.loadComments(this.ticketId);
       },
       error: () => {
+        this.newComment = commentText; // Hata durumunda mesajı geri getir
         this.errorMessage = 'Yorum eklenirken bir hata oluştu.';
         this.isSubmittingComment = false;
       }
@@ -275,12 +279,13 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
   }
 
   getStatusText(status: string | number): string {
+    const n = Number(status);
     const opt = this.statusOptions.find((o: any) =>
-      Number(o.sortOrder ?? o.id) === Number(status) || o.key === status || String(o.id) === String(status)
+      Number(o.numericKey ?? o.sortOrder ?? o.id) === n || o.key === status || String(o.id) === String(status)
     );
     if (opt) return opt.label;
 
-    const statusMap: { [key: string]: string; [key: number]: string } = {
+    const statusMap: { [key: string]: string;[key: number]: string } = {
       'Open': 'Açık',
       'Processing': 'İşlemde',
       'InProgress': 'İşlemde',
@@ -298,12 +303,13 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
   }
 
   getPriorityText(priority: string | number): string {
+    const n = Number(priority);
     const opt = this.priorityOptions.find((o: any) =>
-      Number(o.sortOrder ?? o.id) === Number(priority) || o.key === priority || String(o.id) === String(priority)
+      Number(o.numericKey ?? o.sortOrder ?? o.id) === n || o.key === priority || String(o.id) === String(priority)
     );
     if (opt) return opt.label;
 
-    const priorityMap: { [key: string]: string; [key: number]: string } = {
+    const priorityMap: { [key: string]: string;[key: number]: string } = {
       'Low': 'Düşük',
       'Medium': 'Orta',
       'High': 'Yüksek',
@@ -341,13 +347,15 @@ export class CustomerTicketDetailComponent implements OnInit, OnDestroy, AfterVi
 
   getStatusColor(status: string | number): string | null {
     const s = String(status ?? '');
-    const found = this.statusOptions.find((o: any) => String(o.sortOrder ?? o.id) === s || String(o.id) === s || String(o.key) === s || o.label === status || String(o.label) === s);
+    const n = Number(status);
+    const found = this.statusOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === s || String(o.key) === s || o.label === status || String(o.label) === s);
     return found?.color ?? null;
   }
 
   getPriorityColor(priority: string | number): string | null {
     const p = String(priority ?? '');
-    const found = this.priorityOptions.find((o: any) => String(o.sortOrder ?? o.id) === p || String(o.id) === p || String(o.key) === p || o.label === priority || String(o.label) === p);
+    const n = Number(priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === p || String(o.key) === p || o.label === priority || String(o.label) === p);
     return found?.color ?? null;
   }
 

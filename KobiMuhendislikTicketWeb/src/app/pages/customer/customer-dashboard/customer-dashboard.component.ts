@@ -70,7 +70,14 @@ export class CustomerDashboardComponent implements OnInit {
     this.systemParamSvc.getByGroup('TicketStatus').subscribe({
       next: (res: any) => {
         const sData = res?.data?.data || res?.data || res || [];
-        this.statusOptions = (Array.isArray(sData) ? sData : []).map((p: any, i: number) => ({ id: p.id, key: p.key, label: p.value, sortOrder: p.sortOrder ?? i + 1, color: p.value2 ?? p.color ?? null }));
+        this.statusOptions = (Array.isArray(sData) ? sData : []).map((p: any, i: number) => ({
+          id: p.id,
+          key: p.key,
+          numericKey: p.numericKey ?? (typeof p.key === 'number' ? p.key : (Number.isFinite(Number(p.key)) ? Number(p.key) : null)),
+          label: (p.numericKey != null) ? (p.value || p.key || p.description) : '',
+          sortOrder: p.sortOrder ?? i + 1,
+          color: (p.numericKey != null) ? (p.value2 ?? p.color ?? null) : null
+        }));
       },
       error: () => { this.statusOptions = []; }
     });
@@ -78,7 +85,14 @@ export class CustomerDashboardComponent implements OnInit {
     this.systemParamSvc.getByGroup('TicketPriority').subscribe({
       next: (res: any) => {
         const pData = res?.data?.data || res?.data || res || [];
-        this.priorityOptions = (Array.isArray(pData) ? pData : []).map((p: any, i: number) => ({ id: p.id, key: p.key, label: p.value, sortOrder: p.sortOrder ?? i + 1, color: p.value2 ?? p.color ?? null }));
+        this.priorityOptions = (Array.isArray(pData) ? pData : []).map((p: any, i: number) => ({
+          id: p.id,
+          key: p.key,
+          numericKey: p.numericKey ?? (typeof p.key === 'number' ? p.key : (Number.isFinite(Number(p.key)) ? Number(p.key) : null)),
+          label: (p.numericKey != null) ? (p.value || p.key || p.description) : '',
+          sortOrder: p.sortOrder ?? i + 1,
+          color: (p.numericKey != null) ? (p.value2 ?? p.color ?? null) : null
+        }));
       },
       error: () => { this.priorityOptions = []; }
     });
@@ -86,13 +100,15 @@ export class CustomerDashboardComponent implements OnInit {
 
   getStatusColor(status: string | number): string | null {
     const s = String(status ?? '');
-    const found = this.statusOptions.find((o: any) => String(o.sortOrder ?? o.id) === s || String(o.id) === s || String(o.key) === s || o.label === status || String(o.label) === s);
+    const n = Number(status);
+    const found = this.statusOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === s || String(o.key) === s || o.label === status || String(o.label) === s);
     return found?.color ?? null;
   }
 
   getPriorityColor(priority: string | number): string | null {
     const p = String(priority ?? '');
-    const found = this.priorityOptions.find((o: any) => String(o.sortOrder ?? o.id) === p || String(o.id) === p || String(o.key) === p || o.label === priority || String(o.label) === p);
+    const n = Number(priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === p || String(o.key) === p || o.label === priority || String(o.label) === p);
     return found?.color ?? null;
   }
 
@@ -181,7 +197,7 @@ export class CustomerDashboardComponent implements OnInit {
 
   getStatusText(status: string | number): string {
     const n = Number(status);
-    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
+    const found = this.statusOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
     if (found) return found.label || 'Bilinmiyor';
 
     const statusMap: { [key: string]: string; [key: number]: string } = {
@@ -203,7 +219,7 @@ export class CustomerDashboardComponent implements OnInit {
 
   getPriorityText(priority: string | number): string {
     const n = Number(priority);
-    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
     if (found) return found.label || 'Normal';
 
     const priorityMap: { [key: string]: string; [key: number]: string } = {
@@ -221,9 +237,9 @@ export class CustomerDashboardComponent implements OnInit {
 
   getStatusClass(status: string): string {
     const n = Number(status as any);
-    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
+    const found = this.statusOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
     if (found) {
-      const num = Number(found.sortOrder ?? found.id);
+      const num = Number(found.numericKey ?? found.sortOrder ?? found.id);
       switch (num) {
         case 1: return 'status-open';
         case 2: return 'status-progress';
@@ -245,9 +261,9 @@ export class CustomerDashboardComponent implements OnInit {
 
   getPriorityClass(priority: string): string {
     const n = Number(priority as any);
-    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
     if (found) {
-      const num = Number(found.sortOrder ?? found.id);
+      const num = Number(found.numericKey ?? found.sortOrder ?? found.id);
       switch (num) {
         case 1: return 'priority-low';
         case 2: return 'priority-medium';

@@ -4,6 +4,7 @@ using KobiMuhendislikTicket.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace KobiMuhendislikTicket.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260220052335_SeedNumericKeys")]
+    partial class SeedNumericKeys
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -255,7 +258,7 @@ namespace KobiMuhendislikTicket.Migrations
                             IsActive = true,
                             IsDeleted = false,
                             MaxConcurrentTickets = 10,
-                            PasswordHash = "$2a$11$H0EsXpavaPZcDY8lmnIW9um24QZAUmsTKPh3iIAGNgOE8wSCPyMne",
+                            PasswordHash = "$2a$11$NW8LYAVpzHO3HfTCG930/e7rV59BgT1vnW3uSS1Npdj4o9En78cRC",
                             Phone = "(532) 111 2233"
                         },
                         new
@@ -268,7 +271,7 @@ namespace KobiMuhendislikTicket.Migrations
                             IsActive = true,
                             IsDeleted = false,
                             MaxConcurrentTickets = 8,
-                            PasswordHash = "$2a$11$AzgaWJXt9T/Ch7Yp91OKzO/csliUuhR2kQw5E8dzv6eHmt9.jwNhO",
+                            PasswordHash = "$2a$11$Ji.2mHPQ2sIw7bbTAwpTF./TSfpmpgPS.TLXWCZPje9QAn2XXi1V.",
                             Phone = "(533) 222 3344"
                         },
                         new
@@ -281,7 +284,7 @@ namespace KobiMuhendislikTicket.Migrations
                             IsActive = true,
                             IsDeleted = false,
                             MaxConcurrentTickets = 5,
-                            PasswordHash = "$2a$11$AVDMBLz7t54KV0xJk0U3V.VRsTAeLHo0i6CuTHrtfuBQeORbK0k1e",
+                            PasswordHash = "$2a$11$t5.Y/OugRwehFTdmi4oN..9Dg06WHmAKMBZqrk5Tz0XzS7uqhY0LW",
                             Phone = "(534) 333 4455"
                         });
                 });
@@ -343,7 +346,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 100,
-                            CreatedDate = new DateTime(2026, 2, 22, 15, 34, 5, 28, DateTimeKind.Unspecified).AddTicks(863),
+                            CreatedDate = new DateTime(2026, 2, 20, 8, 23, 33, 752, DateTimeKind.Unspecified).AddTicks(9986),
                             DataType = "String",
                             Description = "Düşük öncelik",
                             Group = "TicketPriority",
@@ -357,7 +360,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 101,
-                            CreatedDate = new DateTime(2026, 2, 22, 15, 34, 5, 28, DateTimeKind.Unspecified).AddTicks(901),
+                            CreatedDate = new DateTime(2026, 2, 20, 8, 23, 33, 753, DateTimeKind.Unspecified).AddTicks(37),
                             DataType = "String",
                             Description = "Orta öncelik",
                             Group = "TicketPriority",
@@ -371,7 +374,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 102,
-                            CreatedDate = new DateTime(2026, 2, 22, 15, 34, 5, 28, DateTimeKind.Unspecified).AddTicks(904),
+                            CreatedDate = new DateTime(2026, 2, 20, 8, 23, 33, 753, DateTimeKind.Unspecified).AddTicks(44),
                             DataType = "String",
                             Description = "Yüksek öncelik",
                             Group = "TicketPriority",
@@ -385,7 +388,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 103,
-                            CreatedDate = new DateTime(2026, 2, 22, 15, 34, 5, 28, DateTimeKind.Unspecified).AddTicks(906),
+                            CreatedDate = new DateTime(2026, 2, 20, 8, 23, 33, 753, DateTimeKind.Unspecified).AddTicks(49),
                             DataType = "String",
                             Description = "Kritik öncelik",
                             Group = "TicketPriority",
@@ -399,7 +402,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 110,
-                            CreatedDate = new DateTime(2026, 2, 22, 15, 34, 5, 28, DateTimeKind.Unspecified).AddTicks(908),
+                            CreatedDate = new DateTime(2026, 2, 20, 8, 23, 33, 753, DateTimeKind.Unspecified).AddTicks(54),
                             DataType = "String",
                             Description = "Açık",
                             Group = "TicketStatus",
@@ -413,7 +416,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 111,
-                            CreatedDate = new DateTime(2026, 2, 22, 15, 34, 5, 28, DateTimeKind.Unspecified).AddTicks(913),
+                            CreatedDate = new DateTime(2026, 2, 20, 8, 23, 33, 753, DateTimeKind.Unspecified).AddTicks(70),
                             DataType = "String",
                             Description = "İşleniyor",
                             Group = "TicketStatus",
@@ -427,7 +430,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 112,
-                            CreatedDate = new DateTime(2026, 2, 22, 15, 34, 5, 28, DateTimeKind.Unspecified).AddTicks(916),
+                            CreatedDate = new DateTime(2026, 2, 20, 8, 23, 33, 753, DateTimeKind.Unspecified).AddTicks(75),
                             DataType = "String",
                             Description = "Müşteri Bekleniyor",
                             Group = "TicketStatus",
@@ -441,7 +444,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 113,
-                            CreatedDate = new DateTime(2026, 2, 22, 15, 34, 5, 28, DateTimeKind.Unspecified).AddTicks(918),
+                            CreatedDate = new DateTime(2026, 2, 20, 8, 23, 33, 753, DateTimeKind.Unspecified).AddTicks(81),
                             DataType = "String",
                             Description = "Çözüldü",
                             Group = "TicketStatus",
@@ -455,7 +458,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 114,
-                            CreatedDate = new DateTime(2026, 2, 22, 15, 34, 5, 28, DateTimeKind.Unspecified).AddTicks(920),
+                            CreatedDate = new DateTime(2026, 2, 20, 8, 23, 33, 753, DateTimeKind.Unspecified).AddTicks(87),
                             DataType = "String",
                             Description = "Kapandı",
                             Group = "TicketStatus",
@@ -469,7 +472,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 120,
-                            CreatedDate = new DateTime(2026, 2, 22, 15, 34, 5, 28, DateTimeKind.Unspecified).AddTicks(921),
+                            CreatedDate = new DateTime(2026, 2, 20, 8, 23, 33, 753, DateTimeKind.Unspecified).AddTicks(92),
                             DataType = "String",
                             Description = "Admin role",
                             Group = "UserRole",
@@ -483,7 +486,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 121,
-                            CreatedDate = new DateTime(2026, 2, 22, 15, 34, 5, 28, DateTimeKind.Unspecified).AddTicks(939),
+                            CreatedDate = new DateTime(2026, 2, 20, 8, 23, 33, 753, DateTimeKind.Unspecified).AddTicks(127),
                             DataType = "String",
                             Description = "Staff role",
                             Group = "UserRole",
@@ -497,7 +500,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 122,
-                            CreatedDate = new DateTime(2026, 2, 22, 15, 34, 5, 28, DateTimeKind.Unspecified).AddTicks(941),
+                            CreatedDate = new DateTime(2026, 2, 20, 8, 23, 33, 753, DateTimeKind.Unspecified).AddTicks(132),
                             DataType = "String",
                             Description = "Customer role",
                             Group = "UserRole",
@@ -511,7 +514,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 130,
-                            CreatedDate = new DateTime(2026, 2, 22, 15, 34, 5, 28, DateTimeKind.Unspecified).AddTicks(943),
+                            CreatedDate = new DateTime(2026, 2, 20, 8, 23, 33, 753, DateTimeKind.Unspecified).AddTicks(137),
                             DataType = "String",
                             Description = "Teknik Destek",
                             Group = "Department",
@@ -525,7 +528,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 131,
-                            CreatedDate = new DateTime(2026, 2, 22, 15, 34, 5, 28, DateTimeKind.Unspecified).AddTicks(945),
+                            CreatedDate = new DateTime(2026, 2, 20, 8, 23, 33, 753, DateTimeKind.Unspecified).AddTicks(142),
                             DataType = "String",
                             Description = "Satış",
                             Group = "Department",
@@ -539,7 +542,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 132,
-                            CreatedDate = new DateTime(2026, 2, 22, 15, 34, 5, 28, DateTimeKind.Unspecified).AddTicks(947),
+                            CreatedDate = new DateTime(2026, 2, 20, 8, 23, 33, 753, DateTimeKind.Unspecified).AddTicks(147),
                             DataType = "String",
                             Description = "Muhasebe",
                             Group = "Department",
@@ -553,7 +556,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 133,
-                            CreatedDate = new DateTime(2026, 2, 22, 15, 34, 5, 28, DateTimeKind.Unspecified).AddTicks(949),
+                            CreatedDate = new DateTime(2026, 2, 20, 8, 23, 33, 753, DateTimeKind.Unspecified).AddTicks(152),
                             DataType = "String",
                             Description = "Yönetim",
                             Group = "Department",
@@ -567,7 +570,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 134,
-                            CreatedDate = new DateTime(2026, 2, 22, 15, 34, 5, 28, DateTimeKind.Unspecified).AddTicks(950),
+                            CreatedDate = new DateTime(2026, 2, 20, 8, 23, 33, 753, DateTimeKind.Unspecified).AddTicks(157),
                             DataType = "String",
                             Description = "Diğer",
                             Group = "Department",
@@ -581,7 +584,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 200,
-                            CreatedDate = new DateTime(2026, 2, 22, 15, 34, 5, 28, DateTimeKind.Unspecified).AddTicks(952),
+                            CreatedDate = new DateTime(2026, 2, 20, 8, 23, 33, 753, DateTimeKind.Unspecified).AddTicks(161),
                             DataType = "Int",
                             Description = "Varsayılan ticket limiti",
                             Group = "General",
@@ -666,9 +669,6 @@ namespace KobiMuhendislikTicket.Migrations
                     b.Property<string>("AssignedPerson")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("AssignedStaffId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
@@ -705,8 +705,6 @@ namespace KobiMuhendislikTicket.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AssignedStaffId");
 
                     b.HasIndex("ProductId");
 
@@ -871,10 +869,6 @@ namespace KobiMuhendislikTicket.Migrations
 
             modelBuilder.Entity("KobiMuhendislikTicket.Domain.Entities.Ticket", b =>
                 {
-                    b.HasOne("KobiMuhendislikTicket.Domain.Entities.Staff", "AssignedStaff")
-                        .WithMany()
-                        .HasForeignKey("AssignedStaffId");
-
                     b.HasOne("KobiMuhendislikTicket.Domain.Entities.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
@@ -885,8 +879,6 @@ namespace KobiMuhendislikTicket.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("AssignedStaff");
 
                     b.Navigation("Product");
 

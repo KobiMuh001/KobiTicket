@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { DashboardService, TicketListItem } from '../../../core/services/dashboard.service';
 import { SystemParameterService } from '../../../core/services/system-parameter.service';
 import { NotificationService, Notification } from '../../../core/services/notification.service';
-import { Subject } from 'rxjs';
+import { Subject, firstValueFrom } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 @Component({
@@ -18,15 +18,16 @@ import { takeUntil } from 'rxjs/operators';
 export class TicketsComponent implements OnInit {
   tickets: TicketListItem[] = [];
   filteredTickets: TicketListItem[] = [];
+  allTicketsCache: TicketListItem[] | null = null;
   isLoading = true;
   errorMessage = '';
-  
+
   // Pagination
   currentPage = 1;
   pageSize = 20;
   totalCount = 0;
   totalPages = 1;
-  
+
   // Filters
   searchTerm = '';
   statusFilter = '';
@@ -50,7 +51,7 @@ export class TicketsComponent implements OnInit {
     private notificationService: NotificationService,
     private router: Router
     , private paramSvc: SystemParameterService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadTickets();
@@ -58,15 +59,45 @@ export class TicketsComponent implements OnInit {
     this.loadDynamicFilters();
   }
 
+  // Fetch all paginated ticket pages from server and return combined array
+  private async fetchAllTicketsPaginated(pageSize = 200): Promise<TicketListItem[]> {
+    const all: TicketListItem[] = [];
+    let page = 1;
+    try {
+      while (true) {
+        // use the paged API to retrieve each page and accumulate
+        const resp: any = await firstValueFrom(this.dashboardService.getAllTicketsPage(page, pageSize));
+        let items: TicketListItem[] = [];
+        if (resp == null) break;
+        if (resp.items && Array.isArray(resp.items)) {
+          items = resp.items;
+        } else if (Array.isArray(resp)) {
+          items = resp;
+        }
+
+        if (items.length) all.push(...items);
+
+        // determine if we should continue
+        const totalPages = resp && resp.totalPages ? resp.totalPages : Math.ceil((resp.totalCount ?? items.length) / pageSize || 1);
+        if (!totalPages || page >= totalPages) break;
+        page++;
+      }
+    } catch (e) {
+      // bubble error up to caller
+      throw e;
+    }
+    return all;
+  }
+
   private loadDynamicFilters(): void {
     // Load TicketStatus and TicketPriority from system parameters and map to numeric option values
     this.paramSvc.getByGroup('TicketStatus').subscribe({
       next: (res: any) => {
         let list = res.data || res || [];
-        // prefer sortOrder when present, otherwise fallback to stable key order
+        // prefer SortOrder when present (admin-defined), then numericKey, then fallback to stable key order
         list = list.slice().sort((a: any, b: any) => {
-          const sa = (a.sortOrder ?? null);
-          const sb = (b.sortOrder ?? null);
+          const sa = (a.sortOrder ?? a.numericKey ?? null);
+          const sb = (b.sortOrder ?? b.numericKey ?? null);
           if (sa !== null && sb !== null) return sa - sb;
           if (sa !== null) return -1;
           if (sb !== null) return 1;
@@ -74,7 +105,7 @@ export class TicketsComponent implements OnInit {
           const ib = this.statusKeyOrder.indexOf(b.key ?? b.Key ?? b.value ?? '');
           return ia - ib;
         });
-        this.statusOptions = list.map((p: any, i: number) => ({ value: String(p.sortOrder ?? (i + 1)), label: p.value || p.key || p.description, key: p.key, color: p.value2 ?? p.color ?? null }));
+        this.statusOptions = list.map((p: any, i: number) => ({ value: p.numericKey != null ? String(p.numericKey) : '', label: (p.numericKey != null) ? (p.value || p.key || p.description) : '', key: p.numericKey ?? p.key, numericKey: p.numericKey ?? (typeof p.key === 'number' ? p.key : (Number.isFinite(Number(p.key)) ? Number(p.key) : null)), color: (p.numericKey != null) ? (p.value2 ?? p.color ?? null) : null }));
       },
       error: () => {
         this.statusOptions = [];
@@ -84,9 +115,10 @@ export class TicketsComponent implements OnInit {
     this.paramSvc.getByGroup('TicketPriority').subscribe({
       next: (res: any) => {
         let list = res.data || res || [];
+        // prefer SortOrder when present (admin-defined), then numericKey, then fallback to stable key order
         list = list.slice().sort((a: any, b: any) => {
-          const sa = (a.sortOrder ?? null);
-          const sb = (b.sortOrder ?? null);
+          const sa = (a.sortOrder ?? a.numericKey ?? null);
+          const sb = (b.sortOrder ?? b.numericKey ?? null);
           if (sa !== null && sb !== null) return sa - sb;
           if (sa !== null) return -1;
           if (sb !== null) return 1;
@@ -94,7 +126,7 @@ export class TicketsComponent implements OnInit {
           const ib = this.priorityKeyOrder.indexOf(b.key ?? b.Key ?? b.value ?? '');
           return ia - ib;
         });
-        this.priorityOptions = list.map((p: any, i: number) => ({ value: String(p.sortOrder ?? (i + 1)), label: p.value || p.key || p.description, key: p.key, color: p.value2 ?? p.color ?? null }));
+        this.priorityOptions = list.map((p: any, i: number) => ({ value: p.numericKey != null ? String(p.numericKey) : '', label: (p.numericKey != null) ? (p.value || p.key || p.description) : '', key: p.numericKey ?? p.key, numericKey: p.numericKey ?? (typeof p.key === 'number' ? p.key : (Number.isFinite(Number(p.key)) ? Number(p.key) : null)), color: (p.numericKey != null) ? (p.value2 ?? p.color ?? null) : null }));
       },
       error: () => {
         this.priorityOptions = [];
@@ -132,7 +164,7 @@ export class TicketsComponent implements OnInit {
     const ticketNotifications = this.notifications.filter(
       notif => notif.ticketId && Number(notif.ticketId) === ticketId && !notif.isRead
     );
-    
+
     ticketNotifications.forEach(notif => {
       this.notificationService.markAsRead(notif.id).subscribe({
         next: () => {
@@ -140,7 +172,7 @@ export class TicketsComponent implements OnInit {
         }
       });
     });
-    
+
     this.updateTicketNotificationCounts();
 
     // Satıra tıklayınca detay sayfasına git
@@ -149,6 +181,34 @@ export class TicketsComponent implements OnInit {
 
   loadTickets(): void {
     this.isLoading = true;
+
+    const hasFilter = !!(this.searchTerm || this.statusFilter || this.priorityFilter || this.customerFilter);
+
+    // When filters are active, fetch full list once and apply client-side filtering + pagination
+    if (hasFilter) {
+      if (this.allTicketsCache) {
+        this.tickets = this.allTicketsCache;
+        this.applyLocalFilteringAndPagination();
+        this.isLoading = false;
+        return;
+      }
+
+      // Fetch all pages from the paginated API to ensure we have the full dataset
+      this.fetchAllTicketsPaginated().then((allTickets) => {
+        this.tickets = allTickets || [];
+        this.allTicketsCache = this.tickets;
+        this.extractCustomers();
+        this.applyLocalFilteringAndPagination();
+        this.isLoading = false;
+      }).catch(() => {
+        this.errorMessage = 'Ticketlar yüklenirken hata oluştu.';
+        this.isLoading = false;
+      });
+      return;
+    }
+
+    // No filters: use paginated server API
+    this.allTicketsCache = null;
     this.dashboardService.getAllTicketsPage(this.currentPage, this.pageSize).subscribe({
       next: (response: any) => {
         if (response.items) {
@@ -164,8 +224,7 @@ export class TicketsComponent implements OnInit {
           this.totalCount = response.length;
           this.totalPages = Math.ceil(this.totalCount / this.pageSize);
         }
-        // Sort: active tickets first, then resolved/closed at the end
-        this.sortTickets();
+        // Sorting is now handled server-side in the backend query
         this.isLoading = false;
       },
       error: () => {
@@ -205,33 +264,68 @@ export class TicketsComponent implements OnInit {
   }
 
   applyFilters(): void {
-    this.filteredTickets = this.tickets.filter(ticket => {
+    // Reset to first page and reload so filtering is applied to full dataset
+    this.currentPage = 1;
+    this.loadTickets();
+  }
+
+  private applyLocalFilteringAndPagination(): void {
+    const termNorm = this.normalizeForSearch(this.searchTerm || '');
+
+    let results = (this.tickets || []).filter(ticket => {
       const ticketIdText = String(ticket.id ?? '');
-      const matchesSearch = !this.searchTerm || 
-        ticket.title.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        ticket.tenantName?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        ticketIdText.toLowerCase().includes(this.searchTerm.toLowerCase());
-      
+      const titleNorm = this.normalizeForSearch(ticket.title || '');
+      const tenantNorm = this.normalizeForSearch(ticket.tenantName || '');
+      const idNorm = this.normalizeForSearch(ticketIdText);
+
+      const matchesSearch = !termNorm ||
+        titleNorm.includes(termNorm) ||
+        tenantNorm.includes(termNorm) ||
+        idNorm.includes(termNorm);
+
       const matchesStatus = !this.statusFilter || ticket.status.toString() === this.statusFilter;
       const matchesPriority = !this.priorityFilter || ticket.priority.toString() === this.priorityFilter;
-      const matchesCustomer = !this.customerFilter || ticket.tenantName === this.customerFilter;
-      
+      const matchesCustomer = !this.customerFilter || (ticket.tenantName === this.customerFilter);
+
       return matchesSearch && matchesStatus && matchesPriority && matchesCustomer;
     });
 
-    
-    this.sortTickets();
+    // Sort: active tickets first, then resolved/closed at the end
+    results.sort((a, b) => {
+      const aIsResolved = a.status === 4 || a.status === 5;
+      const bIsResolved = b.status === 4 || b.status === 5;
+      if (aIsResolved && !bIsResolved) return 1;
+      if (!aIsResolved && bIsResolved) return -1;
+      return 0;
+    });
+
+    this.totalCount = results.length;
+    this.totalPages = Math.max(1, Math.ceil(this.totalCount / this.pageSize));
+
+    const start = (this.currentPage - 1) * this.pageSize;
+    this.filteredTickets = results.slice(start, start + this.pageSize);
   }
 
   private sortTickets(): void {
     this.filteredTickets.sort((a, b) => {
       const aIsResolved = a.status === 4 || a.status === 5;
       const bIsResolved = b.status === 4 || b.status === 5;
-      
+
       if (aIsResolved && !bIsResolved) return 1;
       if (!aIsResolved && bIsResolved) return -1;
       return 0;
     });
+  }
+
+  // Normalize strings for search: locale-aware lowercasing (Turkish) + remove combining diacritics
+  private normalizeForSearch(value: any): string {
+    try {
+      const s = (value ?? '').toString();
+      // Use Turkish locale to correctly map dotted/dotless I, then decompose and strip diacritics
+      return s.toLocaleLowerCase('tr').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    } catch {
+      return (value ?? '').toString().toLowerCase();
+    }
   }
 
   clearFilters(): void {
@@ -239,7 +333,8 @@ export class TicketsComponent implements OnInit {
     this.statusFilter = '';
     this.priorityFilter = '';
     this.customerFilter = '';
-    this.filteredTickets = this.tickets;
+    this.currentPage = 1;
+    this.loadTickets();
   }
 
   getStatusText(status: number): string {
@@ -288,14 +383,20 @@ export class TicketsComponent implements OnInit {
     return classMap[priority] || 'low';
   }
 
+  trackByTicketId(index: number, ticket: TicketListItem): number | string | null {
+    return ticket?.id ?? index;
+  }
+
   // Return DB-provided color (value2) for status/priority or null
   getStatusColor(status: number): string | null {
-    const found = this.statusOptions.find((o: any) => Number(o.value) === Number(status) || String(o.value) === String(status) || String(o.key) === String(status) || o.label === status);
+    const n = Number(status);
+    const found = this.statusOptions.find((o: any) => Number(o.value) === n || Number(o.key) === n || Number(o.numericKey) === n || String(o.value) === String(status) || String(o.key) === String(status) || o.label === status);
     return found?.color ?? null;
   }
 
   getPriorityColor(priority: number): string | null {
-    const found = this.priorityOptions.find((o: any) => Number(o.value) === Number(priority) || String(o.value) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    const n = Number(priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.value) === n || Number(o.key) === n || Number(o.numericKey) === n || String(o.value) === String(priority) || String(o.key) === String(priority) || o.label === priority);
     return found?.color ?? null;
   }
 

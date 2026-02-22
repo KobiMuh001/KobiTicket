@@ -166,6 +166,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
         public int Status { get; set; }
         public int Priority { get; set; }
         public string? AssignedPerson { get; set; }
+        public int? AssignedStaffId { get; set; }
         public string TenantName { get; set; } = string.Empty;
         public int TenantId { get; set; }
         public string? ProductName { get; set; }
@@ -185,6 +186,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
         public int Status { get; set; }
         public int Priority { get; set; }
         public string? AssignedPerson { get; set; }
+        public int? AssignedStaffId { get; set; }
         public string? ImagePath { get; set; }
         public List<string> ImagePaths { get; set; } = new();
         public DateTime CreatedDate { get; set; }
@@ -226,6 +228,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
         public int? Status { get; set; }
         public int? Priority { get; set; }
         public string? AssignedPerson { get; set; }
+        public int? AssignedStaffId { get; set; }
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
         public string? SearchTerm { get; set; }

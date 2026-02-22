@@ -11,6 +11,8 @@ namespace KobiMuhendislikTicket.Domain.Entities
         public TicketStatus Status { get; set; } = TicketStatus.Open;
         public TicketPriority Priority { get; set; } = TicketPriority.Low;
         public string? AssignedPerson { get; set; }
+        public int? AssignedStaffId { get; set; }
+        public Staff? AssignedStaff { get; set; }
         public string? TicketCode { get; set; } // T00001 format
 
         // Foreign Keys

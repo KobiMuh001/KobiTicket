@@ -200,8 +200,8 @@ builder.Services.AddCors(options =>
             policy
                 .SetIsOriginAllowed(_ => true)
                 .AllowAnyHeader()
-                .AllowAnyMethod();
-               // .AllowCredentials();
+                .AllowAnyMethod()
+                .AllowCredentials();
         }
         else
         {
@@ -215,8 +215,8 @@ builder.Services.AddCors(options =>
             {
                 policy.WithOrigins(allowedOrigins)
                       .AllowAnyHeader()
-                      .AllowAnyMethod();
-                      //.AllowCredentials();
+                      .AllowAnyMethod()
+                      .AllowCredentials();
             }
             else
             {

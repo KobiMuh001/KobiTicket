@@ -9,6 +9,7 @@ export interface Staff {
   email: string;
   phone?: string;
   department: string;
+  departmentId?: number;
   isActive: boolean;
   maxConcurrentTickets: number;
   createdDate: string;
@@ -43,6 +44,7 @@ export interface UpdateStaffDto {
   email?: string;
   phone?: string;
   department?: string;
+  departmentId?: number;
   isActive?: boolean;
   maxConcurrentTickets?: number;
   newPassword?: string;
@@ -56,6 +58,7 @@ export interface StaffTicket {
   status: number;
   priority: number;
   assignedPerson?: string;
+  assignedStaffId?: number;
   createdDate: string;
   updatedDate?: string;
   tenantId: number;
@@ -71,7 +74,7 @@ export interface StaffTicket {
 export class StaffService {
   private apiUrl = environment.apiUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getAllStaff(activeOnly?: boolean): Observable<any> {
     let params: any = {};
@@ -121,8 +124,8 @@ export class StaffService {
 
   // Get tickets assigned to me
   getMyTickets(page: number = 1, pageSize: number = 20): Observable<any> {
-    return this.http.get(`${this.apiUrl}/staff/tickets`, { 
-      params: { page: page.toString(), pageSize: pageSize.toString() } 
+    return this.http.get(`${this.apiUrl}/staff/tickets`, {
+      params: { page: page.toString(), pageSize: pageSize.toString() }
     });
   }
 

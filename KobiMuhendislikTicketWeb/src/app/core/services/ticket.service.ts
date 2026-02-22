@@ -13,6 +13,7 @@ export interface Ticket {
   createdDate: string;
   updatedDate?: string;
   assignedPerson?: string;
+  assignedStaffId?: number;
   imagePath?: string;
   tenantId: number;
   productId?: number;
@@ -48,7 +49,7 @@ export interface TicketHistory {
 export class TicketService {
   private apiUrl = environment.apiUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getAllTickets(): Observable<any> {
     return this.http.get(`${this.apiUrl}/tickets/admin/all-tickets`);
@@ -66,8 +67,8 @@ export class TicketService {
     return this.http.patch(`${this.apiUrl}/admin/tickets/${id}/priority`, { newPriority: priority });
   }
 
-  assignTicket(id: number | string, personName: string): Observable<any> {
-    return this.http.patch(`${this.apiUrl}/admin/tickets/${id}/assign`, { personName });
+  assignTicket(id: number | string, staffId: number, note?: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/admin/tickets/${id}/assign-to-staff`, { staffId, note });
   }
 
   addAdminComment(ticketId: number | string, message: string, author: string, isAdmin: boolean): Observable<any> {

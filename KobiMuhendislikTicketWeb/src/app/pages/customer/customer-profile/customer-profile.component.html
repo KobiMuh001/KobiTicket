@@ -96,8 +96,10 @@
                 [ngModel]="editForm.phoneNumber"
                 (input)="formatPhoneNumber($event)"
                 name="phoneNumber"
-                placeholder="0(555) 555 55 55"
-                maxlength="16">
+                placeholder="0 (555) 555 55 55"
+                maxlength="17"
+                inputmode="numeric"
+                pattern="\d*">
             </div>
 
             <div class="form-group">

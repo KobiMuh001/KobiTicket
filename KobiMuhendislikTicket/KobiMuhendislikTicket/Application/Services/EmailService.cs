@@ -253,5 +253,122 @@ namespace KobiMuhendislikTicket.Application.Services
 
             await SendEmailAsync(adminEmail, subject, body, true);
         }
+
+        public async Task SendTicketCreatedConfirmationEmailAsync(string toEmail, string toName, string ticketTitle, string ticketCode, int ticketId)
+        {
+            if (string.IsNullOrEmpty(toEmail))
+            {
+                _logger.LogWarning("Müşteri e-posta adresi bulunamadı. Ticket onay e-postası gönderilemedi: {TicketId}", ticketId);
+                return;
+            }
+
+            var subject = "Destek Talebiniz Alındı";
+            var logoUrl = "https://www.kobimuhendislik.com/assets/images/logo/KobiLogo.png";
+
+            // Frontend base url (opsiyonel, appsettings içinde yoksa '#' bırakılır)
+            var portalBase = _configuration["FrontEnd:BaseUrl"] ?? "#";
+            var ticketUrl = portalBase != "#" ? $"{portalBase.TrimEnd('/')}/customer/tickets/{ticketId}" : "#";
+
+            var body = $@"
+                <html>
+                <head>
+                    <style>
+                        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }}
+                        .container {{ max-width: 600px; margin: 20px auto; padding: 0; border: 1px solid #eee; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }}
+                        .header {{ background-color: #ffffff; padding: 25px; text-align: center; border-bottom: 3px solid #2196F3; }}
+                        .logo {{ max-width: 160px; height: auto; margin-bottom: 10px; }}
+                        .content {{ background-color: #ffffff; padding: 30px; }}
+                        .ticket-info {{ background-color: #f8fbfe; border: 1px solid #d1e9ff; border-radius: 8px; padding: 20px; margin: 20px 0; }}
+                        .footer {{ background-color: #f9f9f9; padding: 20px; text-align: center; font-size: 12px; color: #888; border-top: 1px solid #eee; }}
+                        .button {{ display: inline-block; padding: 12px 25px; background-color: #2196F3; color: #ffffff !important; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }}
+                    </style>
+                </head>
+                <body>
+                    <div class='container'>
+                        <div class='header'>
+                            <img src='{logoUrl}' alt='Kobi Mühendislik Logo' class='logo'>
+                            <h2 style='margin:10px 0 0 0; color: #2196F3;'>Destek Talebiniz Alındı</h2>
+                        </div>
+                        <div class='content'>
+                            <p>Merhaba <strong>{toName}</strong>,</p>
+                            <p>Talebiniz tarafımıza başarıyla ulaşmıştır. Aşağıda talebin temel bilgileri yer almaktadır:</p>
+
+                            <div class='ticket-info'>
+                                <div><strong>Başlık:</strong> {ticketTitle}</div>
+                                <div style='margin-top:8px;'><strong>Takip Kodu:</strong> {ticketCode ?? $"T{ticketId:D5}"}</div>
+                                <div style='margin-top:8px;'><strong>ID:</strong> #{ticketId}</div>
+                            </div>
+
+                            {(ticketUrl != "#" ? $"<a href='{ticketUrl}' class='button'>Talebinizi Görüntüleyin</a>" : string.Empty)}
+
+                            <p style='margin-top:18px;'>Kısa süre içinde yetkili personelimiz tarafından işleme alınacaktır. İyi günler dileriz.</p>
+                        </div>
+                        <div class='footer'>
+                            <p><strong>Kobi Mühendislik</strong><br>Bu e-posta otomatik olarak gönderilmiştir.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>";
+
+            await SendEmailAsync(toEmail, subject, body, true);
+        }
+
+        public async Task SendTicketStatusChangedEmailAsync(string toEmail, string toName, string ticketTitle, string newStatus, int ticketId)
+        {
+            if (string.IsNullOrEmpty(toEmail))
+            {
+                _logger.LogWarning("Müşteri e-posta adresi bulunamadı. Durum değişikliği e-postası gönderilemedi: {TicketId}", ticketId);
+                return;
+            }
+
+            var subject = "Ticket Durum Güncellemesi";
+            var logoUrl = "https://www.kobimuhendislik.com/assets/images/logo/KobiLogo.png";
+
+            var portalBase = _configuration["FrontEnd:BaseUrl"] ?? "#";
+            var ticketUrl = portalBase != "#" ? $"{portalBase.TrimEnd('/')}/customer/tickets/{ticketId}" : "#";
+
+            var body = $@"
+                <html>
+                <head>
+                    <style>
+                        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }}
+                        .container {{ max-width: 600px; margin: 20px auto; padding: 0; border: 1px solid #eee; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }}
+                        .header {{ background-color: #ffffff; padding: 25px; text-align: center; border-bottom: 3px solid #2196F3; }}
+                        .logo {{ max-width: 160px; height: auto; margin-bottom: 10px; }}
+                        .content {{ background-color: #ffffff; padding: 30px; }}
+                        .info {{ background-color: #f8fbfe; border: 1px solid #d1e9ff; border-radius: 8px; padding: 20px; margin: 20px 0; }}
+                        .footer {{ background-color: #f9f9f9; padding: 20px; text-align: center; font-size: 12px; color: #888; border-top: 1px solid #eee; }}
+                        .button {{ display: inline-block; padding: 12px 25px; background-color: #2196F3; color: #ffffff !important; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }}
+                    </style>
+                </head>
+                <body>
+                    <div class='container'>
+                        <div class='header'>
+                            <img src='{logoUrl}' alt='Kobi Mühendislik Logo' class='logo'>
+                            <h2 style='margin:10px 0 0 0; color: #2196F3;'>Ticket Durumu Güncellendi</h2>
+                        </div>
+                        <div class='content'>
+                            <p>Merhaba <strong>{toName}</strong>,</p>
+                            <p>#{ticketId} numaralı talebinizin durumu güncellendi:</p>
+
+                            <div class='info'>
+                                <div><strong>Konu:</strong> {ticketTitle}</div>
+                                <div style='margin-top:8px;'><strong>Yeni Durum:</strong> {newStatus}</div>
+                                <div style='margin-top:8px;'><strong>ID:</strong> #{ticketId}</div>
+                            </div>
+
+                            {(ticketUrl != "#" ? $"<a href='{ticketUrl}' class='button'>Talebi Görüntüleyin</a>" : string.Empty)}
+
+                            <p style='margin-top:18px;'>Herhangi bir sorunuz olursa bizimle iletişime geçebilirsiniz.</p>
+                        </div>
+                        <div class='footer'>
+                            <p><strong>Kobi Mühendislik</strong><br>Bu e-posta otomatik olarak gönderilmiştir.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>";
+
+            await SendEmailAsync(toEmail, subject, body, true);
+        }
     }
 }
