@@ -39,7 +39,6 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence.Repositories
             if (tenant != null)
             {
                 _context.Tenants.Remove(tenant);
-                await _context.SaveChangesAsync();
             }
         }
     }

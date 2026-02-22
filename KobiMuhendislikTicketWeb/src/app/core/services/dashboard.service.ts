@@ -86,7 +86,11 @@ export class DashboardService {
     return this.http.get<Ticket[]>(`${this.apiUrl}/tickets/admin/all-tickets`);
   }
 
-  getAllTicketsPage(page: number = 1, pageSize: number = 20): Observable<PaginatedTickets> {
-    return this.http.get<PaginatedTickets>(`${this.apiUrl}/tickets/admin/all-tickets?page=${page}&pageSize=${pageSize}`);
+  getAllTicketsPage(page: number = 1, pageSize: number = 20, assignedStaffId?: number): Observable<PaginatedTickets> {
+    let url = `${this.apiUrl}/admin/tickets?page=${page}&pageSize=${pageSize}`;
+    if (assignedStaffId) {
+      url += `&assignedStaffId=${assignedStaffId}`;
+    }
+    return this.http.get<PaginatedTickets>(url);
   }
 }
