@@ -1,9 +1,10 @@
 ﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DashboardService, TicketListItem } from '../../../core/services/dashboard.service';
 import { SystemParameterService } from '../../../core/services/system-parameter.service';
+import { StaffService } from '../../../core/services/staff.service';
 import { NotificationService, Notification } from '../../../core/services/notification.service';
 import { Subject, firstValueFrom } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -21,6 +22,10 @@ export class TicketsComponent implements OnInit {
   allTicketsCache: TicketListItem[] | null = null;
   isLoading = true;
   errorMessage = '';
+
+  // Staff Context
+  staffId: number | null = null;
+  staffName: string = '';
 
   // Pagination
   currentPage = 1;
@@ -49,14 +54,33 @@ export class TicketsComponent implements OnInit {
   constructor(
     private dashboardService: DashboardService,
     private notificationService: NotificationService,
-    private router: Router
-    , private paramSvc: SystemParameterService
+    private staffService: StaffService,
+    private router: Router,
+    private route: ActivatedRoute,
+    private paramSvc: SystemParameterService
   ) { }
 
   ngOnInit(): void {
-    this.loadTickets();
-    this.subscribeToNotifications();
-    this.loadDynamicFilters();
+    this.route.params.subscribe(params => {
+      if (params['id']) {
+        this.staffId = +params['id'];
+        this.loadStaffName();
+      }
+      this.loadTickets();
+      this.subscribeToNotifications();
+      this.loadDynamicFilters();
+    });
+  }
+
+  private loadStaffName(): void {
+    if (!this.staffId) return;
+    this.staffService.getStaffById(this.staffId).subscribe({
+      next: (res: any) => {
+        if (res.success && res.data) {
+          this.staffName = res.data.fullName;
+        }
+      }
+    });
   }
 
   // Fetch all paginated ticket pages from server and return combined array
@@ -66,7 +90,9 @@ export class TicketsComponent implements OnInit {
     try {
       while (true) {
         // use the paged API to retrieve each page and accumulate
-        const resp: any = await firstValueFrom(this.dashboardService.getAllTicketsPage(page, pageSize));
+        const respRaw: any = await firstValueFrom(this.dashboardService.getAllTicketsPage(page, pageSize, this.staffId || undefined));
+        const resp = (respRaw && respRaw.success && respRaw.data) ? respRaw.data : respRaw;
+
         let items: TicketListItem[] = [];
         if (resp == null) break;
         if (resp.items && Array.isArray(resp.items)) {
@@ -209,8 +235,10 @@ export class TicketsComponent implements OnInit {
 
     // No filters: use paginated server API
     this.allTicketsCache = null;
-    this.dashboardService.getAllTicketsPage(this.currentPage, this.pageSize).subscribe({
-      next: (response: any) => {
+    this.dashboardService.getAllTicketsPage(this.currentPage, this.pageSize, this.staffId || undefined).subscribe({
+      next: (responseRaw: any) => {
+        const response = (responseRaw && responseRaw.success && responseRaw.data) ? responseRaw.data : responseRaw;
+
         if (response.items) {
           this.tickets = response.items;
           this.totalCount = response.totalCount;

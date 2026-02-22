@@ -80,6 +80,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/admin/staff/staff.component').then(m => m.StaffComponent)
       },
       {
+        path: 'staff/:id/tickets',
+        loadComponent: () => import('./pages/admin/tickets/tickets.component').then(m => m.TicketsComponent)
+      },
+      {
         path: 'settings',
         loadComponent: () => import('./pages/admin/settings/settings.component').then(m => m.SettingsComponent)
       },

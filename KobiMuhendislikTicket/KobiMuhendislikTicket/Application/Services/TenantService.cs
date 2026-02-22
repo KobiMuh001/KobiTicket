@@ -172,38 +172,52 @@ namespace KobiMuhendislikTicket.Application.Services
             if (tenant == null)
                 return Result<DeleteTenantResultDto>.Failure("Müşteri bulunamadı.");
 
-        
             var assetCount = await _context.Assets.CountAsync(a => a.TenantId == tenantId);
             var ticketCount = await _context.Tickets.CountAsync(t => t.TenantId == tenantId);
             var openTicketCount = await _context.Tickets.CountAsync(t => t.TenantId == tenantId && t.Status != Domain.Enums.TicketStatus.Resolved);
 
-            
             if (openTicketCount > 0 && !forceDelete)
             {
                 return Result<DeleteTenantResultDto>.Failure(
                     $"Bu müşterinin {openTicketCount} adet açık ticket'ı var. Silmek için forceDelete=true kullanın.");
             }
 
-            
             var ticketIds = await _context.Tickets.Where(t => t.TenantId == tenantId).Select(t => t.Id).ToListAsync();
+
+            // Bildirimleri sil (Ticket ile İlişkili olanlar)
+            var ticketNotifications = await _context.Notifications.Where(n => n.TicketId != null && ticketIds.Contains(n.TicketId.Value)).ToListAsync();
+            if (ticketNotifications.Any())
+                _context.Notifications.RemoveRange(ticketNotifications);
+
+            // Bildirimleri sil (Tenant ile Doğrudan İlişkili olanlar)
+            var tenantNotifications = await _context.Notifications.Where(n => n.TargetTenantId == tenantId).ToListAsync();
+            if (tenantNotifications.Any())
+                _context.Notifications.RemoveRange(tenantNotifications);
+
+            // Yorumları sil
             var comments = await _context.TicketComments.Where(c => ticketIds.Contains(c.TicketId)).ToListAsync();
-            _context.TicketComments.RemoveRange(comments);
+            if (comments.Any())
+                _context.TicketComments.RemoveRange(comments);
 
-           
+            // Geçmiş Kayıtlarını sil
             var histories = await _context.TicketHistories.Where(h => ticketIds.Contains(h.TicketId)).ToListAsync();
-            _context.TicketHistories.RemoveRange(histories);
+            if (histories.Any())
+                _context.TicketHistories.RemoveRange(histories);
 
-            
+            // Ticketları sil
             var tickets = await _context.Tickets.Where(t => t.TenantId == tenantId).ToListAsync();
-            _context.Tickets.RemoveRange(tickets);
+            if (tickets.Any())
+                _context.Tickets.RemoveRange(tickets);
 
-            
+            // Makineleri (Asset) sil
             var assets = await _context.Assets.Where(a => a.TenantId == tenantId).ToListAsync();
-            _context.Assets.RemoveRange(assets);
+            if (assets.Any())
+                _context.Assets.RemoveRange(assets);
 
-            
+            // Müşteriyi (Tenant) sil
             await _tenantRepository.DeleteAsync(tenantId);
 
+            // Tüm değişiklikleri tek seferde kaydet
             await _context.SaveChangesAsync();
 
             return Result<DeleteTenantResultDto>.Success(new DeleteTenantResultDto
