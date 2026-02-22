@@ -21,5 +21,7 @@ namespace KobiMuhendislikTicket.Application.Interfaces
         Task<Result<List<Ticket>>> GetFilteredTicketsAsync(int? tenantId = null, TicketStatus? status = null, TicketPriority? priority = null, string? assignedPerson = null);
         Task<Result> AddCommentAsync(int ticketId, string message, string author, bool isAdmin, string source = "Customer");
         Task<Result> SaveTicketImageAsync(int ticketId, string imagePath);
+        Task BroadcastTicketUpdateAsync(int ticketId);
+        Task BroadcastDashboardStatsAsync();
     }
 }

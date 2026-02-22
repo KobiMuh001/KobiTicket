@@ -25,8 +25,8 @@
     <div class="filter-group">
       <label>Öncelik:</label>
       <select (change)="onPriorityFilterChange($event)" [value]="selectedPriority">
-        <option value="all">Tümü</option>
-        <option *ngFor="let p of priorityOptions" [value]="(p.sortOrder ?? p.id) + ''">{{ p.label }}</option>
+        <option value="">Tümü</option>
+        <option *ngFor="let p of priorityOptions" [value]="p.value">{{ p.label }}</option>
       </select>
     </div>
     <div class="results-count">

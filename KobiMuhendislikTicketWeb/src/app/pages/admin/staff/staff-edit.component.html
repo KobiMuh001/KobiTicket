@@ -158,11 +158,11 @@
                 <select 
                   id="department" 
                   class="form-select"
-                  [(ngModel)]="formData.department"
-                  name="department">
-                  <option value="">Seçiniz</option>
+                  [(ngModel)]="formData.departmentId"
+                  name="departmentId">
+                  <option [ngValue]="null">Seçiniz</option>
                   @for (dept of departmentOptions; track dept) {
-                    <option [value]="dept">{{ dept }}</option>
+                    <option [ngValue]="dept.id">{{ dept.label }}</option>
                   }
                 </select>
               </div>

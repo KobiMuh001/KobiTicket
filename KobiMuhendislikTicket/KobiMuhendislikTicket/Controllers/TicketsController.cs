@@ -257,36 +257,13 @@ namespace KobiMuhendislikTicket.Controllers
             if (!result.IsSuccess)
                 return BadRequest(new { success = false, message = result.ErrorMessage });
 
-            // Get the added comment with full details for broadcasting
-            var commentsResult = await _ticketService.GetCommentsAsync(ticketId);
-            if (commentsResult?.Any() == true)
-            {
-                // Get the latest comment
-                var latestComment = commentsResult.OrderByDescending(c => c.CreatedDate).FirstOrDefault();
-                if (latestComment != null)
-                {
-                    // Broadcast to all clients in the ticket group
-                    await _hubContext.Clients.Group($"ticket-{ticketId}").SendAsync("ReceiveComment", new
-                    {
-                        id = latestComment.Id,
-                        ticketId = ticketId.ToString(),
-                        message = latestComment.Message,
-                        authorName = latestComment.AuthorName,
-                        isAdminReply = latestComment.IsAdminReply,
-                        createdDate = latestComment.CreatedDate
-                    });
-                }
-            }
-
             // Admin'e bildirim gönder
             await _notificationService.NotifyNewCommentAsync(ticketId, ticket.Data.Title, authorName, true);
 
             // Ticket'a atanmış personel varsa personele de bildirim gönder
-            if (!string.IsNullOrWhiteSpace(ticket.Data.AssignedPerson))
+            if (ticket.Data.AssignedStaffId.HasValue)
             {
-                var assignedStaff = await _context.Staff.FirstOrDefaultAsync(s => 
-                    s.FullName == ticket.Data.AssignedPerson || 
-                    s.Email == ticket.Data.AssignedPerson);
+                var assignedStaff = await _context.Staff.FindAsync(ticket.Data.AssignedStaffId.Value);
                 
                 if (assignedStaff != null)
                 {

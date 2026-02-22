@@ -51,8 +51,8 @@
             <div class="status-select-wrap">
               <span class="status-pill" [style.background-color]="getStatusColor(ticket.status)"></span>
               <select class="status-dropdown" [value]="ticket.status + ''" (change)="onStatusSelect($event)">
-                <option *ngFor="let s of statusOptions" [value]="(s.sortOrder ?? s.id) + ''"
-                  [selected]="((s.sortOrder ?? s.id) + '') === (ticket.status + '') || (s.id + '') === (ticket.status + '') || (s.key + '') === (ticket.status + '')">
+                <option *ngFor="let s of statusOptions" [value]="(s.value ?? s.numericKey ?? s.sortOrder ?? s.id) + ''"
+                  [selected]="((s.value ?? s.numericKey ?? s.sortOrder ?? s.id) + '') === (ticket.status + '') || (s.id + '') === (ticket.status + '') || (s.key + '') === (ticket.status + '')">
                   {{ s.label }}
                 </option>
               </select>

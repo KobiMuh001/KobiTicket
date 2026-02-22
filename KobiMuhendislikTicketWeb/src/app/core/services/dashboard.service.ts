@@ -54,6 +54,7 @@ export interface TicketListItem {
   createdDate: string;
   updatedDate?: string;
   assignedPerson?: string;
+  assignedStaffId?: number;
   productName?: string;
   assetName?: string;
   productId?: number;
@@ -75,7 +76,7 @@ export interface PaginatedTickets {
 export class DashboardService {
   private apiUrl = environment.apiUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getStats(): Observable<DashboardResponse> {
     return this.http.get<DashboardResponse>(`${this.apiUrl}/dashboard/stats`);

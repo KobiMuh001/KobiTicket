@@ -166,15 +166,13 @@ namespace KobiMuhendislikTicket.Controllers
                 return NotFound(new { success = false, message = "Profil bulunamadı." });
 
             // Ticket staff'a atanmış mı kontrol et (üstlenmeden mesaj gönderemez)
-            var ticketAssignee = await _context.Tickets
+            var ticketStaffId = await _context.Tickets
                 .AsNoTracking()
                 .Where(t => t.Id == ticketId && !t.IsDeleted)
-                .Select(t => t.AssignedPerson)
+                .Select(t => t.AssignedStaffId)
                 .FirstOrDefaultAsync();
 
-            var assigned = (ticketAssignee ?? string.Empty).Trim();
-            var me = (profile.FullName ?? string.Empty).Trim();
-            if (string.IsNullOrEmpty(assigned) || !string.Equals(assigned, me, StringComparison.OrdinalIgnoreCase))
+            if (ticketStaffId == null || ticketStaffId != staffId)
                 return Forbid();
 
             var result = await _ticketService.AddCommentAsync(ticketId, dto.Message, profile.FullName, true, "Staff");
@@ -226,16 +224,13 @@ namespace KobiMuhendislikTicket.Controllers
             var ticket = await _context.Tickets
                 .AsNoTracking()
                 .Where(t => t.Id == ticketId && !t.IsDeleted)
-                .Select(t => new { t.Id, t.AssignedPerson })
+                .Select(t => new { t.Id, t.AssignedStaffId })
                 .FirstOrDefaultAsync();
 
             if (ticket == null)
                 return NotFound(new { success = false, message = "Ticket bulunamadı." });
 
-            var assigned = (ticket.AssignedPerson ?? string.Empty).Trim();
-            var me = (profile.FullName ?? string.Empty).Trim();
-
-            if (string.IsNullOrEmpty(assigned) || !string.Equals(assigned, me, StringComparison.OrdinalIgnoreCase))
+            if (ticket.AssignedStaffId == null || ticket.AssignedStaffId != staffId)
                 return Forbid();
 
             var result = await _ticketService.UpdateStatusAsync(ticketId, dto, profile.FullName ?? "Staff");

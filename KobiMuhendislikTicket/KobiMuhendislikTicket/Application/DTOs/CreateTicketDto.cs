@@ -11,6 +11,7 @@ namespace KobiMuhendislikTicket.Application.DTOs
         public TicketStatus Status { get; set; }
         public TicketPriority Priority { get; set; }
         public string? AssignedPerson { get; set; }
+        public int? AssignedStaffId { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }
         public int TenantId { get; set; }

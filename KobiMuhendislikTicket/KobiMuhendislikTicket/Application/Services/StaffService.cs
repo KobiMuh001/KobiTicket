@@ -6,6 +6,7 @@ using KobiMuhendislikTicket.Domain.Enums;
 using KobiMuhendislikTicket.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Hosting;
 using System.Text.RegularExpressions;
 
 namespace KobiMuhendislikTicket.Application.Services
@@ -16,13 +17,23 @@ namespace KobiMuhendislikTicket.Application.Services
         private readonly ITicketRepository _ticketRepository;
         private readonly ILogger<StaffService> _logger;
         private readonly NotificationService _notificationService;
+        private readonly IHostEnvironment _env;
+        private readonly ITicketService _ticketService;
 
-        public StaffService(ApplicationDbContext context, ITicketRepository ticketRepository, ILogger<StaffService> logger, NotificationService notificationService)
+        public StaffService(
+            ApplicationDbContext context, 
+            ITicketRepository ticketRepository, 
+            ILogger<StaffService> logger, 
+            NotificationService notificationService, 
+            IHostEnvironment env, 
+            ITicketService ticketService)
         {
             _context = context;
             _ticketRepository = ticketRepository;
             _logger = logger;
             _notificationService = notificationService;
+            _env = env;
+            _ticketService = ticketService;
         }
 
         
@@ -48,13 +59,20 @@ namespace KobiMuhendislikTicket.Application.Services
                 if (existingEmail)
                     return Result<Staff>.Failure("Bu email adresi zaten kullanılıyor.");
 
+                // Resolve department id from SystemParameters (Department group)
+                var deptParam = await _context.SystemParameters.FirstOrDefaultAsync(p => p.Group == "Department" && (p.Id == dto.DepartmentId || p.NumericKey == dto.DepartmentId || p.Key == dto.DepartmentId.ToString()));
+                if (deptParam == null)
+                {
+                    return Result<Staff>.Failure($"Department with id {dto.DepartmentId} not found in SystemParameters.");
+                }
+
                 var staff = new Staff
                 {
                     FullName = dto.FullName,
                     Email = dto.Email,
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                     Phone = dto.Phone,
-                    DepartmentId = dto.DepartmentId,
+                    DepartmentId = deptParam.Id,
                     MaxConcurrentTickets = dto.MaxConcurrentTickets,
                     IsActive = true
                 };
@@ -68,6 +86,10 @@ namespace KobiMuhendislikTicket.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Çalışan oluşturulurken hata");
+                if (_env != null && _env.IsDevelopment())
+                {
+                    return Result<Staff>.Failure(ex.InnerException?.Message ?? ex.Message);
+                }
                 return Result<Staff>.Failure("Çalışan oluşturulurken bir hata oluştu.");
             }
         }
@@ -95,7 +117,12 @@ namespace KobiMuhendislikTicket.Application.Services
                     staff.Phone = dto.Phone;
 
                 if (dto.DepartmentId.HasValue)
-                    staff.DepartmentId = dto.DepartmentId.Value;
+                {
+                    var param = await _context.SystemParameters.FirstOrDefaultAsync(p => p.Group == "Department" && (p.Id == dto.DepartmentId.Value || p.NumericKey == dto.DepartmentId.Value || p.Key == dto.DepartmentId.Value.ToString()));
+                    if (param == null)
+                        return Result.Failure("Belirtilen departman bulunamadı.");
+                    staff.DepartmentId = param.Id;
+                }
                 else if (!string.IsNullOrWhiteSpace(dto.Department) && dto.Department != "string")
                 {
                     var param = await _context.SystemParameters.FirstOrDefaultAsync(p => p.Group == "Department" && (p.Key == dto.Department || p.Value == dto.Department));
@@ -211,8 +238,7 @@ namespace KobiMuhendislikTicket.Application.Services
 
             var workloads = staffList.Select(staff =>
             {
-                var normalizedName = (staff.FullName ?? string.Empty).Trim().ToLower();
-                var staffTickets = tickets.Where(t => !string.IsNullOrEmpty(t.AssignedPerson) && t.AssignedPerson.Trim().ToLower() == normalizedName).ToList();
+                var staffTickets = tickets.Where(t => t.AssignedStaffId == staff.Id).ToList();
                 var openTickets = staffTickets.Count(t => t.Status == TicketStatus.Open);
                 var processingTickets = staffTickets.Count(t => t.Status == TicketStatus.Processing);
                 // Consider any status that is not Resolved or Closed as active so new DB-added statuses are included
@@ -257,9 +283,8 @@ namespace KobiMuhendislikTicket.Application.Services
                     return Result.Failure("Bu �al��an aktif de�il.");
 
                 
-                var normalizedName = (staff.FullName ?? string.Empty).Trim().ToLower();
                 var currentTickets = await _context.Tickets
-                    .CountAsync(t => !string.IsNullOrEmpty(t.AssignedPerson) && t.AssignedPerson.Trim().ToLower() == normalizedName && 
+                    .CountAsync(t => t.AssignedStaffId == staffId && 
                                     (t.Status != TicketStatus.Resolved && t.Status != TicketStatus.Closed));
 
                 if (currentTickets >= staff.MaxConcurrentTickets)
@@ -270,6 +295,7 @@ namespace KobiMuhendislikTicket.Application.Services
                     return Result.Failure("Ticket bulunamad�.");
 
                 var oldAssignee = ticket.AssignedPerson;
+                ticket.AssignedStaffId = staff.Id;
                 ticket.AssignedPerson = staff.FullName;
                 ticket.Status = TicketStatus.Processing;
                 ticket.UpdatedDate = DateTimeHelper.GetLocalNow();
@@ -299,13 +325,18 @@ namespace KobiMuhendislikTicket.Application.Services
                     tenant?.CompanyName ?? "Müşteri",
                     ticketId
                 );
-                _logger.LogInformation("Ticket atand�: {TicketId} ? {StaffName}", ticketId, staff.FullName);
+                _logger.LogInformation("Ticket atand: {TicketId} ? {StaffName}", ticketId, staff.FullName);
+                
+                // Real-time broadcast
+                await _ticketService.BroadcastDashboardStatsAsync();
+                await _ticketService.BroadcastTicketUpdateAsync(ticketId);
+                
                 return Result.Success();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ticket atan�rken hata: {TicketId}", ticketId);
-                return Result.Failure("Ticket atan�rken bir hata olu�tu.");
+                _logger.LogError(ex, "Ticket atanrken hata: {TicketId}", ticketId);
+                return Result.Failure("Ticket atanrken bir hata olutu.");
             }
         }
 
@@ -315,10 +346,10 @@ namespace KobiMuhendislikTicket.Application.Services
             {
                 var staff = await _context.Staff.FindAsync(staffId);
                 if (staff == null)
-                    return Result<int>.Failure("�al��an bulunamad�.");
+                    return Result<int>.Failure("alan bulunamad.");
 
                 if (!staff.IsActive)
-                    return Result<int>.Failure("Bu �al��an aktif de�il.");
+                    return Result<int>.Failure("Bu alan aktif deil.");
 
                 int successCount = 0;
                 foreach (var ticketId in ticketIds)
@@ -332,8 +363,8 @@ namespace KobiMuhendislikTicket.Application.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Toplu atama hatas�");
-                return Result<int>.Failure("Toplu atama s�ras�nda hata olu�tu.");
+                _logger.LogError(ex, "Toplu atama hatası");
+                return Result<int>.Failure("Toplu atama sırasında hata oluştu.");
             }
         }
 
@@ -343,10 +374,10 @@ namespace KobiMuhendislikTicket.Application.Services
             {
                 var ticket = await _ticketRepository.GetByIdAsync(ticketId);
                 if (ticket == null)
-                    return Result<AutoAssignResultDto>.Failure("Ticket bulunamad.");
+                    return Result<AutoAssignResultDto>.Failure("Ticket bulunamadı.");
 
                 if (!string.IsNullOrEmpty(ticket.AssignedPerson))
-                    return Result<AutoAssignResultDto>.Failure("Bu ticket zaten birine atanm��.");
+                    return Result<AutoAssignResultDto>.Failure("Bu ticket zaten birine atanmış.");
 
                 
                 var workloads = await GetStaffWorkloadsAsync();
@@ -356,7 +387,7 @@ namespace KobiMuhendislikTicket.Application.Services
                     .FirstOrDefault();
 
                 if (availableStaff == null)
-                    return Result<AutoAssignResultDto>.Failure("M�sait �al��an bulunamad�.");
+                    return Result<AutoAssignResultDto>.Failure("Müsait alan bulunamadı.");
 
                 var assignResult = await AssignTicketToStaffAsync(ticketId, availableStaff.Id, "Otomatik atama");
                 if (!assignResult.IsSuccess)
@@ -365,15 +396,15 @@ namespace KobiMuhendislikTicket.Application.Services
                 return Result<AutoAssignResultDto>.Success(new AutoAssignResultDto
                 {
                     Success = true,
-                    Message = $"Ticket otomatik olarak atand�",
+                    Message = $"Ticket otomatik olarak atandı",
                     AssignedTo = availableStaff.FullName,
                     StaffId = availableStaff.Id
                 });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Otomatik atama hatas�: {TicketId}", ticketId);
-                return Result<AutoAssignResultDto>.Failure("Otomatik atama s�ras�nda hata olu�tu.");
+                _logger.LogError(ex, "Otomatik atama hatası: {TicketId}", ticketId);
+                return Result<AutoAssignResultDto>.Failure("Otomatik atama sırasında hata olutu.");
             }
         }
 
@@ -388,9 +419,10 @@ namespace KobiMuhendislikTicket.Application.Services
                     return Result.Failure("Ticket bulunamad.");
 
                 var oldAssignee = ticket.AssignedPerson;
-                if (string.IsNullOrEmpty(oldAssignee))
-                    return Result.Failure("Bu ticket zaten kimseye atanmam��.");
+                if (!ticket.AssignedStaffId.HasValue && string.IsNullOrEmpty(oldAssignee))
+                    return Result.Failure("Bu ticket zaten kimseye atanmamış.");
 
+                ticket.AssignedStaffId = null;
                 ticket.AssignedPerson = null;
                 ticket.Status = TicketStatus.Open;
                 ticket.UpdatedDate = DateTimeHelper.GetLocalNow();
@@ -406,6 +438,11 @@ namespace KobiMuhendislikTicket.Application.Services
                 });
 
                 _logger.LogInformation("Ticket ataması kaldırıldı: {TicketId}", ticketId);
+
+                // Real-time broadcast
+                await _ticketService.BroadcastDashboardStatsAsync();
+                await _ticketService.BroadcastTicketUpdateAsync(ticketId);
+
                 return Result.Success();
             }
             catch (Exception ex)
@@ -464,8 +501,9 @@ namespace KobiMuhendislikTicket.Application.Services
             var tickets = await _context.Tickets
                 .Include(t => t.Tenant)
                 .Include(t => t.Product)
-                .Where(t => !string.IsNullOrEmpty(t.AssignedPerson) && t.AssignedPerson.Trim().ToLower() == normalizedName)
-                .OrderByDescending(t => t.CreatedDate)
+                .Where(t => t.AssignedStaffId == staffId)
+                .OrderBy(t => t.Status == TicketStatus.Resolved || t.Status == TicketStatus.Closed ? 1 : 0)
+                .ThenByDescending(t => t.CreatedDate)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Select(t => new TicketDto
@@ -477,6 +515,7 @@ namespace KobiMuhendislikTicket.Application.Services
                     Status = t.Status,
                     Priority = t.Priority,
                     AssignedPerson = t.AssignedPerson,
+                    AssignedStaffId = t.AssignedStaffId,
                     CreatedDate = t.CreatedDate,
                     UpdatedDate = t.UpdatedDate,
                     TenantId = t.TenantId,
@@ -501,7 +540,7 @@ namespace KobiMuhendislikTicket.Application.Services
             var tickets = await _context.Tickets
                 .Include(t => t.Tenant)
                 .Include(t => t.Product)
-                .Where(t => !string.IsNullOrEmpty(t.AssignedPerson) && t.AssignedPerson.Trim().ToLower() == normalizedName)
+                .Where(t => t.AssignedStaffId == staffId)
                 .OrderByDescending(t => t.CreatedDate)
                 .Select(t => new TicketDto
                 {
@@ -512,6 +551,7 @@ namespace KobiMuhendislikTicket.Application.Services
                     Status = t.Status,
                     Priority = t.Priority,
                     AssignedPerson = t.AssignedPerson,
+                    AssignedStaffId = t.AssignedStaffId,
                     CreatedDate = t.CreatedDate,
                     UpdatedDate = t.UpdatedDate,
                     TenantId = t.TenantId,
@@ -531,7 +571,8 @@ namespace KobiMuhendislikTicket.Application.Services
             var tickets = await _context.Tickets
                 .Include(t => t.Tenant)
                 .Include(t => t.Product)
-                .Where(t => string.IsNullOrEmpty(t.AssignedPerson) && t.Status == TicketStatus.Open)
+                // Return tickets that are not assigned to anyone regardless of their status
+                .Where(t => !t.AssignedStaffId.HasValue)
                 .OrderByDescending(t => t.Priority)
                 .ThenBy(t => t.CreatedDate)
                 .Select(t => new TicketDto
@@ -543,6 +584,7 @@ namespace KobiMuhendislikTicket.Application.Services
                     Status = t.Status,
                     Priority = t.Priority,
                     AssignedPerson = t.AssignedPerson,
+                    AssignedStaffId = t.AssignedStaffId,
                     CreatedDate = t.CreatedDate,
                     UpdatedDate = t.UpdatedDate,
                     TenantId = t.TenantId,
@@ -572,17 +614,18 @@ namespace KobiMuhendislikTicket.Application.Services
                 if (ticket == null)
                     return Result.Failure("Ticket bulunamadı.");
 
-                if (!string.IsNullOrEmpty(ticket.AssignedPerson))
+                if (ticket.AssignedStaffId.HasValue)
                     return Result.Failure("Bu ticket zaten birine atanmış.");
 
                 // Kapasite kontrolü
                 var currentTickets = await _context.Tickets
-                    .CountAsync(t => t.AssignedPerson == staff.FullName && 
+                    .CountAsync(t => t.AssignedStaffId == staff.Id && 
                                     (t.Status != TicketStatus.Resolved && t.Status != TicketStatus.Closed));
 
                 if (currentTickets >= staff.MaxConcurrentTickets)
                     return Result.Failure($"Maksimum ticket kapasitesine ulaştınız ({currentTickets}/{staff.MaxConcurrentTickets}).");
 
+                ticket.AssignedStaffId = staff.Id;
                 ticket.AssignedPerson = staff.FullName;
                 ticket.Status = TicketStatus.Processing;
                 ticket.UpdatedDate = DateTimeHelper.GetLocalNow();
@@ -598,6 +641,11 @@ namespace KobiMuhendislikTicket.Application.Services
                 });
 
                 _logger.LogInformation("Ticket alındı: {TicketId} -> {StaffName}", ticketId, staff.FullName);
+
+                // Real-time broadcast
+                await _ticketService.BroadcastDashboardStatsAsync();
+                await _ticketService.BroadcastTicketUpdateAsync(ticketId);
+
                 return Result.Success();
             }
             catch (Exception ex)
@@ -620,9 +668,10 @@ namespace KobiMuhendislikTicket.Application.Services
                 if (ticket == null)
                     return Result.Failure("Ticket bulunamadı.");
 
-                if (ticket.AssignedPerson != staff.FullName)
+                if (ticket.AssignedStaffId != staffId)
                     return Result.Failure("Bu ticket size atanmamış.");
 
+                ticket.AssignedStaffId = null;
                 ticket.AssignedPerson = null;
                 ticket.Status = TicketStatus.Open;
                 ticket.UpdatedDate = DateTimeHelper.GetLocalNow();
@@ -638,6 +687,11 @@ namespace KobiMuhendislikTicket.Application.Services
                 });
 
                 _logger.LogInformation("Ticket bırakıldı: {TicketId} <- {StaffName}", ticketId, staff.FullName);
+
+                // Real-time broadcast
+                await _ticketService.BroadcastDashboardStatsAsync();
+                await _ticketService.BroadcastTicketUpdateAsync(ticketId);
+
                 return Result.Success();
             }
             catch (Exception ex)
@@ -678,7 +732,7 @@ namespace KobiMuhendislikTicket.Application.Services
             var weekAgo = today.AddDays(-7);
 
             var staffTickets = await _context.Tickets
-                .Where(t => t.AssignedPerson == staff.FullName)
+                .Where(t => t.AssignedStaffId == staffId)
                 .ToListAsync();
 
             var openTickets = staffTickets.Count(t => t.Status == TicketStatus.Open);
@@ -722,7 +776,12 @@ namespace KobiMuhendislikTicket.Application.Services
                     staff.Phone = dto.Phone;
 
                 if (dto.DepartmentId.HasValue)
-                    staff.DepartmentId = dto.DepartmentId.Value;
+                {
+                    var param = await _context.SystemParameters.FirstOrDefaultAsync(p => p.Group == "Department" && (p.Id == dto.DepartmentId.Value || p.NumericKey == dto.DepartmentId.Value || p.Key == dto.DepartmentId.Value.ToString()));
+                    if (param == null)
+                        return Result.Failure("Belirtilen departman bulunamadı.");
+                    staff.DepartmentId = param.Id;
+                }
                 else if (!string.IsNullOrWhiteSpace(dto.Department) && dto.Department != "string")
                 {
                     var param = await _context.SystemParameters.FirstOrDefaultAsync(p => p.Group == "Department" && (p.Key == dto.Department || p.Value == dto.Department));

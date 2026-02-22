@@ -438,3 +438,82 @@
     align-items: center;
   }
 }
+
+/* Tenant card layout for small screens */
+.tenant-cards {
+  display: none;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.tenant-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  border-left: 4px solid var(--border-light);
+  transition: all 0.18s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tenant-card:hover {
+  box-shadow: 0 6px 20px rgba(2,6,23,0.08);
+  transform: translateY(-4px);
+}
+
+.tenant-card .card-header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.tenant-card .card-title { font-weight:700; font-size:16px; color:#0f1724; }
+.tenant-card .card-meta { color:#64748b; font-size:13px; }
+.tenant-card .card-desc { margin:0; color:#475569; font-size:14px; }
+.tenant-card .card-dates { margin:0; color:#94a3b8; font-size:13px; }
+.tenant-card .card-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:6px; }
+
+@media (max-width: 768px) {
+  .table-container { display: none; }
+  .tenant-cards { display: grid; grid-template-columns: 1fr; }
+}
+
+/* Card button styles (text buttons inside tenant cards) */
+.detail-btn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: #f8fafc;
+  color: #334155;
+}
+
+.detail-btn.action-btn--edit,
+.detail-btn.action-btn--danger {
+  /* Neutral / colorless appearance like global buttons */
+  background: var(--bg-primary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.detail-btn.action-btn--edit:hover,
+.detail-btn.action-btn--danger:hover {
+  background: var(--bg-secondary);
+  border-color: var(--primary-color);
+  color: var(--text-primary);
+}
+
+/* Ensure icon action buttons use same modifiers as products page */
+.action-btn--edit,
+.action-btn--danger {
+  background: var(--bg-primary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.action-btn--edit:hover,
+.action-btn--danger:hover {
+  background: var(--bg-secondary);
+  border-color: var(--primary-color);
+  color: var(--text-primary);
+}

@@ -32,20 +32,18 @@
       <div class="filter-select">
         <select [(ngModel)]="statusFilter" (ngModelChange)="applyFilters()">
           <option value="">Tüm Durumlar</option>
-          <option value="Açık">Açık</option>
-          <option value="İşlemde">İşlemde</option>
-          <option value="Çözüldü">Çözüldü</option>
-          <option value="Kapatıldı">Kapatıldı</option>
+          @for (opt of statusOptions; track opt.id) {
+            <option value="{{ opt.label }}">{{ opt.label }}</option>
+          }
         </select>
       </div>
 
       <div class="filter-select">
         <select [(ngModel)]="priorityFilter" (ngModelChange)="applyFilters()">
           <option value="">Tüm Öncelikler</option>
-          <option value="Düşük">Düşük</option>
-          <option value="Orta">Orta</option>
-          <option value="Yüksek">Yüksek</option>
-          <option value="Kritik">Kritik</option>
+          @for (opt of priorityOptions; track opt.id) {
+            <option value="{{ opt.label }}">{{ opt.label }}</option>
+          }
         </select>
       </div>
 

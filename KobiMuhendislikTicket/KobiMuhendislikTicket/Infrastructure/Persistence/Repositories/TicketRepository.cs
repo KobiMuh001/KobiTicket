@@ -141,7 +141,8 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence.Repositories
             var query = _context.Tickets
                 .Include(t => t.Tenant)
                 .Include(t => t.Product)
-                .OrderByDescending(t => t.CreatedDate);
+                .OrderBy(t => t.Status == TicketStatus.Resolved || t.Status == TicketStatus.Closed ? 1 : 0)
+                .ThenByDescending(t => t.CreatedDate);
 
             var totalCount = await query.CountAsync();
             var tickets = await query

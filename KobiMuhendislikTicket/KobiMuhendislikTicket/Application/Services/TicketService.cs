@@ -147,6 +147,7 @@ namespace KobiMuhendislikTicket.Application.Services
                 
                 // Dashboard istatistiklerini anlık olarak güncelle
                 await BroadcastDashboardStatsAsync();
+                await BroadcastTicketUpdateAsync(ticket.Id);
                 
                 return Result.Success();
             }
@@ -170,15 +171,21 @@ namespace KobiMuhendislikTicket.Application.Services
                 var newStatusEnum = (TicketStatus)newStatus;
 
                 await _ticketRepository.UpdateStatusDirectlyAsync(ticketId, newStatusEnum);
-                await LogHistoryAsync(ticketId, "Admin", 
-                    $"Ticket durumu '{oldStatus}' → '{newStatusEnum}' olarak güncellendi");
+                // Resolve friendly labels for history (prefer NumericKey -> SortOrder -> Id)
+                var oldStatusValue = (int)oldStatus;
+                var newStatusValue = newStatus;
+                var oldStatusLabel = await ResolveLookupLabelAsync("TicketStatus", oldStatusValue) ?? oldStatus.ToString();
+                var newStatusLabel = await ResolveLookupLabelAsync("TicketStatus", newStatusValue) ?? newStatusEnum.ToString();
 
-                // Customer'a sadece status değişikliği bildirimi
+                await LogHistoryAsync(ticketId, "Admin",
+                    $"Ticket durumu '{oldStatusLabel}' → '{newStatusLabel}' olarak güncellendi");
+
+                // Customer'a sadece status değişikliği bildirimi (lookup değeri gönderilsin)
                 await _notificationService.NotifyCustomerStatusChangedAsync(
                     ticket.TenantId,
                     ticketId,
                     ticket.Title,
-                    newStatusEnum.ToString()
+                    newStatusLabel
                 );
 
                 _logger.LogInformation("Ticket durumu güncellendi: {TicketId}, {OldStatus} → {NewStatus}", 
@@ -186,6 +193,7 @@ namespace KobiMuhendislikTicket.Application.Services
 
                 // Dashboard istatistiklerini anlık olarak güncelle
                 await BroadcastDashboardStatsAsync();
+                await BroadcastTicketUpdateAsync(ticketId);
 
                 return Result.Success();
             }
@@ -209,14 +217,21 @@ namespace KobiMuhendislikTicket.Application.Services
                 var newPriorityEnum = (TicketPriority)newPriority;
 
                 await _ticketRepository.UpdatePriorityDirectlyAsync(ticketId, newPriorityEnum);
-                await LogHistoryAsync(ticketId, "Admin", 
-                    $"Öncelik '{oldPriority}' → '{newPriorityEnum}' olarak güncellendi");
+                // Resolve friendly labels for history (prefer NumericKey -> SortOrder -> Id)
+                var oldPriorityValue = (int)oldPriority;
+                var newPriorityValue = newPriority;
+                var oldPriorityLabel = await ResolveLookupLabelAsync("TicketPriority", oldPriorityValue) ?? oldPriority.ToString();
+                var newPriorityLabel = await ResolveLookupLabelAsync("TicketPriority", newPriorityValue) ?? newPriorityEnum.ToString();
+
+                await LogHistoryAsync(ticketId, "Admin",
+                    $"Öncelik '{oldPriorityLabel}' → '{newPriorityLabel}' olarak güncellendi");
 
                 _logger.LogInformation("Ticket önceliği güncellendi: {TicketId}, {OldPriority} → {NewPriority}", 
                     ticketId, oldPriority, newPriorityEnum);
 
                 // Dashboard istatistiklerini anlık olarak güncelle
                 await BroadcastDashboardStatsAsync();
+                await BroadcastTicketUpdateAsync(ticketId);
 
                 return Result.Success();
             }
@@ -261,6 +276,7 @@ namespace KobiMuhendislikTicket.Application.Services
                 
                 // Dashboard istatistiklerini anlık olarak güncelle
                 await BroadcastDashboardStatsAsync();
+                await BroadcastTicketUpdateAsync(ticketId);
                 
                 return Result.Success();
             }
@@ -295,6 +311,7 @@ namespace KobiMuhendislikTicket.Application.Services
                 
                 // Dashboard istatistiklerini anlık olarak güncelle
                 await BroadcastDashboardStatsAsync();
+                await BroadcastTicketUpdateAsync(ticketId);
                 
                 return Result.Success();
             }
@@ -356,6 +373,41 @@ namespace KobiMuhendislikTicket.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Dashboard stats broadcast sırasında hata");
+            }
+        }
+
+        public async Task BroadcastTicketUpdateAsync(int ticketId)
+        {
+            try
+            {
+                var ticketResult = await GetTicketByIdAsync(ticketId);
+                if (ticketResult.IsSuccess && ticketResult.Data != null)
+                {
+                    var ticket = ticketResult.Data;
+                    var ticketDto = new TicketListItemDto
+                    {
+                        Id = ticket.Id,
+                        TicketCode = ticket.TicketCode,
+                        Title = ticket.Title,
+                        Status = (int)ticket.Status,
+                        Priority = (int)ticket.Priority,
+                        TenantName = ticket.Tenant?.CompanyName ?? "Bilinmiyor",
+                        TenantId = ticket.TenantId,
+                        CreatedDate = ticket.CreatedDate,
+                        UpdatedDate = ticket.UpdatedDate,
+                        AssignedPerson = ticket.AssignedPerson ?? "Atanmadı",
+                        ProductName = ticket.Product?.Name ?? "Belirtilmemiş",
+                        ProductId = ticket.ProductId
+                    };
+
+                    await _hubContext.Clients.Group($"ticket-{ticketId}")
+                        .SendAsync("TicketUpdated", ticketDto);
+                    _logger.LogInformation("Ticket update broadcast başarılı: {TicketId}", ticketId);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ticket update broadcast sırasında hata: {TicketId}", ticketId);
             }
         }
 
@@ -468,6 +520,35 @@ namespace KobiMuhendislikTicket.Application.Services
             }
         }
 
+        // Resolve a user-friendly label for lookup groups (TicketStatus, TicketPriority, ...)
+        // Preference order: NumericKey -> SortOrder -> Id. Returns null if not found.
+        private async Task<string?> ResolveLookupLabelAsync(string group, int numericValue)
+        {
+            try
+            {
+                // Prefer matching NumericKey only. If not found, allow matching by Id as a last resort.
+                var param = await _context.SystemParameters
+                    .FirstOrDefaultAsync(p => p.Group == group && p.NumericKey.HasValue && p.NumericKey.Value == numericValue);
+
+                if (param == null)
+                {
+                    param = await _context.SystemParameters
+                        .FirstOrDefaultAsync(p => p.Group == group && p.Id == numericValue);
+                }
+
+                if (param != null)
+                {
+                    return param.Value ?? param.Key ?? numericValue.ToString();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Lookup label resolution failed for group {Group} value {Value}", group, numericValue);
+            }
+
+            return null;
+        }
+
         // Staff için overload metodlar
         public async Task<Result> AddCommentAsync(int ticketId, AddCommentDto dto)
         {
@@ -492,8 +573,14 @@ namespace KobiMuhendislikTicket.Application.Services
                 var newStatusEnum = (TicketStatus)dto.NewStatus;
 
                 await _ticketRepository.UpdateStatusDirectlyAsync(ticketId, newStatusEnum);
-                await LogHistoryAsync(ticketId, actionBy, 
-                    $"Ticket durumu '{oldStatus}' → '{newStatusEnum}' olarak güncellendi");
+                // Resolve friendly labels from SystemParameters (prefer NumericKey -> SortOrder -> Id)
+                var oldStatusValue = (int)oldStatus;
+                var newStatusValue = (int)newStatusEnum;
+                var oldLabel = await ResolveLookupLabelAsync("TicketStatus", oldStatusValue) ?? oldStatus.ToString();
+                var newLabel = await ResolveLookupLabelAsync("TicketStatus", newStatusValue) ?? newStatusEnum.ToString();
+
+                await LogHistoryAsync(ticketId, actionBy,
+                    $"Ticket durumu '{oldLabel}' → '{newLabel}' olarak güncellendi");
 
                 // Customer'a sadece status değişikliği bildirimi
                 await _notificationService.NotifyCustomerStatusChangedAsync(
@@ -505,6 +592,9 @@ namespace KobiMuhendislikTicket.Application.Services
 
                 _logger.LogInformation("Ticket durumu güncellendi: {TicketId}, {OldStatus} → {NewStatus}", 
                     ticketId, oldStatus, newStatusEnum);
+
+                await BroadcastDashboardStatsAsync();
+                await BroadcastTicketUpdateAsync(ticketId);
 
                 return Result.Success();
             }
@@ -566,6 +656,9 @@ namespace KobiMuhendislikTicket.Application.Services
                 await LogHistoryAsync(ticketId, "System", "Ticket'a resim eklendi");
 
                 _logger.LogInformation("Ticket'a resim eklendi: {TicketId}, {ImagePath}", ticketId, imagePath);
+                
+                await BroadcastTicketUpdateAsync(ticketId);
+                
                 return Result.Success();
             }
             catch (Exception ex)

@@ -1,42 +1,45 @@
 import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { StaffService, StaffTicket } from '../../../core/services/staff.service';
 import { SystemParameterService } from '../../../core/services/system-parameter.service';
 import { SignalRService, CommentMessage } from '../../../core/services/signalr.service';
 import { NotificationService, Notification } from '../../../core/services/notification.service';
-import { Subject } from 'rxjs';
+import { Subject, firstValueFrom } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-my-tickets',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './my-tickets.component.html',
   styleUrls: ['./my-tickets.component.scss']
 })
 export class MyTicketsComponent implements OnInit, OnDestroy {
   tickets: StaffTicket[] = [];
   filteredTickets: StaffTicket[] = [];
+  allTicketsCache: StaffTicket[] | null = null;
   notifications: Notification[] = [];
-  ticketNotifications: Map<number, number> = new Map(); // ticket id -> unread count
+  ticketNotifications: Map<number, number> = new Map();
   isLoading = true;
   error: string | null = null;
   successMessage: string | null = null;
-  
-  // Pagination
+
+
   currentPage = 1;
   itemsPerPage = 20;
   totalPages = 1;
-  
-  // Filters
-  selectedStatus: string = 'all';
-  selectedPriority: string = 'all';
-  selectedCustomer: string = 'all';
+  totalCount = 0;
+
+  selectedStatus: string = '';
+  selectedPriority: string = '';
+  selectedCustomer: string = '';
+  searchTerm: string = '';
   customers: string[] = [];
-  
-  // SignalR & Notifications
+
+
   private destroy$ = new Subject<void>();
   private isBrowser: boolean;
   statusOptions: Array<any> = [];
@@ -54,7 +57,7 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadTickets();
-    // Ativar SignalR para notificações em tempo real
+
     setTimeout(() => {
       this.initSignalR();
       this.subscribeToNotifications();
@@ -62,21 +65,77 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
     this.loadLookups();
   }
 
+
+  private async fetchAllMyTicketsPaginated(pageSize = 200): Promise<StaffTicket[]> {
+    const all: StaffTicket[] = [];
+    let page = 1;
+    try {
+      while (true) {
+        const resp: any = await firstValueFrom(this.staffService.getMyTickets(page, pageSize));
+        if (!resp) break;
+
+        let items: StaffTicket[] = [];
+        if (resp.data && Array.isArray(resp.data)) items = resp.data;
+        else if (Array.isArray(resp)) items = resp;
+        if (items.length) all.push(...items);
+
+        const totalPages = resp && resp.totalPages ? resp.totalPages : Math.ceil((resp.totalCount ?? items.length) / pageSize || 1);
+        if (!totalPages || page >= totalPages) break;
+        page++;
+      }
+    } catch (e) {
+      throw e;
+    }
+    return all;
+  }
+
   loadLookups(): void {
-    // Load TicketStatus
+
     const paramSvc = (this as any).paramSvc as SystemParameterService | undefined;
     if (!paramSvc) return;
     paramSvc.getByGroup('TicketStatus').subscribe({
       next: (res: any) => {
-        const sData = res?.data?.data || res?.data || res || [];
-        this.statusOptions = (Array.isArray(sData) ? sData : []).map((p: any, i: number) => ({ id: p.id, key: p.key, label: p.value, sortOrder: p.sortOrder ?? i + 1, color: p.value2 ?? p.color ?? null }));
+        let list = res?.data?.data || res?.data || res || [];
+        list = (Array.isArray(list) ? list.slice() : []).sort((a: any, b: any) => {
+          const sa = (a.sortOrder ?? a.numericKey ?? null);
+          const sb = (b.sortOrder ?? b.numericKey ?? null);
+          if (sa !== null && sb !== null) return sa - sb;
+          if (sa !== null) return -1;
+          if (sb !== null) return 1;
+          return 0;
+        });
+        this.statusOptions = list.map((p: any, i: number) => ({
+          id: p.id,
+          value: p.numericKey != null ? String(p.numericKey) : '',
+          label: (p.numericKey != null) ? (p.value || p.key || p.description) : '',
+          key: p.numericKey ?? p.key,
+          numericKey: p.numericKey ?? (typeof p.key === 'number' ? p.key : (Number.isFinite(Number(p.key)) ? Number(p.key) : null)),
+          sortOrder: p.sortOrder ?? i + 1,
+          color: (p.numericKey != null) ? (p.value2 ?? p.color ?? null) : null
+        }));
       },
       error: () => { this.statusOptions = []; }
     });
     paramSvc.getByGroup('TicketPriority').subscribe({
       next: (res: any) => {
-        const pData = res?.data?.data || res?.data || res || [];
-        this.priorityOptions = (Array.isArray(pData) ? pData : []).map((p: any, i: number) => ({ id: p.id, key: p.key, label: p.value, sortOrder: p.sortOrder ?? i + 1, color: p.value2 ?? p.color ?? null }));
+        let list = res?.data?.data || res?.data || res || [];
+        list = (Array.isArray(list) ? list.slice() : []).sort((a: any, b: any) => {
+          const sa = (a.sortOrder ?? a.numericKey ?? null);
+          const sb = (b.sortOrder ?? b.numericKey ?? null);
+          if (sa !== null && sb !== null) return sa - sb;
+          if (sa !== null) return -1;
+          if (sb !== null) return 1;
+          return 0;
+        });
+        this.priorityOptions = list.map((p: any, i: number) => ({
+          id: p.id,
+          value: p.numericKey != null ? String(p.numericKey) : '',
+          label: (p.numericKey != null) ? (p.value || p.key || p.description) : '',
+          key: p.numericKey ?? p.key,
+          numericKey: p.numericKey ?? (typeof p.key === 'number' ? p.key : (Number.isFinite(Number(p.key)) ? Number(p.key) : null)),
+          sortOrder: p.sortOrder ?? i + 1,
+          color: (p.numericKey != null) ? (p.value2 ?? p.color ?? null) : null
+        }));
       },
       error: () => { this.priorityOptions = []; }
     });
@@ -102,7 +161,7 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
   }
 
   private subscribeToNotifications(): void {
-    // Bildirimleri dinle
+
     this.notificationService.notificationsList$
       .pipe(takeUntil(this.destroy$))
       .subscribe(notifications => {
@@ -110,11 +169,11 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
         this.updateTicketNotificationCounts();
       });
 
-    // SignalR yorum bildirimlerini dinle
+
     this.signalRService.commentReceived$
       .pipe(takeUntil(this.destroy$))
       .subscribe((comment: CommentMessage) => {
-        // Bu yorum bana ait bir tickete mi ait?
+
         const commentTicketId = Number(comment.ticketId);
         const ticket = this.tickets.find(t => t.id === commentTicketId);
         if (ticket) {
@@ -131,6 +190,53 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
           this.updateTicketNotificationCounts();
         }
       });
+
+    // Ticket güncellemelerini dinle
+    this.signalRService.ticketUpdated$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((updatedTicket: any) => {
+        console.log('Real-time ticket update received:', updatedTicket);
+        this.updateTicketInList(updatedTicket);
+      });
+
+    // Yeni bildirimler geldiğinde listeyi yenile (özellikle yeni atamalar için)
+    this.notificationService.notificationsList$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((notifications: Notification[]) => {
+        // Eğer yeni bir bildirim varsa ve tipi 'TicketAssigned' ise listeyi yenile
+        const hasNewAssignment = notifications.some((n: Notification) => !n.isRead && n.type === 'TicketAssigned');
+        if (hasNewAssignment) {
+          console.log('New ticket assignment detected, refreshing list...');
+          this.loadTickets();
+        }
+      });
+  }
+
+  private updateTicketInList(updatedTicket: any): void {
+    const ticketId = Number(updatedTicket.id);
+
+    // Cache'i kontrol et
+    if (this.allTicketsCache) {
+      const cacheIndex = this.allTicketsCache.findIndex(t => t.id === ticketId);
+      if (cacheIndex !== -1) {
+        this.allTicketsCache[cacheIndex] = {
+          ...this.allTicketsCache[cacheIndex],
+          ...updatedTicket,
+          companyName: updatedTicket.tenantName // Backend DTO mapping
+        };
+      }
+    }
+
+    // Mevcut listeyi kontrol et
+    const index = this.tickets.findIndex(t => t.id === ticketId);
+    if (index !== -1) {
+      this.tickets[index] = {
+        ...this.tickets[index],
+        ...updatedTicket,
+        companyName: updatedTicket.tenantName // Backend DTO mapping
+      };
+      this.applyFilters();
+    }
   }
 
   private updateTicketNotificationCounts(): void {
@@ -148,15 +254,96 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
     return this.ticketNotifications.get(ticketId) || 0;
   }
 
+  private joinTicketGroups(): void {
+    if (!this.isBrowser) return;
+
+    // Yüklenen tüm ticketlar için SignalR grubuna katıl
+    this.tickets.forEach(ticket => {
+      this.signalRService.joinTicketGroup(ticket.id.toString()).catch(err => {
+        console.error(`Error joining ticket group ${ticket.id}:`, err);
+      });
+    });
+  }
+
   loadTickets(): void {
     this.isLoading = true;
+    const hasFilter = !!(this.selectedStatus || this.selectedPriority || this.selectedCustomer || this.searchTerm);
+
+    if (hasFilter) {
+      if (this.allTicketsCache) {
+        this.tickets = this.allTicketsCache;
+        this.applyFilters();
+        this.isLoading = false;
+        return;
+      }
+
+      this.fetchAllMyTicketsPaginated().then(all => {
+        this.tickets = all || [];
+        this.allTicketsCache = this.tickets;
+        this.extractCustomers();
+        this.joinTicketGroups(); // SignalR gruplarına katıl
+        this.applyFilters();
+        this.isLoading = false;
+      }).catch(() => {
+        this.error = 'Ticketlar yüklenirken hata oluştu';
+        this.isLoading = false;
+      });
+      return;
+    }
+
+    this.allTicketsCache = null;
     this.staffService.getMyTickets(this.currentPage, this.itemsPerPage).subscribe({
       next: (res) => {
-        if (res.success) {
-          this.tickets = res.data;
-          this.extractCustomers();
-          this.applyFilters();
+        let items: StaffTicket[] = [];
+        let totalCount = 0;
+        let totalPages = 1;
+
+        const payload = (res && res.success !== undefined) ? res.data ?? null : res;
+
+        if (Array.isArray(payload)) {
+          items = payload;
+          totalCount = items.length;
+          totalPages = Math.max(1, Math.ceil(totalCount / this.itemsPerPage));
+        } else if (payload && Array.isArray(payload.items)) {
+          items = payload.items;
+          totalCount = payload.totalCount ?? items.length;
+          totalPages = payload.totalPages ?? Math.max(1, Math.ceil(totalCount / this.itemsPerPage));
+        } else if (res && Array.isArray(res.items)) {
+          items = res.items;
+          totalCount = res.totalCount ?? items.length;
+          totalPages = res.totalPages ?? Math.max(1, Math.ceil(totalCount / this.itemsPerPage));
+        } else if (Array.isArray(res)) {
+          items = res;
+          totalCount = items.length;
+          totalPages = Math.max(1, Math.ceil(totalCount / this.itemsPerPage));
+        } else if (res && res.data && Array.isArray(res.data)) {
+          items = res.data;
+          totalCount = items.length;
+          totalPages = Math.max(1, Math.ceil(totalCount / this.itemsPerPage));
         }
+
+        this.tickets = items;
+        this.extractCustomers();
+        this.joinTicketGroups(); // SignalR gruplarına katıl
+        this.applyFilters();
+
+
+        this.totalCount = totalCount;
+        this.totalPages = totalPages;
+
+        if (!res?.totalCount && !res?.totalPages && totalPages === 1 && Array.isArray(items) && items.length === this.itemsPerPage) {
+          this.totalPages = this.currentPage + 1;
+        }
+
+        if (this.totalPages < this.currentPage) {
+          this.totalPages = this.currentPage;
+        }
+
+
+        if (!this.totalCount && this.totalPages > 1) {
+          this.totalCount = this.totalPages * this.itemsPerPage;
+        }
+
         this.isLoading = false;
       },
       error: (err) => {
@@ -177,40 +364,62 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
   }
 
   applyFilters(): void {
-    this.filteredTickets = this.tickets.filter(ticket => {
-      const statusMatch = this.selectedStatus === 'all' || ticket.status.toString() === this.selectedStatus;
-      const priorityMatch = this.selectedPriority === 'all' || ticket.priority.toString() === this.selectedPriority;
-      const customerMatch = this.selectedCustomer === 'all' || ticket.companyName === this.selectedCustomer;
-      return statusMatch && priorityMatch && customerMatch;
+    const termNorm = this.normalizeForSearch(this.searchTerm || '');
+
+    const results = this.tickets.filter(ticket => {
+      const ticketIdText = String(ticket.id ?? '');
+      const titleNorm = this.normalizeForSearch(ticket.title || '');
+      const tenantNorm = this.normalizeForSearch(ticket.companyName || '');
+      const idNorm = this.normalizeForSearch(ticketIdText);
+
+      const matchesSearch = !termNorm ||
+        titleNorm.includes(termNorm) ||
+        tenantNorm.includes(termNorm) ||
+        idNorm.includes(termNorm);
+
+      const statusMatch = !this.selectedStatus || ticket.status.toString() === this.selectedStatus;
+      const priorityMatch = !this.selectedPriority || ticket.priority.toString() === this.selectedPriority;
+      const customerMatch = !this.selectedCustomer || ticket.companyName === this.selectedCustomer;
+
+      return matchesSearch && statusMatch && priorityMatch && customerMatch;
     });
-    
-    // Sort: active tickets first, then resolved/closed at the end
-    this.filteredTickets.sort((a, b) => {
-      const aIsResolved = a.status === 4 || a.status === 5;
-      const bIsResolved = b.status === 4 || b.status === 5;
-      
-      if (aIsResolved && !bIsResolved) return 1;
-      if (!aIsResolved && bIsResolved) return -1;
-      return 0;
-    });
+
+
+    // Global sorting by status is now handled on the backend
+
+
+
+    if (this.allTicketsCache) {
+      this.totalCount = results.length;
+      this.totalPages = Math.max(1, Math.ceil(this.totalCount / this.itemsPerPage));
+      const start = (this.currentPage - 1) * this.itemsPerPage;
+      this.filteredTickets = results.slice(start, start + this.itemsPerPage);
+    } else {
+
+      this.filteredTickets = results;
+      this.totalCount = this.filteredTickets.length;
+    }
   }
 
   onStatusFilterChange(event: Event): void {
     this.selectedStatus = (event.target as HTMLSelectElement).value;
-    this.applyFilters();
+    this.currentPage = 1;
+    this.loadTickets();
   }
 
   onPriorityFilterChange(event: Event): void {
     this.selectedPriority = (event.target as HTMLSelectElement).value;
-    this.applyFilters();
+    this.currentPage = 1;
+    this.loadTickets();
   }
 
   onCustomerFilterChange(event: Event): void {
     this.selectedCustomer = (event.target as HTMLSelectElement).value;
-    this.applyFilters();
+    this.currentPage = 1;
+    this.loadTickets();
   }
 
-  // Release (leave) ticket flow now uses a centered confirmation modal.
+
   showReleaseConfirm = false;
   ticketToReleaseId: number | null = null;
   ticketToReleaseTitle: string | null = null;
@@ -252,7 +461,7 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
 
   getStatusText(status: number): string {
     const n = Number(status);
-    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
+    const found = this.statusOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
     if (found) return found.label || 'Bilinmiyor';
 
     switch (status) {
@@ -266,32 +475,19 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
   }
 
   getStatusClass(status: number): string {
-    const n = Number(status);
-    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
-    if (found) {
-      const num = Number(found.sortOrder ?? found.id);
-      switch (num) {
-        case 1: return 'status-open';
-        case 2: return 'status-processing';
-        case 3: return 'status-waiting';
-        case 4: return 'status-resolved';
-        case 5: return 'status-closed';
-        default: return '';
-      }
-    }
-    switch (status) {
-      case 1: return 'status-open';
-      case 2: return 'status-processing';
-      case 3: return 'status-waiting';
-      case 4: return 'status-resolved';
-      case 5: return 'status-closed';
-      default: return '';
-    }
+    const classMap: Record<number, string> = {
+      1: 'open',
+      2: 'in-progress',
+      3: 'waiting',
+      4: 'resolved',
+      5: 'closed'
+    };
+    return classMap[status] || 'open';
   }
 
   getPriorityText(priority: number): string {
     const n = Number(priority);
-    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
     if (found) return found.label || 'Normal';
 
     switch (priority) {
@@ -304,40 +500,30 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
   }
 
   getPriorityClass(priority: number): string {
-    const n = Number(priority);
-    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
-    if (found) {
-      const num = Number(found.sortOrder ?? found.id);
-      switch (num) {
-        case 1: return 'priority-low';
-        case 2: return 'priority-normal';
-        case 3: return 'priority-high';
-        case 4: return 'priority-critical';
-        default: return 'priority-normal';
-      }
-    }
-    switch (priority) {
-      case 1: return 'priority-low';
-      case 2: return 'priority-normal';
-      case 3: return 'priority-high';
-      case 4: return 'priority-critical';
-      default: return 'priority-normal';
-    }
+    const classMap: Record<number, string> = {
+      1: 'low',
+      2: 'medium',
+      3: 'high',
+      4: 'critical'
+    };
+    return classMap[priority] || 'low';
   }
 
   getStatusColor(status: string | number): string | null {
     const s = String(status ?? '');
-    const found = this.statusOptions.find((o: any) => String(o.sortOrder ?? o.id) === s || String(o.id) === s || String(o.key) === s || o.label === status || String(o.label) === s);
+    const n = Number(status);
+    const found = this.statusOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === s || String(o.key) === s || o.label === status || String(o.label) === s);
     return found?.color ?? null;
   }
 
   getPriorityColor(priority: string | number): string | null {
     const p = String(priority ?? '');
-    const found = this.priorityOptions.find((o: any) => String(o.sortOrder ?? o.id) === p || String(o.id) === p || String(o.key) === p || o.label === priority || String(o.label) === p);
+    const n = Number(priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === p || String(o.key) === p || o.label === priority || String(o.label) === p);
     return found?.color ?? null;
   }
 
-  // Notification handlers
+
   markNotificationAsRead(notificationId: string): void {
     this.notificationService.markAsRead(notificationId).subscribe({
       next: () => {
@@ -362,11 +548,11 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
   }
 
   onTicketSelect(ticketId: number): void {
-    // Seçilen ticketa ait tüm okunmamış bildirimleri okundu olarak işaretle
+
     const ticketNotifications = this.notifications.filter(
       notif => notif.ticketId && Number(notif.ticketId) === ticketId && !notif.isRead
     );
-    
+
     ticketNotifications.forEach(notif => {
       this.notificationService.markAsRead(notif.id).subscribe({
         next: () => {
@@ -374,18 +560,54 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
         }
       });
     });
-    
+
     this.updateTicketNotificationCounts();
   }
 
   formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('tr-TR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '-';
+      return date.toLocaleDateString('tr-TR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return '-';
+    }
+  }
+
+  normalizeForSearch(value: any): string {
+    try {
+      const s = (value ?? '').toString();
+      return s.toLocaleLowerCase('tr').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    } catch {
+      return (value ?? '').toString().toLowerCase();
+    }
+  }
+
+  trackByTicketId(index: number, ticket: StaffTicket): number | string | null {
+    return ticket?.id ?? index;
+  }
+
+  formatTicketId(id: number | string | null | undefined, ticketCode?: string | null): string {
+    if (ticketCode) return ticketCode;
+    if (id === null || id === undefined) return '-';
+    const numericId = typeof id === 'number' ? id : Number(id);
+    return Number.isFinite(numericId) ? `T${numericId.toString().padStart(5, '0')}` : String(id);
+  }
+
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.selectedStatus = '';
+    this.selectedPriority = '';
+    this.selectedCustomer = '';
+    this.currentPage = 1;
+    this.loadTickets();
   }
 
   get unreadNotificationsCount(): number {
@@ -405,6 +627,10 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
 
   previousPage(): void {
     this.goToPage(this.currentPage - 1);
+  }
+
+  onPageChange(page: number): void {
+    this.goToPage(page);
   }
 
   get paginatedTickets(): StaffTicket[] {

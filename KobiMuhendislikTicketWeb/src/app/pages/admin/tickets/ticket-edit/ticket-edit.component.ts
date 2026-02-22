@@ -68,7 +68,7 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
 
   newComment = '';
   addingComment = false;
-  
+
   selectedStaffId = '';
   staffList: Staff[] = [];
   assigning = false;
@@ -85,7 +85,7 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
   showStatusOptions = false;
   showPriorityOptions = false;
 
-  statusOptions: { value: number; label: string; class?: string; key?: string; color?: string | null }[] = [];
+  statusOptions: any[] = [];
 
   statusValueMap: { [key: number]: number } = {
     1: 1,
@@ -95,7 +95,7 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
     5: 5
   };
 
-  statusDisplayMap: { [key: string]: string; [key: number]: string } = {
+  statusDisplayMap: { [key: string]: string;[key: number]: string } = {
     'Open': 'Açık',
     'Processing': 'İşlemde',
     'InProgress': 'İşlemde',
@@ -110,7 +110,7 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
     5: 'Kapatıldı'
   };
 
-  priorityDisplayMap: { [key: string]: string; [key: number]: string } = {
+  priorityDisplayMap: { [key: string]: string;[key: number]: string } = {
     'Low': 'Düşük',
     'Medium': 'Orta',
     'High': 'Yüksek',
@@ -121,7 +121,7 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
     4: 'Kritik'
   };
 
-  priorityClassMap: { [key: string]: string; [key: number]: string } = {
+  priorityClassMap: { [key: string]: string;[key: number]: string } = {
     'Low': 'low',
     'Medium': 'normal',
     'High': 'high',
@@ -132,7 +132,7 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
     4: 'critical'
   };
 
-  priorityOptions: { value: number; label: string; class?: string; key?: string; color?: string | null }[] = [
+  priorityOptions: any[] = [
     { value: 1, label: 'Düşük', class: 'low' },
     { value: 2, label: 'Orta', class: 'medium' },
     { value: 3, label: 'Yüksek', class: 'high' },
@@ -208,8 +208,9 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
           return ia - ib;
         });
         this.statusOptions = list.map((p: any, i: number) => {
-          const val = Number(p.sortOrder ?? (i + 1));
-          return { value: val, label: p.value || p.key || p.description, class: this.getStatusClass(val), key: p.key, color: p.value2 ?? p.color ?? null };
+          const numericKey = p.numericKey ?? (typeof p.key === 'number' ? p.key : (Number.isFinite(Number(p.key)) ? Number(p.key) : null));
+          const val = numericKey != null ? Number(numericKey) : null;
+          return { value: val, label: (numericKey != null) ? (p.value || p.key || p.description) : '', class: this.getStatusClass(val ?? Number(p.sortOrder ?? (i + 1))), key: p.key, numericKey: numericKey, color: (numericKey != null) ? (p.value2 ?? p.color ?? null) : null };
         });
         this.reconcileTicketStatusPriority();
       },
@@ -232,8 +233,9 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
           return ia - ib;
         });
         this.priorityOptions = list.map((p: any, i: number) => {
-          const val = Number(p.sortOrder ?? (i + 1));
-          return { value: val, label: p.value || p.key || p.description, class: this.getPriorityClass(val), key: p.key, color: p.value2 ?? p.color ?? null };
+          const numericKey = p.numericKey ?? (typeof p.key === 'number' ? p.key : (Number.isFinite(Number(p.key)) ? Number(p.key) : null));
+          const val = numericKey != null ? Number(numericKey) : null;
+          return { value: val, label: (numericKey != null) ? (p.value || p.key || p.description) : '', class: this.getPriorityClass(val ?? Number(p.sortOrder ?? (i + 1))), key: p.key, numericKey: numericKey, color: (numericKey != null) ? (p.value2 ?? p.color ?? null) : null };
         });
         this.reconcileTicketStatusPriority();
       },
@@ -248,7 +250,7 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
       const sVal = String(this.ticket.status ?? '');
       const sFound = this.statusOptions.find(o => String(o.value) === sVal || String(o.key) === sVal || o.label === sVal);
       if (sFound) {
-        this.ticket.status = sFound.value;
+        this.ticket.status = sFound.value ?? sFound.numericKey ?? Number(sFound.sortOrder ?? sFound.id);
       } else if (typeof this.ticket.status === 'string') {
         this.ticket.status = this.statusStringToNumber[sVal] ?? this.ticket.status;
       }
@@ -256,7 +258,7 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
       const pVal = String(this.ticket.priority ?? '');
       const pFound = this.priorityOptions.find(o => String(o.value) === pVal || String(o.key) === pVal || o.label === pVal);
       if (pFound) {
-        this.ticket.priority = pFound.value;
+        this.ticket.priority = pFound.value ?? pFound.numericKey ?? Number(pFound.sortOrder ?? pFound.id);
       } else if (typeof this.ticket.priority === 'string') {
         this.ticket.priority = this.priorityStringToNumber[pVal] ?? this.ticket.priority;
       }
@@ -295,7 +297,7 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
         setTimeout(() => {
           this.commentsContainer.nativeElement.scrollTop = this.commentsContainer.nativeElement.scrollHeight;
         }, 0);
-      } catch (err) {}
+      } catch (err) { }
     }
   }
 
@@ -322,7 +324,7 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
     this.ticketService.getTicketById(id).subscribe({
       next: (response: any) => {
         const data = response?.data?.data || response?.data || response;
-        
+
         // Status ve Priority'yi number'a çevir (backend string döndürüyor)
         if (typeof data.status === 'string') {
           data.status = this.statusStringToNumber[data.status] || 1;
@@ -330,9 +332,9 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
         if (typeof data.priority === 'string') {
           data.priority = this.priorityStringToNumber[data.priority] || 1;
         }
-        
+
         this.ticket = data;
-        
+
         // Process comments to mark staff messages
         let newComments = data.comments?.$values || data.comments || [];
         newComments = newComments.map((c: TicketComment) => {
@@ -342,7 +344,7 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
           }
           return c;
         });
-        
+
         this.history = data.history?.$values || data.history || [];
         this.loading = false;
         // Sadece yorumlar değiştiyse scroll
@@ -444,13 +446,13 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
 
   assignTicket(): void {
     if (!this.ticket || !this.selectedStaffId) return;
-    
+
     const selectedId = typeof this.selectedStaffId === 'number' ? this.selectedStaffId : Number(this.selectedStaffId);
     const selectedStaff = this.staffList.find(s => Number(s.id) === selectedId);
     if (!selectedStaff) return;
 
     this.assigning = true;
-    this.ticketService.assignTicket(this.ticket.id, selectedStaff.fullName).subscribe({
+    this.ticketService.assignTicket(this.ticket.id, selectedId).subscribe({
       next: () => {
         if (this.ticket) {
           this.ticket.assignedPerson = selectedStaff.fullName;
@@ -466,7 +468,7 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
 
   addComment(): void {
     if (!this.ticket || !this.newComment.trim()) return;
-    
+
     this.addingComment = true;
     this.ticketService.addAdminComment(this.ticket.id, this.newComment.trim(), 'Admin', true).subscribe({
       next: () => {
@@ -474,7 +476,7 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
         this.newComment = '';
         this.addingComment = false;
         this.shouldScrollToBottom = true;
-        
+
         // Only reload history to avoid scroll reset
         if (this.ticket) {
           this.ticketService.getTicketById(this.ticket.id).subscribe({
@@ -497,9 +499,9 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
       return;
     }
 
-    
+
     let token = localStorage.getItem('token') || sessionStorage.getItem('token');
-    
+
     if (!token) {
       console.warn('SignalR: No token found. User may not be authenticated.');
       return;
@@ -508,7 +510,7 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
     try {
       console.log('SignalR: Attempting to start connection with token');
       await this.signalRService.startConnection(token);
-      
+
       console.log('SignalR: Joining ticket group', ticketId);
       await this.signalRService.joinTicketGroup(ticketId);
       this.isSignalRConnected = true;
@@ -555,7 +557,7 @@ export class TicketEditComponent implements OnInit, OnDestroy, AfterViewChecked 
     const n = Number(status);
     const found = this.statusOptions.find(o => Number(o.value) === n);
     if (found && found.class) return found.class;
-    const statusMap: { [key: string]: string; [key: number]: string } = {
+    const statusMap: { [key: string]: string;[key: number]: string } = {
       'Open': 'open',
       'Processing': 'processing',
       'InProgress': 'processing',

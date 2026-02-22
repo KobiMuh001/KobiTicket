@@ -52,20 +52,42 @@ export class CustomerTicketsComponent implements OnInit {
         const sData = sRes.data || sRes || [];
         const pData = pRes.data || pRes || [];
 
-        this.statusOptions = (sData || []).map((s: any) => ({
+        // Sort status list by admin-provided sortOrder, then numericKey as fallback
+        const sList = (sData || []).slice().sort((a: any, b: any) => {
+          const sa = (a.sortOrder ?? a.numericKey ?? null);
+          const sb = (b.sortOrder ?? b.numericKey ?? null);
+          if (sa !== null && sb !== null) return sa - sb;
+          if (sa !== null) return -1;
+          if (sb !== null) return 1;
+          return 0;
+        });
+
+        this.statusOptions = sList.map((s: any) => ({
           id: s.id,
           key: s.key,
-          label: s.value ?? s.description ?? s.key,
+          numericKey: s.numericKey ?? (typeof s.key === 'number' ? s.key : (Number.isFinite(Number(s.key)) ? Number(s.key) : null)),
+          label: (s.numericKey != null) ? (s.value ?? s.description ?? s.key) : '',
           sortOrder: s.sortOrder,
-          color: s.value2 ?? s.color ?? null
+          color: (s.numericKey != null) ? (s.value2 ?? s.color ?? null) : null
         }));
 
-        this.priorityOptions = (pData || []).map((p: any) => ({
+        // Sort priority list by admin-provided sortOrder, then numericKey as fallback
+        const pList = (pData || []).slice().sort((a: any, b: any) => {
+          const pa = (a.sortOrder ?? a.numericKey ?? null);
+          const pb = (b.sortOrder ?? b.numericKey ?? null);
+          if (pa !== null && pb !== null) return pa - pb;
+          if (pa !== null) return -1;
+          if (pb !== null) return 1;
+          return 0;
+        });
+
+        this.priorityOptions = pList.map((p: any) => ({
           id: p.id,
           key: p.key,
-          label: p.value ?? p.description ?? p.key,
+          numericKey: p.numericKey ?? (typeof p.key === 'number' ? p.key : (Number.isFinite(Number(p.key)) ? Number(p.key) : null)),
+          label: (p.numericKey != null) ? (p.value ?? p.description ?? p.key) : '',
           sortOrder: p.sortOrder,
-          color: p.value2 ?? p.color ?? null
+          color: (p.numericKey != null) ? (p.value2 ?? p.color ?? null) : null
         }));
 
         this.loadTickets();
@@ -125,8 +147,9 @@ export class CustomerTicketsComponent implements OnInit {
   }
 
   getStatusText(status: string | number): string {
+    const n = Number(status);
     const opt = this.statusOptions.find((o: any) =>
-      Number(o.sortOrder ?? o.id) === Number(status) || o.key === status || String(o.id) === String(status)
+      Number(o.numericKey ?? o.sortOrder ?? o.id) === n || o.key === status || String(o.id) === String(status)
     );
     if (opt) return opt.label;
 
@@ -148,8 +171,9 @@ export class CustomerTicketsComponent implements OnInit {
   }
 
   getPriorityText(priority: string | number): string {
+    const n = Number(priority);
     const opt = this.priorityOptions.find((o: any) =>
-      Number(o.sortOrder ?? o.id) === Number(priority) || o.key === priority || String(o.id) === String(priority)
+      Number(o.numericKey ?? o.sortOrder ?? o.id) === n || o.key === priority || String(o.id) === String(priority)
     );
     if (opt) return opt.label;
 
@@ -189,13 +213,15 @@ export class CustomerTicketsComponent implements OnInit {
 
   getStatusColor(status: string | number): string | null {
     const s = String(status ?? '');
-    const found = this.statusOptions.find((o: any) => String(o.sortOrder ?? o.id) === s || String(o.id) === s || String(o.key) === s || o.label === status || String(o.label) === s);
+    const n = Number(status);
+    const found = this.statusOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === s || String(o.key) === s || o.label === status || String(o.label) === s);
     return found?.color ?? null;
   }
 
   getPriorityColor(priority: string | number): string | null {
     const p = String(priority ?? '');
-    const found = this.priorityOptions.find((o: any) => String(o.sortOrder ?? o.id) === p || String(o.id) === p || String(o.key) === p || o.label === priority || String(o.label) === p);
+    const n = Number(priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === p || String(o.key) === p || o.label === priority || String(o.label) === p);
     return found?.color ?? null;
   }
 }

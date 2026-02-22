@@ -192,6 +192,26 @@ namespace KobiMuhendislikTicket.Application.Services
                 NotificationType.TicketStatusChanged,
                 ticketId
             );
+
+            // Ayrıca müşteriye e-posta gönder (tenant email mevcutsa)
+            try
+            {
+                var tenant = await _context.Tenants.FindAsync(tenantId);
+                if (tenant != null && !string.IsNullOrEmpty(tenant.Email))
+                {
+                    await _emailService.SendTicketStatusChangedEmailAsync(
+                        tenant.Email,
+                        tenant.CompanyName ?? "Müşteri",
+                        ticketTitle,
+                        newStatus,
+                        ticketId
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Müşteriye durum değişikliği e-postası gönderilemedi: {TicketId}", ticketId);
+            }
         }
 
         public async Task NotifyCustomerNewCommentAsync(int tenantId, int ticketId, string ticketTitle, string authorName)
@@ -277,6 +297,27 @@ namespace KobiMuhendislikTicket.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Admin'e yeni ticket e-postası gönderilemedi: {TicketId}", ticket.Id);
+            }
+
+            // Müşteriye onay e-postası gönder (tenant email mevcutsa)
+            try
+            {
+                var tenant = await _context.Tenants.FindAsync(ticket.TenantId);
+                if (tenant != null && !string.IsNullOrEmpty(tenant.Email))
+                {
+                    var ticketCode = ticket.TicketCode ?? $"T{ticket.Id:D5}";
+                    await _emailService.SendTicketCreatedConfirmationEmailAsync(
+                        tenant.Email,
+                        tenant.CompanyName ?? "Müşteri",
+                        ticket.Title,
+                        ticketCode,
+                        ticket.Id
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Müşteriye ticket onay e-postası gönderilemedi: {TicketId}", ticket.Id);
             }
         }
 
@@ -374,31 +415,33 @@ namespace KobiMuhendislikTicket.Application.Services
         {
             await CreateStaffNotificationAsync(
                 staffId,
-                "Yeni Talik Atandı",
+                "Yeni Ticket Atandı",
                 $"Size yeni bir ticket atandı: {ticketTitle} ({tenantName})",
                 NotificationType.TicketAssigned,
                 ticketId
             );
 
-            // Staff bilgilerini al ve e-posta gönder
-            try
-            {
-                var staff = await _context.Staff.FindAsync(staffId);
-                if (staff != null && !string.IsNullOrEmpty(staff.Email))
+            // Staff bilgilerini al ve e-posta gönder (Fire and forget to avoid delaying API response)
+            _ = Task.Run(async () => {
+                try
                 {
-                    await _emailService.SendTicketAssignmentEmailAsync(
-                        staff.Email,
-                        staff.FullName,
-                        ticketTitle,
-                        tenantName,
-                        ticketId
-                    );
+                    var staff = await _context.Staff.FindAsync(staffId);
+                    if (staff != null && !string.IsNullOrEmpty(staff.Email))
+                    {
+                        await _emailService.SendTicketAssignmentEmailAsync(
+                            staff.Email,
+                            staff.FullName,
+                            ticketTitle,
+                            tenantName,
+                            ticketId
+                        );
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Staff'a ticket atama e-postası gönderilemedi: {StaffId}", staffId);
-            }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Staff bilgileri alınırken veya e-posta gönderilirken hata: {StaffId}", staffId);
+                }
+            });
         }
 
         /// <summary>
@@ -414,26 +457,28 @@ namespace KobiMuhendislikTicket.Application.Services
                 ticketId
             );
 
-            // Staff bilgilerini al ve e-posta gönder
-            try
-            {
-                var staff = await _context.Staff.FindAsync(staffId);
-                if (staff != null && !string.IsNullOrEmpty(staff.Email))
+            // Staff bilgilerini al ve e-posta gönder (Fire and forget)
+            _ = Task.Run(async () => {
+                try
                 {
-                    await _emailService.SendNewCommentEmailAsync(
-                        staff.Email,
-                        staff.FullName,
-                        ticketTitle,
-                        authorName,
-                        commentPreview,
-                        ticketId
-                    );
+                    var staff = await _context.Staff.FindAsync(staffId);
+                    if (staff != null && !string.IsNullOrEmpty(staff.Email))
+                    {
+                        await _emailService.SendNewCommentEmailAsync(
+                            staff.Email,
+                            staff.FullName,
+                            ticketTitle,
+                            authorName,
+                            commentPreview,
+                            ticketId
+                        );
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Staff'a yeni yorum e-postası gönderilemedi: {StaffId}", staffId);
-            }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Staff'a yeni yorum e-postası gönderilirken hata: {StaffId}", staffId);
+                }
+            });
         }
     }
 

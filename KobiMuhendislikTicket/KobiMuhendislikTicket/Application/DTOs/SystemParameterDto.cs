@@ -2,9 +2,11 @@ namespace KobiMuhendislikTicket.Application.DTOs
 {
     public class SystemParameterDto
     {
-        public int Id { get; set; }
         public string Group { get; set; } = string.Empty;
-        public string Key { get; set; } = string.Empty;
+        // Expose both the legacy numeric key and the new NumericKey column.
+        // Clients should prefer `NumericKey` for business logic.
+        public int? Key { get; set; }
+        public int? NumericKey { get; set; }
         public string? Value { get; set; }
         public string? Value2 { get; set; }
         public string? Description { get; set; }
@@ -17,7 +19,8 @@ namespace KobiMuhendislikTicket.Application.DTOs
     public class CreateSystemParameterDto
     {
         public string Group { get; set; } = string.Empty;
-        public string Key { get; set; } = string.Empty;
+        // If `Key` is not provided, service will assign next numeric key for the group.
+        public int? Key { get; set; }
         public string? Value { get; set; }
         public string? Value2 { get; set; }
         public string? Description { get; set; }
@@ -33,5 +36,6 @@ namespace KobiMuhendislikTicket.Application.DTOs
         public string? Description { get; set; }
         public bool? IsActive { get; set; }
         public string? DataType { get; set; }
+        public int? SortOrder { get; set; }
     }
 }

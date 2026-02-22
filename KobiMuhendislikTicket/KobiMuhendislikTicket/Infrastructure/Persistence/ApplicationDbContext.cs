@@ -98,32 +98,32 @@ namespace KobiMuhendislikTicket.Infrastructure.Persistence
                 .HasIndex(p => p.Group);
             modelBuilder.Entity<KobiMuhendislikTicket.Domain.Entities.System.SystemParameter>().HasData(
                 // TicketPriority group
-                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 100, Group = "TicketPriority", Key = "Low", Value = "Low", Description = "Düşük öncelik", IsActive = true, DataType = "String", SortOrder = 1 },
-                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 101, Group = "TicketPriority", Key = "Medium", Value = "Medium", Description = "Orta öncelik", IsActive = true, DataType = "String", SortOrder = 2 },
-                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 102, Group = "TicketPriority", Key = "High", Value = "High", Description = "Yüksek öncelik", IsActive = true, DataType = "String", SortOrder = 3 },
-                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 103, Group = "TicketPriority", Key = "Critical", Value = "Critical", Description = "Kritik öncelik", IsActive = true, DataType = "String", SortOrder = 4 },
+                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 100, Group = "TicketPriority", Key = "Düşük", NumericKey = 1, Value = "Low", Description = "Düşük öncelik", IsActive = true, DataType = "String", SortOrder = 1 },
+                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 101, Group = "TicketPriority", Key = "Orta", NumericKey = 2, Value = "Medium", Description = "Orta öncelik", IsActive = true, DataType = "String", SortOrder = 2 },
+                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 102, Group = "TicketPriority", Key = "Yüksek", NumericKey = 3, Value = "High", Description = "Yüksek öncelik", IsActive = true, DataType = "String", SortOrder = 3 },
+                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 103, Group = "TicketPriority", Key = "Kritik", NumericKey = 4, Value = "Critical", Description = "Kritik öncelik", IsActive = true, DataType = "String", SortOrder = 4 },
 
                 // TicketStatus group
-                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 110, Group = "TicketStatus", Key = "Open", Value = "Open", Description = "Açık", IsActive = true, DataType = "String", SortOrder = 1 },
-                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 111, Group = "TicketStatus", Key = "Processing", Value = "Processing", Description = "İşleniyor", IsActive = true, DataType = "String", SortOrder = 2 },
-                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 112, Group = "TicketStatus", Key = "WaitingForCustomer", Value = "WaitingForCustomer", Description = "Müşteri Bekleniyor", IsActive = true, DataType = "String", SortOrder = 3 },
-                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 113, Group = "TicketStatus", Key = "Resolved", Value = "Resolved", Description = "Çözüldü", IsActive = true, DataType = "String", SortOrder = 4 },
-                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 114, Group = "TicketStatus", Key = "Closed", Value = "Closed", Description = "Kapandı", IsActive = true, DataType = "String", SortOrder = 5 },
+                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 110, Group = "TicketStatus", Key = "Açık", NumericKey = 1, Value = "Open", Description = "Açık", IsActive = true, DataType = "String", SortOrder = 1 },
+                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 111, Group = "TicketStatus", Key = "İşleniyor", NumericKey = 2, Value = "Processing", Description = "İşleniyor", IsActive = true, DataType = "String", SortOrder = 2 },
+                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 112, Group = "TicketStatus", Key = "Müşteri Bekleniyor", NumericKey = 3, Value = "WaitingForCustomer", Description = "Müşteri Bekleniyor", IsActive = true, DataType = "String", SortOrder = 3 },
+                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 113, Group = "TicketStatus", Key = "Çözüldü", NumericKey = 4, Value = "Resolved", Description = "Çözüldü", IsActive = true, DataType = "String", SortOrder = 4 },
+                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 114, Group = "TicketStatus", Key = "Kapandı", NumericKey = 5, Value = "Closed", Description = "Kapandı", IsActive = true, DataType = "String", SortOrder = 5 },
 
                 // UserRole group
-                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 120, Group = "UserRole", Key = "Admin", Value = "Admin", Description = "Admin role", IsActive = true, DataType = "String", SortOrder = 1 },
-                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 121, Group = "UserRole", Key = "Staff", Value = "Staff", Description = "Staff role", IsActive = true, DataType = "String", SortOrder = 2 },
-                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 122, Group = "UserRole", Key = "Customer", Value = "Customer", Description = "Customer role", IsActive = true, DataType = "String", SortOrder = 3 },
+                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 120, Group = "UserRole", Key = "Admin", NumericKey = 1, Value = "Admin", Description = "Admin role", IsActive = true, DataType = "String", SortOrder = 1 },
+                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 121, Group = "UserRole", Key = "Staff", NumericKey = 2, Value = "Staff", Description = "Staff role", IsActive = true, DataType = "String", SortOrder = 2 },
+                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 122, Group = "UserRole", Key = "Customer", NumericKey = 3, Value = "Customer", Description = "Customer role", IsActive = true, DataType = "String", SortOrder = 3 },
 
                 // Department group
-                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 130, Group = "Department", Key = "TeknikDestek", Value = "Teknik Destek", Description = "Teknik Destek", IsActive = true, DataType = "String", SortOrder = 1 },
-                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 131, Group = "Department", Key = "Satis", Value = "Satış", Description = "Satış", IsActive = true, DataType = "String", SortOrder = 2 },
-                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 132, Group = "Department", Key = "Muhasebe", Value = "Muhasebe", Description = "Muhasebe", IsActive = true, DataType = "String", SortOrder = 3 },
-                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 133, Group = "Department", Key = "Yonetim", Value = "Yönetim", Description = "Yönetim", IsActive = true, DataType = "String", SortOrder = 4 },
-                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 134, Group = "Department", Key = "Diger", Value = "Diğer", Description = "Diğer", IsActive = true, DataType = "String", SortOrder = 5 },
+                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 130, Group = "Department", Key = "TeknikDestek", NumericKey = 1, Value = "Teknik Destek", Description = "Teknik Destek", IsActive = true, DataType = "String", SortOrder = 1 },
+                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 131, Group = "Department", Key = "Satis", NumericKey = 2, Value = "Satış", Description = "Satış", IsActive = true, DataType = "String", SortOrder = 2 },
+                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 132, Group = "Department", Key = "Muhasebe", NumericKey = 3, Value = "Muhasebe", Description = "Muhasebe", IsActive = true, DataType = "String", SortOrder = 3 },
+                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 133, Group = "Department", Key = "Yonetim", NumericKey = 4, Value = "Yönetim", Description = "Yönetim", IsActive = true, DataType = "String", SortOrder = 4 },
+                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 134, Group = "Department", Key = "Diger", NumericKey = 5, Value = "Diğer", Description = "Diğer", IsActive = true, DataType = "String", SortOrder = 5 },
 
                 // Example system setting
-                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 200, Group = "General", Key = "DefaultTicketLimit", Value = "15", Description = "Varsayılan ticket limiti", IsActive = true, DataType = "Int", SortOrder = 1 }
+                new KobiMuhendislikTicket.Domain.Entities.System.SystemParameter { Id = 200, Group = "General", Key = "DefaultTicketLimit",NumericKey = 1, Value = "15", Description = "Varsayılan ticket limiti", IsActive = true, DataType = "Int", SortOrder = 1 }
             );
 
             // Seed Staff Data (use DepartmentId)

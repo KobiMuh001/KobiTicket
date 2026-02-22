@@ -311,7 +311,11 @@
               type="text" 
               id="taxNumber" 
               [(ngModel)]="createForm.taxNumber" 
+              (input)="formatTaxNumber($event)"
               placeholder="Vergi numarasını girin"
+              maxlength="10"
+              inputmode="numeric"
+              pattern="\\d*"
             />
           </div>
           

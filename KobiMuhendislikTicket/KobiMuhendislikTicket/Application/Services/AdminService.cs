@@ -106,11 +106,11 @@ namespace KobiMuhendislikTicket.Application.Services
 
                 
                 StaffPerformance = tickets
-                    .Where(t => !string.IsNullOrEmpty(t.AssignedPerson))
-                    .GroupBy(t => t.AssignedPerson!)
+                    .Where(t => t.AssignedStaffId.HasValue)
+                    .GroupBy(t => t.AssignedStaffId!.Value)
                     .Select(g => new StaffPerformanceDto
                     {
-                        StaffName = g.Key,
+                        StaffName = g.First().AssignedPerson ?? "Bilinmeyen",
                         AssignedTickets = g.Count(),
                         ResolvedTickets = g.Count(t => t.Status == TicketStatus.Resolved),
                         OpenTickets = g.Count(t => t.Status != TicketStatus.Resolved)
@@ -317,6 +317,9 @@ namespace KobiMuhendislikTicket.Application.Services
             if (filter.Priority.HasValue)
                 query = query.Where(t => (int)t.Priority == filter.Priority.Value);
 
+            if (filter.AssignedStaffId.HasValue)
+                query = query.Where(t => t.AssignedStaffId == filter.AssignedStaffId.Value);
+
             if (!string.IsNullOrWhiteSpace(filter.AssignedPerson))
                 query = query.Where(t => t.AssignedPerson == filter.AssignedPerson);
 
@@ -390,6 +393,7 @@ namespace KobiMuhendislikTicket.Application.Services
                 Status = (int)ticket.Status,
                 Priority = (int)ticket.Priority,
                 AssignedPerson = ticket.AssignedPerson,
+                AssignedStaffId = ticket.AssignedStaffId,
                 ImagePath = ticket.ImagePath,
                 ImagePaths = imagePaths.Distinct().ToList(),
                 CreatedDate = ticket.CreatedDate,
@@ -477,11 +481,11 @@ namespace KobiMuhendislikTicket.Application.Services
                     })
                     .ToList(),
                 StaffPerformance = tickets
-                    .Where(t => !string.IsNullOrEmpty(t.AssignedPerson))
-                    .GroupBy(t => t.AssignedPerson!)
+                    .Where(t => t.AssignedStaffId.HasValue)
+                    .GroupBy(t => t.AssignedStaffId!.Value)
                     .Select(g => new StaffPerformanceDto
                     {
-                        StaffName = g.Key,
+                        StaffName = g.First().AssignedPerson ?? "Bilinmeyen",
                         AssignedTickets = g.Count(),
                         ResolvedTickets = g.Count(t => t.Status == TicketStatus.Resolved),
                         OpenTickets = g.Count(t => t.Status != TicketStatus.Resolved)
@@ -502,6 +506,7 @@ namespace KobiMuhendislikTicket.Application.Services
                 Status = (int)ticket.Status,
                 Priority = (int)ticket.Priority,
                 AssignedPerson = ticket.AssignedPerson,
+                AssignedStaffId = ticket.AssignedStaffId,
                 TenantName = ticket.Tenant?.CompanyName ?? "Bilinmeyen",
                 TenantId = ticket.TenantId,
                 ProductName = ticket.Product?.Name,

@@ -161,6 +161,14 @@ export class TenantsComponent implements OnInit {
       this.createError = 'Lütfen zorunlu alanları doldurun.';
       return;
     }
+    // Tax number must be exactly 10 digits
+    const taxDigits = (this.createForm.taxNumber || '').toString().replace(/\D/g, '');
+    if (taxDigits.length !== 10) {
+      this.createError = 'Vergi numarası 10 haneli bir sayı olmalıdır.';
+      return;
+    }
+    // store cleaned digits
+    this.createForm.taxNumber = taxDigits;
 
     
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -238,5 +246,14 @@ export class TenantsComponent implements OnInit {
     
     this.createForm.phoneNumber = formatted;
     input.value = formatted;
+  }
+
+  formatTaxNumber(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    // Keep only digits and limit to 10
+    const digits = (input.value || '').toString().replace(/\D/g, '').slice(0, 10);
+    this.createForm.taxNumber = digits;
+    // reflect immediately in the input so user cannot type past 10 digits
+    try { input.value = digits; } catch (e) {}
   }
 }

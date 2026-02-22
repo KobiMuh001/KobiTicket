@@ -54,6 +54,28 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.isBrowser = isPlatformBrowser(this.platformId);
   }
 
+  private findOption(options: any[], value: any): any {
+    if (!options || !options.length) return null;
+    if (value === null || value === undefined) return null;
+
+    const str = String(value).trim();
+    const num = Number(value);
+
+    // Try numeric match first
+    if (Number.isFinite(num)) {
+      const byNumeric = options.find(o => Number(o.numericKey ?? o.sortOrder ?? o.id) === num || Number(o.key ?? o.sortOrder ?? o.id) === num || Number(o.sortOrder ?? o.id) === num);
+      if (byNumeric) return byNumeric;
+    }
+
+    // Try exact string matches (id, key, label)
+    const lower = str.toLowerCase();
+    const byString = options.find(o => String(o.id) === str || String(o.key) === str || String(o.label) === str || String(o.label ?? '').toLowerCase() === lower || String(o.key ?? '').toLowerCase() === lower);
+    if (byString) return byString;
+
+    // Fallback: match numericKey/sortOrder/id as strings
+    return options.find(o => String(o.numericKey ?? o.sortOrder ?? o.id) === str);
+  }
+
   ngOnInit(): void {
     // Load DB-driven lookup options first (best-effort)
     this.paramSvc.getByGroup('TicketStatus').subscribe({
@@ -62,9 +84,10 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         this.statusOptions = (Array.isArray(sData) ? sData : []).map((p: any, i: number) => ({
           id: p.id,
           key: p.key,
-          label: p.value,
+          numericKey: p.numericKey ?? (typeof p.key === 'number' ? p.key : (Number.isFinite(Number(p.key)) ? Number(p.key) : null)),
+          label: (p.numericKey != null) ? (p.value || p.key || p.description) : '',
           sortOrder: p.sortOrder ?? i + 1,
-          color: p.value2 ?? p.color ?? null
+          color: (p.numericKey != null) ? (p.value2 ?? p.color ?? null) : null
         }));
       },
       error: () => { this.statusOptions = []; }
@@ -75,9 +98,10 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         this.priorityOptions = (Array.isArray(pData) ? pData : []).map((p: any, i: number) => ({
           id: p.id,
           key: p.key,
-          label: p.value,
+          numericKey: p.numericKey ?? (typeof p.key === 'number' ? p.key : (Number.isFinite(Number(p.key)) ? Number(p.key) : null)),
+          label: (p.numericKey != null) ? (p.value || p.key || p.description) : '',
           sortOrder: p.sortOrder ?? i + 1,
-          color: p.value2 ?? p.color ?? null
+          color: (p.numericKey != null) ? (p.value2 ?? p.color ?? null) : null
         }));
       },
       error: () => { this.priorityOptions = []; }
@@ -86,11 +110,11 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.loadDashboardData();
     this.loadChartData();
     this.initSignalR();
-    
+
     this.refreshInterval = setInterval(() => {
       console.log('Dashboard: Periodic refresh triggered');
       this.loadTicketsOnly();
-    }, 30000); 
+    }, 30000);
   }
 
   ngOnDestroy(): void {
@@ -99,7 +123,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     if (this.refreshInterval) {
       clearInterval(this.refreshInterval);
     }
-    this.signalRService.stopConnection().catch(err => 
+    this.signalRService.stopConnection().catch(err =>
       console.error('SignalR disconnect error:', err)
     );
     this.signalRService.stopDashboardConnection().catch(err =>
@@ -188,7 +212,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   loadDashboardData(): void {
     this.isLoading = true;
-    
+
     // Istatistikleri yukle
     this.dashboardService.getStats().subscribe({
       next: (response: any) => {
@@ -241,15 +265,15 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   updateStats(data: DashboardStats): void {
-    const total = data.totalTickets || 1; 
-    
+    const total = data.totalTickets || 1;
+
     this.stats = [
       {
         title: 'Toplam Ticket',
         value: data.totalTickets,
         icon: 'ticket',
         color: 'primary',
-        change: 0, 
+        change: 0,
         changeType: 'increase'
       },
       {
@@ -281,7 +305,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         value: data.totalTenants,
         icon: 'users',
         color: 'info',
-        change: 0, 
+        change: 0,
         changeType: 'increase'
       }
     ];
@@ -289,7 +313,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   getStatusText(status: number): string {
     const n = Number(status);
-    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
+    const found = this.statusOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
     if (found) return found.label || 'Bilinmiyor';
 
     const statusMap: Record<number, string> = {
@@ -304,10 +328,10 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   getStatusClass(status: number): string {
     const n = Number(status);
-    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
+    const found = this.statusOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
     if (found) {
-      const num = Number(found.sortOrder ?? found.id);
-      const statusMap: { [key: string]: string; [key: number]: string } = {
+      const num = Number(found.numericKey ?? found.sortOrder ?? found.id);
+      const statusMap: { [key: string]: string;[key: number]: string } = {
         1: 'open',
         2: 'in-progress',
         3: 'waiting',
@@ -328,7 +352,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   getPriorityText(priority: number): string {
     const n = Number(priority);
-    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
     if (found) return found.label || 'Bilinmiyor';
 
     const priorityMap: Record<number, string> = {
@@ -342,10 +366,10 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   getPriorityClass(priority: number): string {
     const n = Number(priority);
-    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
     if (found) {
-      const num = Number(found.sortOrder ?? found.id);
-      const map: { [key: string]: string; [key: number]: string } = {
+      const num = Number(found.numericKey ?? found.sortOrder ?? found.id);
+      const map: { [key: string]: string;[key: number]: string } = {
         1: 'low',
         2: 'medium',
         3: 'high',
@@ -378,13 +402,15 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadChartData(): void {
-    this.dashboardService.getAllTickets().subscribe({
+    // Grafik verisi için daha fazla ticket çek (örn: 1000)
+    // getAllTickets varsayılan olarak 20 dönüyor olabilir, GetAllTicketsPage ile büyük bir limit belirtiyoruz.
+    this.dashboardService.getAllTicketsPage(1, 1000).subscribe({
       next: (response: any) => {
         console.log('Chart data raw response:', response);
-        
+
         // Response formatını kontrol et ve parse et
         let allTickets: any[] = [];
-        
+
         if (Array.isArray(response)) {
           allTickets = response;
         } else if (response?.data && Array.isArray(response.data)) {
@@ -392,26 +418,26 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         } else if (response?.items && Array.isArray(response.items)) {
           allTickets = response.items;
         }
-        
+
         console.log('Chart data parsed tickets count:', allTickets.length);
         console.log('Sample tickets:', allTickets.slice(0, 3));
-        
+
         if (allTickets.length === 0) {
           console.warn('No tickets found, using fallback data');
           this.monthlyChartData = this.generateMonthlyData();
           this.weeklyChartData = this.generateWeeklyData();
           return;
         }
-        
+
         // Son 30 günlük veri
         this.monthlyChartData = this.generateMonthlyDataFromTickets(allTickets);
-        
+
         // Son 7 günlük veri
         this.weeklyChartData = this.generateWeeklyDataFromTickets(allTickets);
-        
+
         // Dinamik ölçekleme için maksimum değerleri hesapla
         this.calculateChartMaxValues();
-        
+
         console.log('Monthly chart data:', this.monthlyChartData);
         console.log('Weekly chart data:', this.weeklyChartData);
       },
@@ -429,31 +455,31 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     const data: ChartData[] = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     // Son 8 hafta (2 ay) hafta hafta
     for (let weekIndex = 7; weekIndex >= 0; weekIndex--) {
       const weekStartDate = new Date(today);
       weekStartDate.setDate(weekStartDate.getDate() - (weekIndex * 7));
-      
+
       const weekEndDate = new Date(weekStartDate);
       weekEndDate.setDate(weekEndDate.getDate() + 6);
-      
+
       let opened = 0;
       let resolved = 0;
-      
+
       // Haftanin 7 gunu icin ticket'lari cevapla
       for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
         const checkDate = new Date(weekStartDate);
         checkDate.setDate(checkDate.getDate() + dayOffset);
         const checkDatetime = checkDate.getTime();
-        
+
         for (const ticket of allTickets) {
           try {
             if (!ticket.createdDate) continue;
-            
+
             const createdDate = new Date(ticket.createdDate);
             createdDate.setHours(0, 0, 0, 0);
-            
+
             if (createdDate.getTime() === checkDatetime) {
               opened++;
               if (ticket.status === 4) {
@@ -465,20 +491,20 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
           }
         }
       }
-      
+
       // Label format: 01.02 - 07.02
       const startDay = String(weekStartDate.getDate()).padStart(2, '0');
       const startMonth = String(weekStartDate.getMonth() + 1).padStart(2, '0');
       const endDay = String(weekEndDate.getDate()).padStart(2, '0');
       const endMonth = String(weekEndDate.getMonth() + 1).padStart(2, '0');
-      
+
       data.push({
         label: `${startDay}.${startMonth} - ${endDay}.${endMonth}`,
         opened,
         resolved
       });
     }
-    
+
     return data;
   }
 
@@ -488,22 +514,22 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     today.setHours(0, 0, 0, 0);
     // JavaScript getDay(): 0=Pazar, 1=Pazartesi, 2=Salı, 3=Çarşamba, 4=Perşembe, 5=Cuma, 6=Cumartesi
     const days = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
-    
+
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
       const dateTime = date.getTime();
-      
+
       let opened = 0;
       let resolved = 0;
-      
+
       for (const ticket of allTickets) {
         try {
           if (!ticket.createdDate) continue;
-          
+
           const createdDate = new Date(ticket.createdDate);
           createdDate.setHours(0, 0, 0, 0);
-          
+
           if (createdDate.getTime() === dateTime) {
             opened++;
             if (ticket.status === 4) {
@@ -514,14 +540,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
           console.warn('Error parsing ticket date:', ticket.createdDate, e);
         }
       }
-      
+
       data.push({
         label: days[date.getDay()],
         opened,
         resolved
       });
     }
-    
+
     return data;
   }
 
@@ -529,31 +555,31 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     const data: ChartData[] = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     // Son 8 hafta (2 ay) hafta hafta
     for (let weekIndex = 7; weekIndex >= 0; weekIndex--) {
       const opened = Math.floor(Math.random() * 20) + 5;
       const resolved = Math.floor(Math.random() * 15) + 3;
-      
+
       // Label format: 01.02 - 07.02
       const weekStartDate = new Date(today);
       weekStartDate.setDate(weekStartDate.getDate() - (weekIndex * 7));
-      
+
       const weekEndDate = new Date(weekStartDate);
       weekEndDate.setDate(weekEndDate.getDate() + 6);
-      
+
       const startDay = String(weekStartDate.getDate()).padStart(2, '0');
       const startMonth = String(weekStartDate.getMonth() + 1).padStart(2, '0');
       const endDay = String(weekEndDate.getDate()).padStart(2, '0');
       const endMonth = String(weekEndDate.getMonth() + 1).padStart(2, '0');
-      
+
       data.push({
         label: `${startDay}.${startMonth} - ${endDay}.${endMonth}`,
         opened,
         resolved
       });
     }
-    
+
     return data;
   }
 
@@ -562,21 +588,21 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     const today = new Date();
     // JavaScript getDay(): 0=Pazar, 1=Pazartesi, 2=Salı, 3=Çarşamba, 4=Perşembe, 5=Cuma, 6=Cumartesi
     const days = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
-    
+
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
-      
+
       const opened = Math.floor(Math.random() * 15) + 3;
       const resolved = Math.floor(Math.random() * 12) + 2;
-      
+
       data.push({
         label: days[date.getDay()],
         opened,
         resolved
       });
     }
-    
+
     return data;
   }
 
@@ -637,13 +663,13 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   // Helpers to get raw DB color (value2) for templates
   getStatusColor(status: number): string | null {
     const n = Number(status);
-    const found = this.statusOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
+    const found = this.statusOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === String(status) || String(o.key) === String(status) || o.label === status);
     return found?.color ?? null;
   }
 
   getPriorityColor(priority: number): string | null {
     const n = Number(priority);
-    const found = this.priorityOptions.find((o: any) => Number(o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
+    const found = this.priorityOptions.find((o: any) => Number(o.numericKey ?? o.sortOrder ?? o.id) === n || String(o.id) === String(priority) || String(o.key) === String(priority) || o.label === priority);
     return found?.color ?? null;
   }
 }

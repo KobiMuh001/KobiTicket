@@ -25,5 +25,15 @@ namespace KobiMuhendislikTicket.Application.Interfaces
         /// Admin'e yeni ticket oluşturuldu bildirimi e-postası gönderir
         /// </summary>
         Task SendNewTicketEmailToAdminAsync(string ticketTitle, string tenantName, string priority, string description, int ticketId);
+
+        /// <summary>
+        /// Müşteriye ticket oluşturma onay e-postası gönderir
+        /// </summary>
+        Task SendTicketCreatedConfirmationEmailAsync(string toEmail, string toName, string ticketTitle, string ticketCode, int ticketId);
+
+        /// <summary>
+        /// Müşteriye ticket durum değişikliği hakkında e-posta gönderir
+        /// </summary>
+        Task SendTicketStatusChangedEmailAsync(string toEmail, string toName, string ticketTitle, string newStatus, int ticketId);
     }
 }

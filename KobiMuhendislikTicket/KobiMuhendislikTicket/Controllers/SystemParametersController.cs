@@ -42,6 +42,15 @@ namespace KobiMuhendislikTicket.Controllers
         }
 
         [Authorize(Roles = "Admin")]
+        [HttpGet("admin/group/{group}/key/{numericKey}")]
+        public async Task<IActionResult> GetByGroupAndKey(string group, int numericKey)
+        {
+            var item = await _service.GetByGroupAndKeyAsync(group, numericKey);
+            if (item == null) return NotFound(new { success = false, message = "Bulunamadı." });
+            return Ok(new { success = true, data = item });
+        }
+
+        [Authorize(Roles = "Admin")]
         [HttpPost("admin")]
         public async Task<IActionResult> Create([FromBody] CreateSystemParameterDto dto)
         {
@@ -60,11 +69,39 @@ namespace KobiMuhendislikTicket.Controllers
         }
 
         [Authorize(Roles = "Admin")]
+        [HttpPut("admin/group/{group}/key/{numericKey}")]
+        public async Task<IActionResult> UpdateByGroupAndKey(string group, int numericKey, [FromBody] UpdateSystemParameterDto dto)
+        {
+            var (success, message) = await _service.UpdateByGroupAndKeyAsync(group, numericKey, dto);
+            if (!success) return BadRequest(new { success = false, message });
+            return Ok(new { success = true, message });
+        }
+
+        [Authorize(Roles = "Admin")]
         [HttpDelete("admin/{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             var (success, message) = await _service.DeleteAsync(id);
             if (!success) return NotFound(new { success = false, message });
+            return Ok(new { success = true, message });
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("admin/group/{group}/key/{numericKey}")]
+        public async Task<IActionResult> DeleteByGroupAndKey(string group, int numericKey)
+        {
+            var (success, message) = await _service.DeleteByGroupAndKeyAsync(group, numericKey);
+            if (!success) return NotFound(new { success = false, message });
+            return Ok(new { success = true, message });
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut("admin/group/{group}/reorder")]
+        public async Task<IActionResult> ReorderGroup(string group, [FromBody] List<int> orderedNumericKeys)
+        {
+            if (orderedNumericKeys == null) return BadRequest(new { success = false, message = "Ordered list is required." });
+            var (success, message) = await _service.ReorderGroupAsync(group, orderedNumericKeys);
+            if (!success) return BadRequest(new { success = false, message });
             return Ok(new { success = true, message });
         }
     }
