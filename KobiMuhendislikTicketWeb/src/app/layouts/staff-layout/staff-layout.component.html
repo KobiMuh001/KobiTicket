@@ -6,16 +6,31 @@
         <div class="logo">
           <img src="assets/images/KobiLogo.png" alt="Kobi Mühendislik" class="logo-img" />
         </div>
+        <button class="sidebar-toggle" (click)="toggleSidebar()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            @if (isSidebarCollapsed) {
+              <polyline points="9 18 15 12 9 6"/>
+            } @else {
+              <polyline points="15 18 9 12 15 6"/>
+            }
+          </svg>
+        </button>
+      } @else {
+        <div class="logo-collapsed">
+          <img src="assets/images/KobiUfakLogo.png" alt="Kobi Mühendislik" class="logo-small" />
+          <div class="collapse-toggle-wrap">
+            <button class="sidebar-toggle collapsed" (click)="toggleSidebar()" title="Genişlet">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                @if (isSidebarCollapsed) {
+                  <polyline points="9 18 15 12 9 6"/>
+                } @else {
+                  <polyline points="15 18 9 12 15 6"/>
+                }
+              </svg>
+            </button>
+          </div>
+        </div>
       }
-      <button class="sidebar-toggle" (click)="toggleSidebar()">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          @if (isSidebarCollapsed) {
-            <polyline points="9 18 15 12 9 6"/>
-          } @else {
-            <polyline points="15 18 9 12 15 6"/>
-          }
-        </svg>
-      </button>
     </div>
 
     <nav class="sidebar-nav">

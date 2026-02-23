@@ -57,6 +57,48 @@
   .sidebar-collapsed & {
     justify-content: center;
   }
+
+  .logo-collapsed {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 0.5rem 0;
+
+    .logo-small {
+      width: 40px;
+      height: auto;
+      object-fit: contain;
+      display: block;
+    }
+
+    .collapse-toggle-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .sidebar-toggle.collapsed {
+      width: 36px;
+      height: 36px;
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition-fast);
+
+      &:hover {
+        background: var(--primary-light);
+        color: var(--primary-color);
+      }
+    }
+  }
 }
 
 .logo {

@@ -240,12 +240,34 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.dashboardService.getAllTicketsPage(1, 50).subscribe({
       next: (response: any) => {
         let tickets: TicketListItem[] = [];
-        if (response.items) {
+
+        // Support multiple possible response shapes from backend / proxies
+        // 1) Paginated: { items: [...] }
+        // 2) Wrapped: { data: { items: [...] } } or { data: [...] }
+        // 3) Raw array: [ ... ]
+        // 4) Direct paged object returned as 'data' (e.g., Data property)
+
+        if (response?.items && Array.isArray(response.items)) {
           tickets = response.items;
+        } else if (response?.data && Array.isArray(response.data)) {
+          tickets = response.data;
+        } else if (response?.data?.items && Array.isArray(response.data.items)) {
+          tickets = response.data.items;
+        } else if (response?.data?.data && Array.isArray(response.data.data)) {
+          tickets = response.data.data;
         } else if (Array.isArray(response)) {
           tickets = response;
+        } else if (response) {
+          // Try to find an array property on the object
+          const arrProp = Object.keys(response).find(k => Array.isArray((response as any)[k]));
+          if (arrProp) tickets = (response as any)[arrProp];
         }
-        this.recentTickets = tickets.slice(0, 5); // Son 5 ticket
+
+        if (!tickets.length) {
+          console.warn('Dashboard: No recent tickets parsed from response, raw:', response);
+        }
+
+        this.recentTickets = (tickets || []).slice(0, 5); // Son 5 ticket
         this.isLoading = false;
       },
       error: () => {
@@ -408,15 +430,22 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       next: (response: any) => {
         console.log('Chart data raw response:', response);
 
-        // Response formatını kontrol et ve parse et
+        // Response formatını kontrol et ve parse et (support multiple shapes)
         let allTickets: any[] = [];
 
         if (Array.isArray(response)) {
           allTickets = response;
-        } else if (response?.data && Array.isArray(response.data)) {
-          allTickets = response.data;
         } else if (response?.items && Array.isArray(response.items)) {
           allTickets = response.items;
+        } else if (response?.data && Array.isArray(response.data)) {
+          allTickets = response.data;
+        } else if (response?.data?.items && Array.isArray(response.data.items)) {
+          allTickets = response.data.items;
+        } else if (response?.data?.data && Array.isArray(response.data.data)) {
+          allTickets = response.data.data;
+        } else if (response) {
+          const arrProp = Object.keys(response).find(k => Array.isArray((response as any)[k]));
+          if (arrProp) allTickets = (response as any)[arrProp];
         }
 
         console.log('Chart data parsed tickets count:', allTickets.length);
