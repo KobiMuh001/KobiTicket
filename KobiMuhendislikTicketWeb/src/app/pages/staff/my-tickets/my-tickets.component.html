@@ -1,7 +1,7 @@
 <div class="tickets-page">
   <div class="page-header">
     <div class="header-left">
-      <h1 class="page-title">Ticketlarım</h1>
+      <h1 class="page-title">Taleplerim</h1>
       <p class="page-subtitle">Size atanmış tüm destek taleplerini yönetin.</p>
     </div>
     <div class="header-right">
@@ -25,7 +25,7 @@
         </svg>
         <input 
           type="text" 
-          placeholder="Ticket ara..." 
+          placeholder="Talep ara..." 
           [(ngModel)]="searchTerm"
           (input)="applyFilters()"
         />
@@ -58,14 +58,14 @@
     </div>
     
     <div class="results-info">
-      <span>Sayfa {{ currentPage }} / {{ totalPages }} (Toplamda {{ totalCount }} ticket)</span>
+      <span>Sayfa {{ currentPage }} / {{ totalPages }} (Toplamda {{ totalCount }} talep)</span>
     </div>
   </div>
 
   <!-- Content -->
   <div *ngIf="isLoading" class="loading-container">
     <div class="spinner"></div>
-    <p>Ticketlar yükleniyor...</p>
+    <p>Talepler yükleniyor...</p>
   </div>
 
   <div *ngIf="!isLoading && error" class="alert alert-error">
@@ -86,8 +86,8 @@
       <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
       <polyline points="14 2 14 8 20 8"/>
     </svg>
-    <h3>Ticket bulunamadı</h3>
-    <p>Arama kriterlerinize uygun ticket bulunmuyor.</p>
+    <h3>Talep bulunamadı</h3>
+    <p>Arama kriterlerinize uygun talep bulunmuyor.</p>
   </div>
 
   <div *ngIf="!isLoading && !error && filteredTickets.length > 0" class="tickets-table-card">
@@ -248,11 +248,11 @@
     <div *ngIf="showReleaseConfirm" class="release-overlay" (click)="closeReleaseConfirm()">
       <div class="release-card card" (click)="$event.stopPropagation()">
         <div class="card-header">
-          <h3>Ticketı Bırak</h3>
+          <h3>Talebi Bırak</h3>
           <button class="modal-close" (click)="closeReleaseConfirm()">×</button>
         </div>
         <div class="card-body">
-          <p>Bu ticketı bırakmak istediğinize emin misiniz?</p>
+          <p>Bu talebi bırakmak istediğinize emin misiniz?</p>
           <p *ngIf="ticketToReleaseTitle"><strong>{{ ticketToReleaseTitle }}</strong></p>
         </div>
         <div class="card-actions">

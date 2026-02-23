@@ -10,7 +10,7 @@
           </svg>
         </button>
         <div>
-          <h1 class="page-title">{{ staffId ? (staffName || 'Personel') + ' - Ticketlar' : 'Ticketlar' }}</h1>
+          <h1 class="page-title">{{ staffId ? (staffName || 'Personel') + ' - Talepler' : 'Talepler' }}</h1>
           <p class="page-subtitle">{{ staffId ? 'Bu personele atanan tüm destek taleplerini görüntüleyin.' : 'Tüm destek
             taleplerini görüntüleyin ve yönetin.' }}</p>
         </div>
@@ -35,7 +35,7 @@
           <circle cx="11" cy="11" r="8" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
-        <input type="text" placeholder="Ticket ara..." [(ngModel)]="searchTerm" (input)="applyFilters()" />
+        <input type="text" placeholder="Talep ara..." [(ngModel)]="searchTerm" (input)="applyFilters()" />
       </div>
 
       <div class="filter-group">
@@ -66,14 +66,14 @@
     </div>
 
     <div class="results-info">
-      <span>Sayfa {{ currentPage }} / {{ totalPages }} (Toplamda {{ totalCount }} ticket)</span>
+      <span>Sayfa {{ currentPage }} / {{ totalPages }} (Toplamda {{ totalCount }} Talep)</span>
     </div>
   </div>
 
   <!-- Content -->
   <div *ngIf="isLoading" class="loading-container">
     <div class="spinner"></div>
-    <p>Ticketlar yükleniyor...</p>
+    <p>Talepler yükleniyor...</p>
   </div>
 
   <div *ngIf="!isLoading && errorMessage" class="alert alert-error">
@@ -90,8 +90,8 @@
       <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
       <polyline points="14 2 14 8 20 8" />
     </svg>
-    <h3>Ticket bulunamadı</h3>
-    <p>Arama kriterlerinize uygun ticket bulunmuyor.</p>
+    <h3>Talep bulunamadı</h3>
+    <p>Arama kriterlerinize uygun talep bulunmuyor.</p>
   </div>
 
   <div *ngIf="!isLoading && !errorMessage && filteredTickets.length > 0" class="tickets-table-card">

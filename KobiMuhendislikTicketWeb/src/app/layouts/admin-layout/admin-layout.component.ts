@@ -34,7 +34,7 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
       active: true
     },
     {
-      title: 'Ticketlar',
+      title: 'Talepler',
       icon: 'ticket',
       route: '/admin/tickets',
       active: false

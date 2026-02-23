@@ -54,7 +54,7 @@
             <span class="value">{{ profile.phone }}</span>
           </div>
           <div class="info-item">
-            <span class="label">Maksimum Ticket</span>
+            <span class="label">Maksimum Talep</span>
             <span class="value">{{ profile.maxConcurrentTickets }}</span>
           </div>
           <div class="info-item">
@@ -126,7 +126,7 @@
       <div class="stats-grid">
         <div class="stat-item">
           <span class="stat-value">{{ workload.assignedTickets }}</span>
-          <span class="stat-label">Aktif Ticket</span>
+          <span class="stat-label">Aktif Talep</span>
         </div>
         <div class="stat-item">
           <span class="stat-value">{{ workload.maxConcurrentTickets }}</span>
@@ -153,15 +153,15 @@
 
       <div class="ticket-summary">
         <div class="summary-row">
-          <span>Bekleyen Ticketlar</span>
+          <span>Bekleyen Talepler</span>
           <span class="count open">{{ workload.openTickets }}</span>
         </div>
         <div class="summary-row">
-          <span>İşlemdeki Ticketlar</span>
+          <span>İşlemdeki Talepler</span>
           <span class="count processing">{{ workload.processingTickets }}</span>
         </div>
         <div class="summary-row">
-          <span>Bugün Çözülen</span>
+          <span>Bugün Çözülen Talepler</span>
           <span class="count resolved">{{ workload.resolvedToday }}</span>
         </div>
       </div>

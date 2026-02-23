@@ -271,7 +271,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         this.isLoading = false;
       },
       error: () => {
-        this.errorMessage = 'Ticketlar yüklenirken hata oluştu.';
+        this.errorMessage = 'Talepler yüklenirken hata oluştu.';
         this.isLoading = false;
       }
     });
@@ -291,7 +291,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
     this.stats = [
       {
-        title: 'Toplam Ticket',
+        title: 'Toplam Talep',
         value: data.totalTickets,
         icon: 'ticket',
         color: 'primary',
@@ -299,7 +299,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         changeType: 'increase'
       },
       {
-        title: 'Açık Ticketlar',
+        title: 'Açık Talepler',
         value: data.openTickets,
         icon: 'open',
         color: 'warning',
@@ -307,7 +307,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         changeType: 'increase'
       },
       {
-        title: 'İşlemdeki Ticketlar',
+        title: 'İşlemdeki Talepler',
         value: data.processingTickets || 0,
         icon: 'processing',
         color: 'orange',
@@ -315,7 +315,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         changeType: 'increase'
       },
       {
-        title: 'Çözülen Ticketlar',
+        title: 'Çözülen Talepler',
         value: data.resolvedTickets,
         icon: 'resolved',
         color: 'success',
@@ -424,8 +424,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadChartData(): void {
-    // Grafik verisi için daha fazla ticket çek (örn: 1000)
-    // getAllTickets varsayılan olarak 20 dönüyor olabilir, GetAllTicketsPage ile büyük bir limit belirtiyoruz.
+    
     this.dashboardService.getAllTicketsPage(1, 1000).subscribe({
       next: (response: any) => {
         console.log('Chart data raw response:', response);
