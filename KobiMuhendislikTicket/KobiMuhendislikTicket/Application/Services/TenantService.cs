@@ -35,6 +35,9 @@ namespace KobiMuhendislikTicket.Application.Services
                 if (existingUsername != null) return "Bu kullanıcı adı zaten sistemde kayıtlı.";
             }
 
+            if (!IsPasswordStrong(dto.Password))
+                return "Şifre en az 8 karakter olmalı, büyük ve küçük harf içermelidir.";
+
             var tenant = new Tenant
             {
                 CompanyName = dto.CompanyName,
@@ -47,6 +50,17 @@ namespace KobiMuhendislikTicket.Application.Services
 
             await _tenantRepository.AddAsync(tenant);
             return "Ok";
+        }
+
+        private static bool IsPasswordStrong(string password)
+        {
+            if (string.IsNullOrWhiteSpace(password)) return false;
+            if (password.Length < 8) return false;
+            
+            bool hasUpper = password.Any(char.IsUpper);
+            bool hasLower = password.Any(char.IsLower);
+            
+            return hasUpper && hasLower;
         }
 
         
@@ -121,8 +135,8 @@ namespace KobiMuhendislikTicket.Application.Services
             if (string.IsNullOrWhiteSpace(dto.NewPassword))
                 return Result.Failure("Yeni şifre gereklidir.");
 
-            if (dto.NewPassword.Length < 6)
-                return Result.Failure("Yeni şifre en az 6 karakter olmalıdır.");
+            if (!IsPasswordStrong(dto.NewPassword))
+                return Result.Failure("Şifre en az 8 karakter olmalı, büyük ve küçük harf içermelidir.");
 
             if (dto.NewPassword != dto.ConfirmNewPassword)
                 return Result.Failure("Yeni şifreler eşleşmiyor.");
@@ -150,8 +164,8 @@ namespace KobiMuhendislikTicket.Application.Services
             if (string.IsNullOrWhiteSpace(newPassword))
                 return Result.Failure("Yeni şifre gereklidir.");
 
-            if (newPassword.Length < 6)
-                return Result.Failure("Şifre en az 6 karakter olmalıdır.");
+            if (!IsPasswordStrong(newPassword))
+                return Result.Failure("Şifre en az 8 karakter olmalı, büyük ve küçük harf içermelidir.");
 
             var tenant = await _tenantRepository.GetByIdAsync(tenantId);
             if (tenant == null)

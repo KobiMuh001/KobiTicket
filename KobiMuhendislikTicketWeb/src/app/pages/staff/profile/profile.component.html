@@ -6,16 +6,16 @@
 
   <!-- Alerts -->
   @if (error) {
-    <div class="alert alert-error">
-      {{ error }}
-      <button class="close-btn" (click)="error = null">×</button>
-    </div>
+  <div class="alert alert-error">
+    {{ error }}
+    <button class="close-btn" (click)="error = null">×</button>
+  </div>
   }
 
   @if (successMessage) {
-    <div class="alert alert-success">
-      {{ successMessage }}
-    </div>
+  <div class="alert alert-success">
+    {{ successMessage }}
+  </div>
   }
 
   <div *ngIf="isLoading" class="loading">
@@ -26,103 +26,95 @@
   <div *ngIf="!isLoading && profile" class="content-grid">
     <!-- Profile Card / Edit Form -->
     @if (!isEditMode) {
-      <div class="profile-card">
-        <div class="card-header">
-          <div>
-            <div class="avatar">
-              {{ profile.fullName?.charAt(0).toUpperCase() }}
-            </div>
-            <h2>{{ profile.fullName }}</h2>
-            <p class="department">{{ profile.department || 'Departman belirtilmemiş' }}</p>
+    <div class="profile-card">
+      <div class="card-header">
+        <div>
+          <div class="avatar">
+            {{ profile.fullName?.charAt(0).toUpperCase() }}
           </div>
-          <button class="btn btn-primary" (click)="enterEditMode()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-            Düzenle
-          </button>
+          <h2>{{ profile.fullName }}</h2>
+          <p class="department">{{ profile.department || 'Departman belirtilmemiş' }}</p>
         </div>
-        
-        <div class="info-list">
-          <div class="info-item">
-            <span class="label">E-posta</span>
-            <span class="value">{{ profile.email }}</span>
-          </div>
-          <div class="info-item" *ngIf="profile.phone">
-            <span class="label">Telefon</span>
-            <span class="value">{{ profile.phone }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Maksimum Talep</span>
-            <span class="value">{{ profile.maxConcurrentTickets }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Durum</span>
-            <span class="value status" [class.active]="profile.isActive">
-              {{ profile.isActive ? 'Aktif' : 'Pasif' }}
-            </span>
-          </div>
-        </div>
+        <button class="btn btn-primary" (click)="enterEditMode()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+          Düzenle
+        </button>
+      </div>
 
-        <div class="card-footer">
-          <button class="btn btn-outline" (click)="openPasswordModal()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-            </svg>
-            Şifre Değiştir
-          </button>
+      <div class="info-list">
+        <div class="info-item">
+          <span class="label">E-posta</span>
+          <span class="value">{{ profile.email }}</span>
+        </div>
+        <div class="info-item" *ngIf="profile.phone">
+          <span class="label">Telefon</span>
+          <span class="value">{{ profile.phone }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Maksimum Talep</span>
+          <span class="value">{{ profile.maxConcurrentTickets }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Durum</span>
+          <span class="value status" [class.active]="profile.isActive">
+            {{ profile.isActive ? 'Aktif' : 'Pasif' }}
+          </span>
         </div>
       </div>
+
+      <div class="card-footer">
+        <button class="btn btn-outline" (click)="openPasswordModal()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          Şifre Değiştir
+        </button>
+      </div>
+    </div>
     } @else {
-      <div class="profile-card edit-mode">
-        <div class="card-header">
-          <h3>Profili Düzenle</h3>
+    <div class="profile-card edit-mode">
+      <div class="card-header">
+        <h3>Profili Düzenle</h3>
+      </div>
+
+      <div class="form-body">
+        <div class="form-group">
+          <label for="fullName">Ad Soyad</label>
+          <input type="text" id="fullName" class="form-input" [(ngModel)]="editFormData.fullName"
+            placeholder="Adınız ve soyadınız">
         </div>
 
-        <div class="form-body">
-          <div class="form-group">
-            <label for="fullName">Ad Soyad</label>
-            <input 
-              type="text" 
-              id="fullName" 
-              class="form-input"
-              [(ngModel)]="editFormData.fullName"
-              placeholder="Adınız ve soyadınız">
-          </div>
-
-          <div class="form-group">
-            <label for="phone">Telefon</label>
-            <input 
-              type="tel" 
-              id="phone" 
-              class="form-input"
-              [(ngModel)]="editFormData.phone"
-              placeholder="Telefon numarası">
-          </div>
-        </div>
-
-        <div class="form-footer">
-          <button class="btn btn-outline" (click)="cancelEdit()" [disabled]="isSaving">
-            İptal
-          </button>
-          <button class="btn btn-primary" (click)="saveProfile()" [disabled]="isSaving">
-            @if (isSaving) {
-              <span class="spinner-small"></span>
-              Kaydediliyor...
-            } @else {
-              Kaydet
-            }
-          </button>
+        <div class="form-group">
+          <label for="phone">Telefon</label>
+          <input type="tel" id="phone" class="form-input" [(ngModel)]="editFormData.phone"
+            placeholder="Telefon numarası">
         </div>
       </div>
+
+      <div class="form-footer">
+        <button class="btn btn-outline" (click)="cancelEdit()" [disabled]="isSaving">
+          İptal
+        </button>
+        <button class="btn btn-primary" (click)="saveProfile()" [disabled]="isSaving">
+          @if (isSaving) {
+          <span class="spinner-small"></span>
+          Kaydediliyor...
+          } @else {
+          Kaydet
+          }
+        </button>
+      </div>
+    </div>
     }
 
     <!-- Stats Card -->
     <div class="stats-card" *ngIf="workload">
       <h3>İş Yükü Özeti</h3>
-      
+
       <div class="stats-grid">
         <div class="stat-item">
           <span class="stat-value">{{ workload.assignedTickets }}</span>
@@ -145,8 +137,7 @@
         </div>
         <div class="bar-track">
           <div class="bar-fill" [style.width.%]="workload.workloadPercentage"
-               [class.warning]="workload.workloadPercentage > 70"
-               [class.danger]="workload.workloadPercentage > 90">
+            [class.warning]="workload.workloadPercentage > 70" [class.danger]="workload.workloadPercentage > 90">
           </div>
         </div>
       </div>
@@ -170,94 +161,74 @@
 
   <!-- Password Change Modal -->
   @if (showPasswordModal) {
-    <div class="modal-overlay" (click)="closePasswordModal()">
-      <div class="modal-content" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h3>Şifre Değiştir</h3>
-          <button class="modal-close" (click)="closePasswordModal()">×</button>
+  <div class="modal-overlay" (click)="closePasswordModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Şifre Değiştir</h3>
+        <button class="modal-close" (click)="closePasswordModal()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="currentPassword">Mevcut Şifre *</label>
+          <input type="password" id="currentPassword" class="form-input" [(ngModel)]="passwordForm.currentPassword"
+            (input)="validatePassword()" placeholder="Mevcut şifrenizi girin">
+          @if (hasPasswordError('currentPassword')) {
+          <span class="error-message">{{ getPasswordError('currentPassword') }}</span>
+          }
         </div>
 
-        <div class="modal-body">
-          <div class="form-group">
-            <label for="currentPassword">Mevcut Şifre *</label>
-            <input 
-              type="password" 
-              id="currentPassword" 
-              class="form-input"
-              [(ngModel)]="passwordForm.currentPassword"
-              (input)="validatePassword()"
-              placeholder="Mevcut şifrenizi girin">
-            @if (hasPasswordError('currentPassword')) {
-              <span class="error-message">{{ getPasswordError('currentPassword') }}</span>
-            }
-          </div>
+        <div class="form-group">
+          <label for="newPassword">Yeni Şifre *</label>
+          <input type="password" id="newPassword" class="form-input" [(ngModel)]="passwordForm.newPassword"
+            (input)="validatePassword()" placeholder="Yeni şifre belirleyin">
+          @if (hasPasswordError('newPassword')) {
+          <span class="error-message">{{ getPasswordError('newPassword') }}</span>
+          }
 
-          <div class="form-group">
-            <label for="newPassword">Yeni Şifre *</label>
-            <input 
-              type="password" 
-              id="newPassword" 
-              class="form-input"
-              [(ngModel)]="passwordForm.newPassword"
-              (input)="validatePassword()"
-              placeholder="Yeni şifre belirleyin">
-            @if (hasPasswordError('newPassword')) {
-              <span class="error-message">{{ getPasswordError('newPassword') }}</span>
-            }
-
-            <div class="password-requirements">
-              <p class="requirement-title">Şifre gereksinimleri:</p>
-              <ul>
-                <li [class.met]="hasUppercase()">
-                  <span class="check">✓</span> En az bir büyük harf (A-Z)
-                </li>
-                <li [class.met]="hasLowercase()">
-                  <span class="check">✓</span> En az bir küçük harf (a-z)
-                </li>
-                <li [class.met]="hasNumber()">
-                  <span class="check">✓</span> En az bir sayı (0-9)
-                </li>
-                <li [class.met]="hasMinLength()">
-                  <span class="check">✓</span> Minimum 6 karakter
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="confirmPassword">Şifreyi Onayla *</label>
-            <input 
-              type="password" 
-              id="confirmPassword" 
-              class="form-input"
-              [(ngModel)]="passwordForm.confirmPassword"
-              (input)="validatePassword()"
-              placeholder="Şifreyi tekrar girin">
-            @if (hasPasswordError('confirmPassword')) {
-              <span class="error-message">{{ getPasswordError('confirmPassword') }}</span>
-            } @else if (passwordsMatch() && passwordForm.newPassword.length > 0) {
-              <span class="success-message">✓ Şifreler eşleşiyor</span>
-            }
+          <div class="password-requirements">
+            <p class="requirement-title">Şifre gereksinimleri:</p>
+            <ul>
+              <li [class.met]="hasUppercase()">
+                <span class="check">✓</span> En az bir büyük harf (A-Z)
+              </li>
+              <li [class.met]="hasLowercase()">
+                <span class="check">✓</span> En az bir küçük harf (a-z)
+              </li>
+              <li [class.met]="hasMinLength()">
+                <span class="check">✓</span> Minimum 8 karakter
+              </li>
+            </ul>
           </div>
         </div>
 
-        <div class="modal-footer">
-          <button class="btn btn-outline" (click)="closePasswordModal()" [disabled]="isSaving">
-            İptal
-          </button>
-          <button 
-            class="btn btn-primary" 
-            (click)="changePassword()" 
-            [disabled]="isSaving || !passwordsMatch() || hasPasswordErrors()">
-            @if (isSaving) {
-              <span class="spinner-small"></span>
-              İşleniyor...
-            } @else {
-              Şifreyi Değiştir
-            }
-          </button>
+        <div class="form-group">
+          <label for="confirmPassword">Şifreyi Onayla *</label>
+          <input type="password" id="confirmPassword" class="form-input" [(ngModel)]="passwordForm.confirmPassword"
+            (input)="validatePassword()" placeholder="Şifreyi tekrar girin">
+          @if (hasPasswordError('confirmPassword')) {
+          <span class="error-message">{{ getPasswordError('confirmPassword') }}</span>
+          } @else if (passwordsMatch() && passwordForm.newPassword.length > 0) {
+          <span class="success-message">✓ Şifreler eşleşiyor</span>
+          }
         </div>
       </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closePasswordModal()" [disabled]="isSaving">
+          İptal
+        </button>
+        <button class="btn btn-primary" (click)="changePassword()"
+          [disabled]="isSaving || !passwordsMatch() || hasPasswordErrors()">
+          @if (isSaving) {
+          <span class="spinner-small"></span>
+          İşleniyor...
+          } @else {
+          Şifreyi Değiştir
+          }
+        </button>
+      </div>
     </div>
+  </div>
   }
 </div>
