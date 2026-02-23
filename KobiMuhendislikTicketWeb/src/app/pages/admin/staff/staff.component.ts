@@ -53,7 +53,7 @@ export class StaffComponent implements OnInit {
   itemsPerPage = 10;
   totalPages = 1;
 
-  constructor(private staffService: StaffService, private paramSvc: SystemParameterService, private router: Router) {}
+  constructor(private staffService: StaffService, private paramSvc: SystemParameterService, private router: Router) { }
 
   goToStaffTickets(staffId: number | string): void {
     const id = typeof staffId === 'number' ? staffId : Number(staffId);
@@ -92,7 +92,7 @@ export class StaffComponent implements OnInit {
               }));
             }
           },
-          error: () => {}
+          error: () => { }
         });
       },
       error: () => {
@@ -334,9 +334,12 @@ export class StaffComponent implements OnInit {
       return;
     }
 
-    // Password validation
-    if (this.newStaff.password.length < 6) {
-      this.errorMessage = 'Şifre en az 6 karakter olmalıdır.';
+    // Password validation: min 8 chars, at least one uppercase and one lowercase
+    const password = this.newStaff.password || '';
+    const hasUpper = /[A-Z]/.test(password);
+    const hasLower = /[a-z]/.test(password);
+    if (password.length < 8 || !hasUpper || !hasLower) {
+      this.errorMessage = 'Şifre en az 8 karakter olmalı, büyük ve küçük harf içermelidir.';
       return;
     }
 
