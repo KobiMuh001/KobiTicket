@@ -238,13 +238,23 @@ export class TicketDetailComponent implements OnInit, OnDestroy, AfterViewChecke
           console.log('Staff-Detail: Received comment from SignalR:', comment);
          
           if (comment.ticketId === this.ticketId) {
-            
+            // Ignore comments sent by the currently logged-in staff member
+            try {
+              const myName = this.staffProfile?.fullName?.toString().trim().toLowerCase();
+              const authorName = (comment.authorName || '').toString().trim().toLowerCase();
+              if (myName && authorName && myName === authorName) {
+                console.log('Staff-Detail: Ignoring own comment notification');
+                return;
+              }
+            } catch (e) {
+              // ignore any comparison errors and proceed
+            }
+
             const exists = this.comments.some(c => c.id === comment.id);
             if (!exists) {
               console.log('Staff-Detail: Adding new comment to list');
               this.comments.push(comment);
               this.shouldScrollToBottom = true;
-              
               this.loadHistory();
             } else {
               console.log('Staff-Detail: Comment already exists, skipping');

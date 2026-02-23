@@ -87,10 +87,16 @@ export class DashboardService {
   }
 
   getAllTicketsPage(page: number = 1, pageSize: number = 20, assignedStaffId?: number): Observable<PaginatedTickets> {
-    let url = `${this.apiUrl}/admin/tickets?page=${page}&pageSize=${pageSize}`;
+    // If an assignedStaffId filter is requested use the Admin controller endpoint
+    // which supports server-side filtering by AssignedStaffId. Otherwise fall
+    // back to the legacy admin paged endpoint used elsewhere.
     if (assignedStaffId) {
-      url += `&assignedStaffId=${assignedStaffId}`;
+      const url = `${this.apiUrl}/admin/tickets?page=${page}&pageSize=${pageSize}&assignedStaffId=${assignedStaffId}`;
+      return this.http.get<PaginatedTickets>(url);
     }
+
+    // Backend exposes admin paged tickets at `/api/tickets/admin/all-tickets` for global lists
+    const url = `${this.apiUrl}/tickets/admin/all-tickets?page=${page}&pageSize=${pageSize}`;
     return this.http.get<PaginatedTickets>(url);
   }
 }

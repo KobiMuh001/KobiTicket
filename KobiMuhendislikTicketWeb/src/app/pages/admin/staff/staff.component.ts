@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { StaffService, Staff, StaffWorkload, CreateStaffDto } from '../../../core/services/staff.service';
 import { SystemParameterService } from '../../../core/services/system-parameter.service';
@@ -53,7 +53,13 @@ export class StaffComponent implements OnInit {
   itemsPerPage = 10;
   totalPages = 1;
 
-  constructor(private staffService: StaffService, private paramSvc: SystemParameterService) {}
+  constructor(private staffService: StaffService, private paramSvc: SystemParameterService, private router: Router) {}
+
+  goToStaffTickets(staffId: number | string): void {
+    const id = typeof staffId === 'number' ? staffId : Number(staffId);
+    if (!Number.isFinite(id)) return;
+    this.router.navigate(['/admin/staff', id, 'tickets']);
+  }
 
   ngOnInit(): void {
     this.loadStaff();
