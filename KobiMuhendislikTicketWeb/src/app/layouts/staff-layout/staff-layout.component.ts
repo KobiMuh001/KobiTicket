@@ -31,12 +31,12 @@ export class StaffLayoutComponent implements OnInit, OnDestroy {
       route: '/staff/dashboard'
     },
     {
-      title: 'Ticketlarım',
+      title: 'Taleplerim',
       icon: 'my-tickets',
       route: '/staff/my-tickets'
     },
     {
-      title: 'Açık Ticketlar',
+      title: 'Açık Talepler',
       icon: 'open-tickets',
       route: '/staff/open-tickets'
     },

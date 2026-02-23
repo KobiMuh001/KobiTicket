@@ -520,13 +520,11 @@ namespace KobiMuhendislikTicket.Application.Services
             }
         }
 
-        // Resolve a user-friendly label for lookup groups (TicketStatus, TicketPriority, ...)
-        // Preference order: NumericKey -> SortOrder -> Id. Returns null if not found.
+        
         private async Task<string?> ResolveLookupLabelAsync(string group, int numericValue)
         {
             try
             {
-                // Prefer matching NumericKey only. If not found, allow matching by Id as a last resort.
                 var param = await _context.SystemParameters
                     .FirstOrDefaultAsync(p => p.Group == group && p.NumericKey.HasValue && p.NumericKey.Value == numericValue);
 

@@ -34,12 +34,12 @@ export class CustomerLayoutComponent implements OnInit, OnDestroy {
       route: '/customer/dashboard'
     },
     {
-      title: 'Ticketlarım',
+      title: 'Taleplerim',
       icon: 'ticket',
       route: '/customer/tickets'
     },
     {
-      title: 'Varlıklarım',
+      title: 'Ürünlerim',
       icon: 'assets',
       route: '/customer/assets'
     },
