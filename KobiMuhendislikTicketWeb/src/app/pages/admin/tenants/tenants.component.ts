@@ -16,7 +16,7 @@ export class TenantsComponent implements OnInit {
   filteredTenants: Tenant[] = [];
   isLoading = true;
   errorMessage = '';
-  
+
   // Filters
   searchTerm = '';
 
@@ -44,7 +44,7 @@ export class TenantsComponent implements OnInit {
   };
   createError = '';
 
-  constructor(private tenantService: TenantService) {}
+  constructor(private tenantService: TenantService) { }
 
   ngOnInit(): void {
     this.loadTenants();
@@ -86,9 +86,9 @@ export class TenantsComponent implements OnInit {
       this.filteredTenants = this.tenants;
       return;
     }
-    
+
     const search = this.searchTerm.toLowerCase();
-    this.filteredTenants = this.tenants.filter(tenant => 
+    this.filteredTenants = this.tenants.filter(tenant =>
       tenant.companyName?.toLowerCase().includes(search) ||
       tenant.email?.toLowerCase().includes(search) ||
       tenant.username?.toLowerCase().includes(search) ||
@@ -123,7 +123,7 @@ export class TenantsComponent implements OnInit {
 
   confirmDelete(): void {
     if (!this.tenantToDelete) return;
-    
+
     this.isDeleting = true;
     this.tenantService.deleteTenant(this.tenantToDelete.id, this.forceDelete).subscribe({
       next: () => {
@@ -161,6 +161,15 @@ export class TenantsComponent implements OnInit {
       this.createError = 'Lütfen zorunlu alanları doldurun.';
       return;
     }
+
+    // Password validation: min 8 chars, at least one uppercase and one lowercase
+    const password = this.createForm.password || '';
+    const hasUpper = /[A-Z]/.test(password);
+    const hasLower = /[a-z]/.test(password);
+    if (password.length < 8 || !hasUpper || !hasLower) {
+      this.createError = 'Şifre en az 8 karakter olmalı, büyük ve küçük harf içermelidir.';
+      return;
+    }
     // Tax number must be exactly 10 digits
     const taxDigits = (this.createForm.taxNumber || '').toString().replace(/\D/g, '');
     if (taxDigits.length !== 10) {
@@ -170,7 +179,7 @@ export class TenantsComponent implements OnInit {
     // store cleaned digits
     this.createForm.taxNumber = taxDigits;
 
-    
+
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(this.createForm.email)) {
       this.createError = 'Geçerli bir e-posta adresi girin. (örn: ornek@firma.com)';
@@ -221,13 +230,13 @@ export class TenantsComponent implements OnInit {
   formatPhoneNumber(event: Event): void {
     const input = event.target as HTMLInputElement;
     let value = input.value.replace(/\D/g, ''); // Sadece rakamları al
-    
+
     if (value.length > 11) {
       value = value.substring(0, 11);
     }
-    
+
     let formatted = '';
-    
+
     if (value.length > 0) {
       formatted = value.substring(0, 1); // 0
     }
@@ -243,7 +252,7 @@ export class TenantsComponent implements OnInit {
     if (value.length > 9) {
       formatted += ' ' + value.substring(9, 11); // XX
     }
-    
+
     this.createForm.phoneNumber = formatted;
     input.value = formatted;
   }
@@ -254,6 +263,6 @@ export class TenantsComponent implements OnInit {
     const digits = (input.value || '').toString().replace(/\D/g, '').slice(0, 10);
     this.createForm.taxNumber = digits;
     // reflect immediately in the input so user cannot type past 10 digits
-    try { input.value = digits; } catch (e) {}
+    try { input.value = digits; } catch (e) { }
   }
 }

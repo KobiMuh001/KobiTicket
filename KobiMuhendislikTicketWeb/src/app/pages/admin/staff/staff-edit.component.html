@@ -2,7 +2,8 @@
   <!-- Breadcrumb -->
   <nav class="breadcrumb">
     <a routerLink="/admin/staff">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="15 18 9 12 15 6"></polyline>
       </svg>
       Personel Listesi
@@ -13,294 +14,241 @@
 
   <!-- Loading State -->
   @if (isLoading) {
-    <div class="loading-container">
-      <div class="spinner"></div>
-      <p>Personel bilgileri yükleniyor...</p>
-    </div>
+  <div class="loading-container">
+    <div class="spinner"></div>
+    <p>Personel bilgileri yükleniyor...</p>
+  </div>
   }
 
   <!-- Error State -->
   @if (error && !isLoading) {
-    <div class="alert alert-error">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="12" y1="8" x2="12" y2="12"></line>
-        <line x1="12" y1="16" x2="12.01" y2="16"></line>
-      </svg>
-      <span>{{ error }}</span>
-      <button class="alert-close" (click)="dismissError()">×</button>
-    </div>
+  <div class="alert alert-error">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="8" x2="12" y2="12"></line>
+      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+    </svg>
+    <span>{{ error }}</span>
+    <button class="alert-close" (click)="dismissError()">×</button>
+  </div>
   }
 
   <!-- Success Message -->
   @if (successMessage) {
-    <div class="alert alert-success">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-        <polyline points="22 4 12 14.01 9 11.01"></polyline>
-      </svg>
-      <span>{{ successMessage }}</span>
-      <button class="alert-close" (click)="dismissSuccess()">×</button>
-    </div>
+  <div class="alert alert-success">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+    </svg>
+    <span>{{ successMessage }}</span>
+    <button class="alert-close" (click)="dismissSuccess()">×</button>
+  </div>
   }
 
   @if (staff && !isLoading) {
-    <div class="edit-layout">
-      <!-- Staff Info Card -->
-      <div class="info-card">
-        <div class="card-header">
-          <div class="staff-avatar large">{{ getInitials(staff.fullName) }}</div>
-          <div class="staff-info">
-            <h2>{{ staff.fullName }}</h2>
-            <p>{{ staff.department || 'Departman belirtilmemiş' }}</p>
-            <span class="status-badge" [class.status-active]="staff.isActive" [class.status-inactive]="!staff.isActive">
-              {{ staff.isActive ? 'Aktif' : 'Pasif' }}
-            </span>
+  <div class="edit-layout">
+    <!-- Staff Info Card -->
+    <div class="info-card">
+      <div class="card-header">
+        <div class="staff-avatar large">{{ getInitials(staff.fullName) }}</div>
+        <div class="staff-info">
+          <h2>{{ staff.fullName }}</h2>
+          <p>{{ staff.department || 'Departman belirtilmemiş' }}</p>
+          <span class="status-badge" [class.status-active]="staff.isActive" [class.status-inactive]="!staff.isActive">
+            {{ staff.isActive ? 'Aktif' : 'Pasif' }}
+          </span>
+        </div>
+      </div>
+
+      @if (workload) {
+      <div class="workload-section">
+        <h3>İş Yükü Durumu</h3>
+
+        <div class="workload-stats">
+          <div class="stat-item">
+            <span class="stat-value">{{ workload.assignedTickets }}</span>
+            <span class="stat-label">Toplam Atanan</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{ workload.openTickets }}</span>
+            <span class="stat-label">Açık Talepler</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{ workload.processingTickets }}</span>
+            <span class="stat-label">İşleniyor</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{ workload.resolvedToday }}</span>
+            <span class="stat-label">Bugün Çözülen</span>
           </div>
         </div>
 
-        @if (workload) {
-          <div class="workload-section">
-            <h3>İş Yükü Durumu</h3>
-            
-            <div class="workload-stats">
-              <div class="stat-item">
-                <span class="stat-value">{{ workload.assignedTickets }}</span>
-                <span class="stat-label">Toplam Atanan</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-value">{{ workload.openTickets }}</span>
-                <span class="stat-label">Açık Talepler</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-value">{{ workload.processingTickets }}</span>
-                <span class="stat-label">İşleniyor</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-value">{{ workload.resolvedToday }}</span>
-                <span class="stat-label">Bugün Çözülen</span>
-              </div>
-            </div>
-
-            <div class="capacity-section">
-              <div class="capacity-header">
-                <span>Kapasite Kullanımı</span>
-                <span>{{ getCurrentLoad() }} / {{ formData.maxConcurrentTickets }}</span>
-              </div>
-              <div class="capacity-bar large">
-                <div 
-                  class="capacity-fill" 
-                  [class]="getCapacityClass()"
-                  [style.width.%]="getCapacityPercentage()">
-                </div>
-              </div>
-              <div class="capacity-status">
-                @if (workload.isAvailable) {
-                  <span class="availability-badge available">Müsait</span>
-                } @else {
-                  <span class="availability-badge busy">Meşgul</span>
-                }
-              </div>
+        <div class="capacity-section">
+          <div class="capacity-header">
+            <span>Kapasite Kullanımı</span>
+            <span>{{ getCurrentLoad() }} / {{ formData.maxConcurrentTickets }}</span>
+          </div>
+          <div class="capacity-bar large">
+            <div class="capacity-fill" [class]="getCapacityClass()" [style.width.%]="getCapacityPercentage()">
             </div>
           </div>
-        }
-      </div>
-
-      <!-- Edit Form -->
-      <div class="form-card">
-        <div class="card-header">
-          <h3>Personel Bilgileri</h3>
+          <div class="capacity-status">
+            @if (workload.isAvailable) {
+            <span class="availability-badge available">Müsait</span>
+            } @else {
+            <span class="availability-badge busy">Meşgul</span>
+            }
+          </div>
         </div>
-
-        <form (ngSubmit)="saveStaff()">
-          <div class="form-body">
-            <div class="form-group">
-              <label for="fullName">Ad Soyad *</label>
-              <input 
-                type="text" 
-                id="fullName" 
-                class="form-input"
-                [(ngModel)]="formData.fullName"
-                name="fullName"
-                placeholder="Personel adı soyadı"
-                required>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="email">E-posta *</label>
-                <input 
-                  type="email" 
-                  id="email" 
-                  class="form-input"
-                  [(ngModel)]="formData.email"
-                  name="email"
-                  placeholder="ornek@sirket.com"
-                  required>
-              </div>
-
-              <div class="form-group">
-                <label for="phone">Telefon</label>
-                <input 
-                  type="text" 
-                  id="phone" 
-                  class="form-input"
-                  [value]="formData.phone"
-                  (input)="formatPhoneNumber($event)"
-                  name="phone"
-                  placeholder="(5XX) XXX XXXX">
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="department">Departman</label>
-                <select 
-                  id="department" 
-                  class="form-select"
-                  [(ngModel)]="formData.departmentId"
-                  name="departmentId">
-                  <option [ngValue]="null">Seçiniz</option>
-                  @for (dept of departmentOptions; track dept) {
-                    <option [ngValue]="dept.id">{{ dept.label }}</option>
-                  }
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label for="maxTickets">Maks. Eşzamanlı Talep *</label>
-                <input 
-                  type="number" 
-                  id="maxTickets" 
-                  class="form-input"
-                  [(ngModel)]="formData.maxConcurrentTickets"
-                  name="maxTickets"
-                  min="1"
-                  max="50"
-                  required>
-                <span class="form-hint">Aynı anda atanabilecek maksimum talep sayısı</span>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="checkbox-label">
-                <input 
-                  type="checkbox" 
-                  [(ngModel)]="formData.isActive"
-                  name="isActive">
-                <span class="checkmark"></span>
-                <span class="label-text">Personel Aktif</span>
-              </label>
-              <span class="form-hint">Pasif personellere yeni talep atanamaz</span>
-            </div>
-          </div>
-
-          <div class="form-footer">
-            <a routerLink="/admin/staff" class="btn btn-secondary">İptal</a>
-            <div class="button-group">
-              <button
-                type="button"
-                class="btn btn-warning"
-                (click)="resetPassword()"
-                [disabled]="isSaving">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="1"></circle>
-                  <path d="M4.9 19a9 9 0 0 1 14.85-3.36M19.1 5a9 9 0 0 0-14.85 3.36m-.5 1.64v-2.5h2.5"></path>
-                </svg>
-                Şifre Sıfırla
-              </button>
-              <button 
-                type="submit" 
-                class="btn btn-primary"
-                [disabled]="isSaving || !isFormValid()">
-                @if (isSaving) {
-                  <span class="spinner-small"></span>
-                  Kaydediliyor...
-                } @else {
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                    <polyline points="7 3 7 8 15 8"></polyline>
-                  </svg>
-                  Kaydet
-                }
-              </button>
-            </div>
-          </div>
-        </form>
       </div>
+      }
     </div>
+
+    <!-- Edit Form -->
+    <div class="form-card">
+      <div class="card-header">
+        <h3>Personel Bilgileri</h3>
+      </div>
+
+      <form (ngSubmit)="saveStaff()">
+        <div class="form-body">
+          <div class="form-group">
+            <label for="fullName">Ad Soyad *</label>
+            <input type="text" id="fullName" class="form-input" [(ngModel)]="formData.fullName" name="fullName"
+              placeholder="Personel adı soyadı" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="email">E-posta *</label>
+              <input type="email" id="email" class="form-input" [(ngModel)]="formData.email" name="email"
+                placeholder="ornek@sirket.com" required>
+            </div>
+
+            <div class="form-group">
+              <label for="phone">Telefon</label>
+              <input type="text" id="phone" class="form-input" [value]="formData.phone"
+                (input)="formatPhoneNumber($event)" name="phone" placeholder="(5XX) XXX XXXX">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="department">Departman</label>
+              <select id="department" class="form-select" [(ngModel)]="formData.departmentId" name="departmentId">
+                <option [ngValue]="null">Seçiniz</option>
+                @for (dept of departmentOptions; track dept) {
+                <option [ngValue]="dept.id">{{ dept.label }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="maxTickets">Maks. Eşzamanlı Talep *</label>
+              <input type="number" id="maxTickets" class="form-input" [(ngModel)]="formData.maxConcurrentTickets"
+                name="maxTickets" min="1" max="50" required>
+              <span class="form-hint">Aynı anda atanabilecek maksimum talep sayısı</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" [(ngModel)]="formData.isActive" name="isActive">
+              <span class="checkmark"></span>
+              <span class="label-text">Personel Aktif</span>
+            </label>
+            <span class="form-hint">Pasif personellere yeni talep atanamaz</span>
+          </div>
+        </div>
+
+        <div class="form-footer">
+          <a routerLink="/admin/staff" class="btn btn-secondary">İptal</a>
+          <div class="button-group">
+            <button type="button" class="btn btn-warning" (click)="resetPassword()" [disabled]="isSaving">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="1"></circle>
+                <path d="M4.9 19a9 9 0 0 1 14.85-3.36M19.1 5a9 9 0 0 0-14.85 3.36m-.5 1.64v-2.5h2.5"></path>
+              </svg>
+              Şifre Sıfırla
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="isSaving || !isFormValid()">
+              @if (isSaving) {
+              <span class="spinner-small"></span>
+              Kaydediliyor...
+              } @else {
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+              </svg>
+              Kaydet
+              }
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
   }
 
   <!-- Password Reset Modal -->
   @if (showPasswordModal) {
-    <div class="modal-overlay" (click)="cancelResetPassword()">
-      <div class="modal-content" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h3>Şifre Sıfırla</h3>
-          <button class="modal-close" (click)="cancelResetPassword()">×</button>
-        </div>
+  <div class="modal-overlay" (click)="cancelResetPassword()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Şifre Sıfırla</h3>
+        <button class="modal-close" (click)="cancelResetPassword()">×</button>
+      </div>
 
-        <div class="modal-body">
-          <p class="modal-description">{{ staff?.fullName }} personelinin yeni şifresini belirleyin:</p>
-          
-          <div class="form-group">
-            <label for="newPassword">Yeni Şifre *</label>
-            <input 
-              type="password" 
-              id="newPassword" 
-              class="form-input"
-              [(ngModel)]="newPassword"
-              placeholder="Minimum 6 karakter"
-              (keyup.enter)="confirmResetPassword()">
-            <div class="password-requirements">
-              <p class="requirement-title">Şifre gereksinimleri:</p>
-              <ul>
-                <li [class.met]="newPassword && hasUppercase()">
-                  <span class="check">✓</span> En az bir büyük harf (A-Z)
-                </li>
-                <li [class.met]="newPassword && hasLowercase()">
-                  <span class="check">✓</span> En az bir küçük harf (a-z)
-                </li>
-                <li [class.met]="newPassword && hasNumber()">
-                  <span class="check">✓</span> En az bir sayı (0-9)
-                </li>
-                <li [class.met]="newPassword && hasMinLength()">
-                  <span class="check">✓</span> Minimum 6 karakter
-                </li>
-              </ul>
-            </div>
-          </div>
+      <div class="modal-body">
+        <p class="modal-description">{{ staff?.fullName }} personelinin yeni şifresini belirleyin:</p>
 
-          <div class="form-group">
-            <label for="confirmPassword">Şifreyi Onayla *</label>
-            <input 
-              type="password" 
-              id="confirmPassword" 
-              class="form-input"
-              [(ngModel)]="confirmPassword"
-              placeholder="Şifreyi tekrar girin"
-              (keyup.enter)="confirmResetPassword()">
+        <div class="form-group">
+          <label for="newPassword">Yeni Şifre *</label>
+          <input type="password" id="newPassword" class="form-input" [(ngModel)]="newPassword"
+            placeholder="Minimum 8 karakter" (keyup.enter)="confirmResetPassword()">
+          <div class="password-requirements">
+            <p class="requirement-title">Şifre gereksinimleri:</p>
+            <ul>
+              <li [class.met]="newPassword && hasUppercase()">
+                <span class="check">✓</span> En az bir büyük harf (A-Z)
+              </li>
+              <li [class.met]="newPassword && hasLowercase()">
+                <span class="check">✓</span> En az bir küçük harf (a-z)
+              </li>
+              <li [class.met]="newPassword && hasMinLength()">
+                <span class="check">✓</span> Minimum 8 karakter
+              </li>
+            </ul>
           </div>
         </div>
 
-        <div class="modal-footer">
-          <button class="btn btn-secondary" (click)="cancelResetPassword()">
-            İptal
-          </button>
-          <button 
-            class="btn btn-primary" 
-            (click)="confirmResetPassword()"
-            [disabled]="isSaving || !newPassword || !confirmPassword">
-            @if (isSaving) {
-              <span class="spinner-small"></span>
-              İşleniyor...
-            } @else {
-              Şifreyi Sıfırla
-            }
-          </button>
+        <div class="form-group">
+          <label for="confirmPassword">Şifreyi Onayla *</label>
+          <input type="password" id="confirmPassword" class="form-input" [(ngModel)]="confirmPassword"
+            placeholder="Şifreyi tekrar girin" (keyup.enter)="confirmResetPassword()">
         </div>
       </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="cancelResetPassword()">
+          İptal
+        </button>
+        <button class="btn btn-primary" (click)="confirmResetPassword()"
+          [disabled]="isSaving || !newPassword || !confirmPassword">
+          @if (isSaving) {
+          <span class="spinner-small"></span>
+          İşleniyor...
+          } @else {
+          Şifreyi Sıfırla
+          }
+        </button>
+      </div>
     </div>
+  </div>
   }
 </div>

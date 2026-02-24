@@ -1,8 +1,8 @@
 <div class="open-tickets-page">
   <div class="page-header">
     <div class="header-left">
-      <h1>Açık Ticketlar</h1>
-      <p class="subtitle">Atanmamış ve bekleyen ticketlar</p>
+      <h1>Açık Talepler</h1>
+      <p class="subtitle">Atanmamış ve bekleyen talepler</p>
     </div>
   </div>
 
@@ -30,7 +30,7 @@
       </select>
     </div>
     <div class="results-count">
-      {{ filteredTickets.length }} açık ticket
+      {{ filteredTickets.length }} açık talep
     </div>
     <button class="refresh-btn" (click)="loadTickets()">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -52,7 +52,7 @@
           <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
           <polyline points="22 4 12 14.01 9 11.01"/>
         </svg>
-        <p>Tüm ticketlar atanmış! 🎉</p>
+        <p>Tüm talepler atanmış! 🎉</p>
       </div>
     } @else {
       <div class="tickets-grid">

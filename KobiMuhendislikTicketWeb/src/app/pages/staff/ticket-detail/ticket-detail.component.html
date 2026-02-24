@@ -9,7 +9,7 @@
   <!-- Loading state -->
   <div *ngIf="isLoading" class="loading-state">
     <div class="spinner"></div>
-    <p>Ticket yükleniyor...</p>
+    <p>Talep yükleniyor...</p>
   </div>
 
   <!-- Error message -->
@@ -40,7 +40,7 @@
         <!-- Not assigned - Show claim button -->
         <ng-container *ngIf="!ticket.assignedPerson">
           <button (click)="claimTicket()" class="btn btn-primary">
-            Ticketı Üstlen
+            Talebi Üstlen
           </button>
         </ng-container>
         
@@ -63,18 +63,18 @@
           <!-- Resolve and Release actions remain -->
           
             <button (click)="releaseTicket()" class="btn btn-secondary">
-              Ticketı Bırak
+              Talebi Bırak
             </button>
           
             <!-- Release Confirmation Modal -->
             <div *ngIf="showReleaseModal" class="modal-overlay" (click)="cancelRelease()">
               <div class="modal-content" (click)="$event.stopPropagation()">
                 <div class="modal-header">
-                  <h3>Ticketı Bırak</h3>
+                  <h3>Talebi Bırak</h3>
                   <button (click)="cancelRelease()" class="close-btn">×</button>
                 </div>
                 <div class="modal-body">
-                  <p>Bu ticketı bırakmak istediğinize emin misiniz?</p>
+                  <p>Bu talebi bırakmak istediğinize emin misiniz?</p>
                 </div>
                 <div class="modal-footer">
                   <button (click)="cancelRelease()" class="btn btn-secondary">İptal</button>
@@ -96,7 +96,7 @@
       <!-- Left column - Details -->
       <div class="detail-section">
         <div class="detail-card">
-          <h3>Ticket Detayları</h3>
+          <h3>Talep Detayları</h3>
           <div class="detail-row">
             <label>Açıklama:</label>
             <p class="description">{{ ticket.description }}</p>
@@ -109,7 +109,7 @@
               <button (click)="cancelStatusChange()" class="close-btn">×</button>
             </div>
             <div class="modal-body">
-              <p>Bu ticketin durumunu <strong>{{ pendingStatusLabel }}</strong> olarak değiştirmek istediğinize emin misiniz?</p>
+              <p>Bu talebin durumunu <strong>{{ pendingStatusLabel }}</strong> olarak değiştirmek istediğinize emin misiniz?</p>
             </div>
             <div class="modal-footer">
               <button (click)="cancelStatusChange()" class="btn btn-secondary">İptal</button>
@@ -252,7 +252,7 @@
 <div *ngIf="showResolveModal" class="modal-overlay" (click)="showResolveModal = false">
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h3>Ticketı Çöz</h3>
+      <h3>Talebi Çöz</h3>
       <button (click)="showResolveModal = false" class="close-btn">×</button>
     </div>
     <div class="modal-body">

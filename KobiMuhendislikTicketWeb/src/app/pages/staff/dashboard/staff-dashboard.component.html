@@ -18,7 +18,7 @@
         </div>
         <div class="stat-info">
           <span class="stat-value">{{ workload.assignedTickets }}</span>
-          <span class="stat-label">Aktif Ticket</span>
+          <span class="stat-label">Aktif Talep</span>
         </div>
       </div>
 
@@ -75,7 +75,7 @@
     <!-- My Tickets -->
     <div class="dashboard-card">
       <div class="card-header">
-        <h2>Aktif Ticketlarım</h2>
+        <h2>Aktif Taleplerim</h2>
         <a routerLink="/staff/my-tickets" class="view-all">Tümünü Gör →</a>
       </div>
       <div class="card-body">
@@ -83,7 +83,7 @@
           <div class="loading">Yükleniyor...</div>
         } @else if (myTickets.length === 0) {
           <div class="empty-state">
-            <p>Henüz atanmış ticket yok</p>
+            <p>Henüz atanmış talep yok</p>
           </div>
         } @else {
           <div class="ticket-list">
@@ -111,7 +111,7 @@
     <!-- Unassigned Tickets -->
     <div class="dashboard-card">
       <div class="card-header">
-        <h2>Açık Ticketlar</h2>
+        <h2>Açık Talepler</h2>
         <a routerLink="/staff/open-tickets" class="view-all">Tümünü Gör →</a>
       </div>
       <div class="card-body">
@@ -119,7 +119,7 @@
           <div class="loading">Yükleniyor...</div>
         } @else if (unassignedTickets.length === 0) {
           <div class="empty-state">
-            <p>Bekleyen ticket yok 🎉</p>
+            <p>Bekleyen talep yok 🎉</p>
           </div>
         } @else {
           <div class="ticket-list">

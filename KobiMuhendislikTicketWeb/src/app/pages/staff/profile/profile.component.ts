@@ -34,7 +34,7 @@ export class StaffProfileComponent implements OnInit {
   };
   passwordErrors: { [key: string]: string } = {};
 
-  constructor(private staffService: StaffService) {}
+  constructor(private staffService: StaffService) { }
 
   ngOnInit(): void {
     this.loadProfile();
@@ -97,7 +97,7 @@ export class StaffProfileComponent implements OnInit {
           this.successMessage = 'Profil başarıyla güncellendi.';
           this.isEditMode = false;
           this.loadProfile();
-          
+
           setTimeout(() => {
             this.successMessage = null;
           }, 3000);
@@ -145,8 +145,8 @@ export class StaffProfileComponent implements OnInit {
       return;
     }
 
-    if (this.passwordForm.newPassword.length < 6) {
-      this.passwordErrors['newPassword'] = 'Şifre en az 6 karakter olmalıdır.';
+    if (this.passwordForm.newPassword.length < 8) {
+      this.passwordErrors['newPassword'] = 'Şifre en az 8 karakter olmalıdır.';
     }
 
     if (!/[A-Z]/.test(this.passwordForm.newPassword)) {
@@ -157,9 +157,12 @@ export class StaffProfileComponent implements OnInit {
       this.passwordErrors['newPassword'] = 'Şifre en az bir küçük harf içermelidir.';
     }
 
+    // Sayı kontrolü (Opsiyonel: Eğer kriterlere dahil edilmeyecekse kaldırılabilir, ama mevcut kodu temiz tutuyorum)
+    /*
     if (!/[0-9]/.test(this.passwordForm.newPassword)) {
       this.passwordErrors['newPassword'] = 'Şifre en az bir sayı içermelidir.';
     }
+    */
 
     if (this.passwordForm.newPassword !== this.passwordForm.confirmPassword) {
       this.passwordErrors['confirmPassword'] = 'Şifreler eşleşmiyor.';
@@ -187,7 +190,7 @@ export class StaffProfileComponent implements OnInit {
         if (res.success) {
           this.successMessage = 'Şifre başarıyla değiştirildi.';
           this.closePasswordModal();
-          
+
           setTimeout(() => {
             this.successMessage = null;
           }, 3000);
@@ -222,12 +225,12 @@ export class StaffProfileComponent implements OnInit {
   }
 
   hasMinLength(): boolean {
-    return this.passwordForm.newPassword.length >= 6;
+    return this.passwordForm.newPassword.length >= 8;
   }
 
   passwordsMatch(): boolean {
     return this.passwordForm.newPassword === this.passwordForm.confirmPassword &&
-           this.passwordForm.newPassword.length > 0;
+      this.passwordForm.newPassword.length > 0;
   }
 
   hasPasswordErrors(): boolean {

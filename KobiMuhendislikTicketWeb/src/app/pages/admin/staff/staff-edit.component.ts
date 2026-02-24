@@ -44,7 +44,7 @@ export class StaffEditComponent implements OnInit {
     private router: Router,
     private staffService: StaffService,
     private paramSvc: SystemParameterService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -222,7 +222,7 @@ export class StaffEditComponent implements OnInit {
 
     if (digits.length === 0) {
       this.formData.phone = '';
-      try { input.value = ''; } catch (e) {}
+      try { input.value = ''; } catch (e) { }
       return;
     }
 
@@ -277,8 +277,12 @@ export class StaffEditComponent implements OnInit {
       return;
     }
 
-    if (this.newPassword.length < 6) {
-      this.error = 'Şifre en az 6 karakter olmalıdır.';
+    // Password validation: min 8 chars, at least one uppercase and one lowercase
+    const password = this.newPassword || '';
+    const hasUpper = /[A-Z]/.test(password);
+    const hasLower = /[a-z]/.test(password);
+    if (password.length < 8 || !hasUpper || !hasLower) {
+      this.error = 'Şifre en az 8 karakter olmalı, büyük ve küçük harf içermelidir.';
       return;
     }
 
@@ -308,7 +312,7 @@ export class StaffEditComponent implements OnInit {
         this.successMessage = 'Şifre başarıyla sıfırlandı.';
         this.showPasswordModal = false;
         this.isSaving = false;
-        
+
         setTimeout(() => {
           this.successMessage = null;
         }, 3000);
@@ -340,6 +344,6 @@ export class StaffEditComponent implements OnInit {
   }
 
   hasMinLength(): boolean {
-    return this.newPassword.length >= 6;
+    return this.newPassword.length >= 8;
   }
 }

@@ -63,62 +63,77 @@ namespace KobiMuhendislikTicket.Application.Services
                 _logger.LogError(ex, "E-posta gönderilirken hata oluştu: {ToEmail}, Konu: {Subject}", toEmail, subject);
             }
         }
-        
+
         public async Task SendTicketAssignmentEmailAsync(string toEmail, string staffName, string ticketTitle, string tenantName, int ticketId)
         {
-            var subject = "Size Yeni Bir Ticket Atandı";
-            
-            // Logonuzun internet üzerindeki tam URL'ini buraya yazın
-            var logoUrl = "https://www.kobimuhendislik.com/assets/images/logo/KobiLogo.png"; 
+            // Use ticketId to generate ticketCode if needed
+            var ticketCode = $"T{ticketId:D5}";
+            await SendTicketAssignmentEmailAsync(toEmail, staffName, ticketTitle, tenantName, ticketCode);
+        }
+
+        public async Task SendTicketAssignmentEmailAsync(string toEmail, string staffName, string ticketTitle, string tenantName, string ticketCode)
+        {
+            var subject = $"Yeni Ticket Ataması: {ticketCode}";
+            var logoUrl = "https://www.kobimuhendislik.com/assets/images/logo/KobiLogo.png";
 
             var body = $@"
-                <html>
-                <head>
-                    <style>
-                        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }}
-                        .container {{ max-width: 600px; margin: 20px auto; padding: 0; border: 1px solid #eee; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }}
-                        .header {{ background-color: #ffffff; padding: 25px; text-align: center; border-bottom: 3px solid #2196F3; }}
-                        .logo {{ max-width: 180px; height: auto; margin-bottom: 10px; }}
-                        .content {{ background-color: #ffffff; padding: 30px; }}
-                        .welcome-text {{ font-size: 18px; color: #2c3e50; }}
-                        .info-box {{ background-color: #f8fbfe; border: 1px solid #d1e9ff; border-radius: 8px; padding: 20px; margin: 20px 0; }}
-                        .info-item {{ margin-bottom: 8px; font-size: 15px; }}
-                        .info-label {{ font-weight: bold; color: #2196F3; width: 80px; display: inline-block; }}
-                        .footer {{ background-color: #f9f9f9; padding: 20px; text-align: center; font-size: 12px; color: #888; border-top: 1px solid #eee; }}
-                        .button {{ display: inline-block; padding: 12px 25px; background-color: #2196F3; color: #ffffff !important; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }}
-                    </style>
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset='UTF-8'>
                 </head>
-                <body>
-                    <div class='container'>
-                        <div class='header'>
-                            <img src='{logoUrl}' alt='Kobi Mühendislik Logo' class='logo'>
-                            <h2 style='margin:10px 0 0 0; color: #2196F3;'>Yeni Ticket Ataması</h2>
-                        </div>
-                        <div class='content'>
-                            <p class='welcome-text'>Merhaba <strong>{staffName}</strong>,</p>
-                            <p>Sistem üzerinden size yeni bir teknik destek talebi yönlendirildi. Detaylar aşağıdadır:</p>
-                            
-                            <div class='info-box'>
-                                <div class='info-item'><span class='info-label'>Ticket:</span> {ticketTitle}</div>
-                                <div class='info-item'><span class='info-label'>Firma:</span> {tenantName}</div>
-                                <div class='info-item'><span class='info-label'>ID:</span> #{ticketId}</div>
-                            </div>
+            <body style='margin: 0; padding: 0; background-color: #f4f4f4; font-family: ""Segoe UI"", Tahoma, Geneva, Verdana, sans-serif;'>
+                <center>
+                    <table border='0' cellpadding='0' cellspacing='0' width='100%' style='background-color: #f4f4f4; padding: 20px 0;'>
+                        <tr>
+                            <td align='center'>
+                                <table border='0' cellpadding='0' cellspacing='0' width='550' style='background-color: #ffffff; border: 1px solid #dddddd;'>
+                                
+                                    <tr>
+                                        <td align='center' style='padding: 25px; border-bottom: 3px solid #2196F3;'>
+                                            <img src='{logoUrl}' alt='Kobi Mühendislik' width='160' style='display: block;'>
+                                            <h2 style='color: #2196F3; margin: 15px 0 0 0; font-family: Arial, sans-serif;'>Yeni Ticket Ataması</h2>
+                                        </td>
+                                    </tr>
 
-                            <p>Lütfen talebi en kısa sürede kontrol ederek süreçle ilgili güncellemeleri sisteme giriniz.</p>
-                            
-                            
-                        </div>
-                        <div class='footer'>
-                            <p><strong>Kobi Mühendislik</strong><br>
-                            Bu e-posta otomatik olarak oluşturulmuştur, lütfen yanıtlamayınız.</p>
-                        </div>
-                    </div>
-                </body>
-                </html>";
+                                    <tr>
+                                        <td style='padding: 30px;'>
+                                            <p style='font-size: 16px; color: #333;'>Merhaba <strong>{staffName}</strong>,</p>
+                                            <p style='font-size: 15px; color: #555;'>Size yeni bir iş emri atandı. Detaylar:</p>
+                                        
+                                            <table border='0' cellpadding='0' cellspacing='0' width='100%' style='background-color: #f8fbfe; border: 1px solid #d1e9ff; border-radius: 6px;'>
+                                                <tr>
+                                                    <td style='padding: 15px;'>
+                                                        <p style='margin: 5px 0; font-size: 15px;'><strong style='color: #2196F3;'>Kod:</strong> {ticketCode}</p>
+                                                        <p style='margin: 5px 0; font-size: 15px;'><strong style='color: #2196F3;'>Başlık:</strong> {ticketTitle}</p>
+                                                        <p style='margin: 5px 0; font-size: 15px;'><strong style='color: #2196F3;'>Firma:</strong> {tenantName}</p>
+                                                    </td>
+                                                </tr>
+                                            </table>
+
+                                            <p style='font-size: 14px; color: #777; margin-top: 20px;'>
+                                                Lütfen paneli ziyaret ederek talebi yanıtlayınız.
+                                            </p>
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td align='center' style='padding: 15px; background-color: #f9f9f9; color: #999; font-size: 11px;'>
+                                            <strong>Kobi Mühendislik</strong><br>
+                                            Otomatik sistem mesajıdır.
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </center>
+            </body>
+            </html>";
 
             await SendEmailAsync(toEmail, subject, body, true);
         }
-        
+
         public async Task SendNewCommentEmailAsync(string toEmail, string staffName, string ticketTitle, string authorName, string commentPreview, int ticketId)
         {
             var subject = "Ticket'ınıza Yeni Yorum Eklendi";

@@ -51,8 +51,8 @@ namespace KobiMuhendislikTicket.Application.Services
                 if (string.IsNullOrWhiteSpace(dto.Password))
                     return Result<Staff>.Failure("Şifre gereklidir.");
 
-                if (dto.Password.Length < 6)
-                    return Result<Staff>.Failure("Şifre en az 6 karakter olmalıdır.");
+                if (!IsPasswordStrong(dto.Password))
+                    return Result<Staff>.Failure("Şifre en az 8 karakter olmalı, büyük ve küçük harf içermelidir.");
 
                
                 var existingEmail = await _context.Staff.AnyAsync(s => s.Email == dto.Email);
@@ -138,8 +138,8 @@ namespace KobiMuhendislikTicket.Application.Services
 
                 if (!string.IsNullOrWhiteSpace(dto.NewPassword) && dto.NewPassword != "string")
                 {
-                    if (dto.NewPassword.Length < 6)
-                        return Result.Failure("Şifre en az 6 karakter olmalıdır.");
+                    if (!IsPasswordStrong(dto.NewPassword))
+                        return Result.Failure("Şifre en az 8 karakter olmalı, büyük ve küçük harf içermelidir.");
                     staff.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
                 }
 
@@ -474,8 +474,8 @@ namespace KobiMuhendislikTicket.Application.Services
                 if (staff == null)
                     return Result.Failure("Çalışan bulunamadı.");
 
-                if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
-                    return Result.Failure("Şifre en az 6 karakter olmalıdır.");
+                if (string.IsNullOrWhiteSpace(newPassword) || !IsPasswordStrong(newPassword))
+                    return Result.Failure("Şifre en az 8 karakter olmalı, büyük ve küçük harf içermelidir.");
 
                 staff.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
                 await _context.SaveChangesAsync();
@@ -814,20 +814,8 @@ namespace KobiMuhendislikTicket.Application.Services
                     return Result.Failure("Mevcut şifre yanlış.");
 
                 // Yeni şifre validasyonu
-                if (string.IsNullOrWhiteSpace(dto.NewPassword) || dto.NewPassword.Length < 6)
-                    return Result.Failure("Yeni şifre en az 6 karakter olmalıdır.");
-
-                // Büyük harf kontrolü
-                if (!Regex.IsMatch(dto.NewPassword, "[A-Z]"))
-                    return Result.Failure("Şifre en az bir büyük harf içermelidir.");
-
-                // Küçük harf kontrolü
-                if (!Regex.IsMatch(dto.NewPassword, "[a-z]"))
-                    return Result.Failure("Şifre en az bir küçük harf içermelidir.");
-
-                // Sayı kontrolü
-                if (!Regex.IsMatch(dto.NewPassword, "[0-9]"))
-                    return Result.Failure("Şifre en az bir sayı içermelidir.");
+                if (!IsPasswordStrong(dto.NewPassword))
+                    return Result.Failure("Şifre en az 8 karakter olmalı, büyük ve küçük harf içermelidir.");
 
                 staff.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
                 await _context.SaveChangesAsync();
@@ -840,5 +828,17 @@ namespace KobiMuhendislikTicket.Application.Services
                 _logger.LogError(ex, "Şifre değiştirilirken hata: {StaffId}", staffId);
                 return Result.Failure("Şifre değiştirilirken bir hata oluştu.");
             }
-        }    }
+        }
+
+        private static bool IsPasswordStrong(string password)
+        {
+            if (string.IsNullOrWhiteSpace(password)) return false;
+            if (password.Length < 8) return false;
+
+            bool hasUpper = password.Any(char.IsUpper);
+            bool hasLower = password.Any(char.IsLower);
+
+            return hasUpper && hasLower;
+        }
+    }
 }
