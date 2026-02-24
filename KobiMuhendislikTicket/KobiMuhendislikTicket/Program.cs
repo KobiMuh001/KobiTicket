@@ -16,7 +16,6 @@ using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
@@ -42,7 +41,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Token değerini buraya yapıştırın."
+        Description = "Token değerini buraya yapıştırın1."
     });
 
     
@@ -64,12 +63,7 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-    options.UseMySql(
-        connectionString,
-        ServerVersion.AutoDetect(connectionString)
-    );
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 
     if (builder.Environment.IsDevelopment())
     {
@@ -77,16 +71,6 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
                .EnableSensitiveDataLogging();
     }
 });
-//builder.Services.AddDbContext<ApplicationDbContext>(options =>
-//{
-//    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
-
-//    if (builder.Environment.IsDevelopment())
-//    {
-//        options.LogTo(Console.WriteLine, LogLevel.Information)
-//               .EnableSensitiveDataLogging();
-//    }
-//});
 
 #region SCOPE
 builder.Services.AddScoped<ITenantRepository, TenantRepository>();
@@ -217,12 +201,10 @@ builder.Services.AddCors(options =>
         }
         else
         {
-            // Yapılandırmadan listeyi al
             var allowedOrigins = builder.Configuration
                 .GetSection("Cors:AllowedOrigins")
                 .Get<string[]>();
 
-            // Liste boş değilse ve içinde veri varsa işle
             if (allowedOrigins != null && allowedOrigins.Length > 0)
             {
                 policy.WithOrigins(allowedOrigins)
@@ -294,13 +276,10 @@ if (Directory.Exists(spaDistPath))
     });
 }
 
-// Static Files middleware - wwwroot (ör: uploads) dosyalarını serve et
 app.UseStaticFiles();
 
-// Exception middleware - hata detaylarını gizle
 app.UseMiddleware<ExceptionMiddleware>();
 
-// Rate limiting
 app.UseRateLimiter();
 
 app.UseHttpsRedirection();
@@ -311,12 +290,10 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// SignalR Hub endpoints
 app.MapHub<CommentHub>("/hubs/comments");
 app.MapHub<DashboardStatsHub>("/hubs/dashboard-stats");
 app.MapHub<NotificationHub>("/hubs/notifications");
 
-// SPA fallback (API/Hub route'larını etkilemeden Angular index.html'e yönlendir)
 app.MapFallback(async context =>
 {
     var requestPath = context.Request.Path.Value ?? string.Empty;

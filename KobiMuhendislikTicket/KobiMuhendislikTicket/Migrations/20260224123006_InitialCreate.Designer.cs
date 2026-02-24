@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace KobiMuhendislikTicket.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260224070138_InitialCreate")]
+    [Migration("20260224123006_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -21,9 +21,9 @@ namespace KobiMuhendislikTicket.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "8.0.23")
-                .HasAnnotation("Relational:MaxIdentifierLength", 64);
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
-            MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("KobiMuhendislikTicket.Domain.Entities.Asset", b =>
                 {
@@ -31,34 +31,34 @@ namespace KobiMuhendislikTicket.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<string>("ProductName")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SerialNumber")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("TenantId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("WarrantyEndDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -73,23 +73,23 @@ namespace KobiMuhendislikTicket.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsForAdmin")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsRead")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<string>("Message")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("TargetTenantId")
                         .HasColumnType("int");
@@ -102,13 +102,13 @@ namespace KobiMuhendislikTicket.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Type")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -123,24 +123,24 @@ namespace KobiMuhendislikTicket.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("varchar(200)");
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -159,10 +159,10 @@ namespace KobiMuhendislikTicket.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("AcquisitionDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("WarrantyEndDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.HasKey("ProductId", "TenantId");
 
@@ -177,40 +177,40 @@ namespace KobiMuhendislikTicket.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("DepartmentId")
                         .HasColumnType("int");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("FullName")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<int>("MaxConcurrentTickets")
                         .HasColumnType("int");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Phone")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -228,31 +228,31 @@ namespace KobiMuhendislikTicket.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("DataType")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Description")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Group")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<string>("Key")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("NumericKey")
                         .HasColumnType("int");
@@ -261,13 +261,13 @@ namespace KobiMuhendislikTicket.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Value")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Value2")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -279,7 +279,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 100,
-                            CreatedDate = new DateTime(2026, 2, 24, 10, 1, 38, 433, DateTimeKind.Unspecified).AddTicks(7548),
+                            CreatedDate = new DateTime(2026, 2, 24, 15, 30, 6, 297, DateTimeKind.Unspecified).AddTicks(482),
                             DataType = "String",
                             Description = "Düşük öncelik",
                             Group = "TicketPriority",
@@ -288,12 +288,13 @@ namespace KobiMuhendislikTicket.Migrations
                             Key = "Düşük",
                             NumericKey = 1,
                             SortOrder = 1,
-                            Value = "Low"
+                            Value = "Low",
+                            Value2 = "#6C757D"
                         },
                         new
                         {
                             Id = 101,
-                            CreatedDate = new DateTime(2026, 2, 24, 10, 1, 38, 433, DateTimeKind.Unspecified).AddTicks(7635),
+                            CreatedDate = new DateTime(2026, 2, 24, 15, 30, 6, 297, DateTimeKind.Unspecified).AddTicks(562),
                             DataType = "String",
                             Description = "Orta öncelik",
                             Group = "TicketPriority",
@@ -302,12 +303,13 @@ namespace KobiMuhendislikTicket.Migrations
                             Key = "Orta",
                             NumericKey = 2,
                             SortOrder = 2,
-                            Value = "Medium"
+                            Value = "Medium",
+                            Value2 = "#17A2B8"
                         },
                         new
                         {
                             Id = 102,
-                            CreatedDate = new DateTime(2026, 2, 24, 10, 1, 38, 433, DateTimeKind.Unspecified).AddTicks(7639),
+                            CreatedDate = new DateTime(2026, 2, 24, 15, 30, 6, 297, DateTimeKind.Unspecified).AddTicks(565),
                             DataType = "String",
                             Description = "Yüksek öncelik",
                             Group = "TicketPriority",
@@ -316,12 +318,13 @@ namespace KobiMuhendislikTicket.Migrations
                             Key = "Yüksek",
                             NumericKey = 3,
                             SortOrder = 3,
-                            Value = "High"
+                            Value = "High",
+                            Value2 = "#FD7E14"
                         },
                         new
                         {
                             Id = 103,
-                            CreatedDate = new DateTime(2026, 2, 24, 10, 1, 38, 433, DateTimeKind.Unspecified).AddTicks(7642),
+                            CreatedDate = new DateTime(2026, 2, 24, 15, 30, 6, 297, DateTimeKind.Unspecified).AddTicks(567),
                             DataType = "String",
                             Description = "Kritik öncelik",
                             Group = "TicketPriority",
@@ -330,12 +333,13 @@ namespace KobiMuhendislikTicket.Migrations
                             Key = "Kritik",
                             NumericKey = 4,
                             SortOrder = 4,
-                            Value = "Critical"
+                            Value = "Critical",
+                            Value2 = "#DC3545"
                         },
                         new
                         {
                             Id = 110,
-                            CreatedDate = new DateTime(2026, 2, 24, 10, 1, 38, 433, DateTimeKind.Unspecified).AddTicks(7645),
+                            CreatedDate = new DateTime(2026, 2, 24, 15, 30, 6, 297, DateTimeKind.Unspecified).AddTicks(568),
                             DataType = "String",
                             Description = "Açık",
                             Group = "TicketStatus",
@@ -344,12 +348,13 @@ namespace KobiMuhendislikTicket.Migrations
                             Key = "Açık",
                             NumericKey = 1,
                             SortOrder = 1,
-                            Value = "Open"
+                            Value = "Open",
+                            Value2 = "#007BFF"
                         },
                         new
                         {
                             Id = 111,
-                            CreatedDate = new DateTime(2026, 2, 24, 10, 1, 38, 433, DateTimeKind.Unspecified).AddTicks(7648),
+                            CreatedDate = new DateTime(2026, 2, 24, 15, 30, 6, 297, DateTimeKind.Unspecified).AddTicks(570),
                             DataType = "String",
                             Description = "İşleniyor",
                             Group = "TicketStatus",
@@ -358,12 +363,13 @@ namespace KobiMuhendislikTicket.Migrations
                             Key = "İşleniyor",
                             NumericKey = 2,
                             SortOrder = 2,
-                            Value = "Processing"
+                            Value = "Processing",
+                            Value2 = "#FFC107"
                         },
                         new
                         {
                             Id = 112,
-                            CreatedDate = new DateTime(2026, 2, 24, 10, 1, 38, 433, DateTimeKind.Unspecified).AddTicks(7651),
+                            CreatedDate = new DateTime(2026, 2, 24, 15, 30, 6, 297, DateTimeKind.Unspecified).AddTicks(572),
                             DataType = "String",
                             Description = "Müşteri Bekleniyor",
                             Group = "TicketStatus",
@@ -372,12 +378,13 @@ namespace KobiMuhendislikTicket.Migrations
                             Key = "Müşteri Bekleniyor",
                             NumericKey = 3,
                             SortOrder = 3,
-                            Value = "WaitingForCustomer"
+                            Value = "WaitingForCustomer",
+                            Value2 = "#6F42C1"
                         },
                         new
                         {
                             Id = 113,
-                            CreatedDate = new DateTime(2026, 2, 24, 10, 1, 38, 433, DateTimeKind.Unspecified).AddTicks(7654),
+                            CreatedDate = new DateTime(2026, 2, 24, 15, 30, 6, 297, DateTimeKind.Unspecified).AddTicks(573),
                             DataType = "String",
                             Description = "Çözüldü",
                             Group = "TicketStatus",
@@ -386,12 +393,13 @@ namespace KobiMuhendislikTicket.Migrations
                             Key = "Çözüldü",
                             NumericKey = 4,
                             SortOrder = 4,
-                            Value = "Resolved"
+                            Value = "Resolved",
+                            Value2 = "#28A745"
                         },
                         new
                         {
                             Id = 114,
-                            CreatedDate = new DateTime(2026, 2, 24, 10, 1, 38, 433, DateTimeKind.Unspecified).AddTicks(7657),
+                            CreatedDate = new DateTime(2026, 2, 24, 15, 30, 6, 297, DateTimeKind.Unspecified).AddTicks(575),
                             DataType = "String",
                             Description = "Kapandı",
                             Group = "TicketStatus",
@@ -400,12 +408,13 @@ namespace KobiMuhendislikTicket.Migrations
                             Key = "Kapandı",
                             NumericKey = 5,
                             SortOrder = 5,
-                            Value = "Closed"
+                            Value = "Closed",
+                            Value2 = "#343A40"
                         },
                         new
                         {
                             Id = 120,
-                            CreatedDate = new DateTime(2026, 2, 24, 10, 1, 38, 433, DateTimeKind.Unspecified).AddTicks(7659),
+                            CreatedDate = new DateTime(2026, 2, 24, 15, 30, 6, 297, DateTimeKind.Unspecified).AddTicks(576),
                             DataType = "String",
                             Description = "Admin role",
                             Group = "UserRole",
@@ -419,7 +428,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 121,
-                            CreatedDate = new DateTime(2026, 2, 24, 10, 1, 38, 433, DateTimeKind.Unspecified).AddTicks(7662),
+                            CreatedDate = new DateTime(2026, 2, 24, 15, 30, 6, 297, DateTimeKind.Unspecified).AddTicks(578),
                             DataType = "String",
                             Description = "Staff role",
                             Group = "UserRole",
@@ -433,7 +442,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 122,
-                            CreatedDate = new DateTime(2026, 2, 24, 10, 1, 38, 433, DateTimeKind.Unspecified).AddTicks(7665),
+                            CreatedDate = new DateTime(2026, 2, 24, 15, 30, 6, 297, DateTimeKind.Unspecified).AddTicks(579),
                             DataType = "String",
                             Description = "Customer role",
                             Group = "UserRole",
@@ -447,7 +456,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 130,
-                            CreatedDate = new DateTime(2026, 2, 24, 10, 1, 38, 433, DateTimeKind.Unspecified).AddTicks(7667),
+                            CreatedDate = new DateTime(2026, 2, 24, 15, 30, 6, 297, DateTimeKind.Unspecified).AddTicks(581),
                             DataType = "String",
                             Description = "Teknik Destek",
                             Group = "Department",
@@ -461,7 +470,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 131,
-                            CreatedDate = new DateTime(2026, 2, 24, 10, 1, 38, 433, DateTimeKind.Unspecified).AddTicks(7670),
+                            CreatedDate = new DateTime(2026, 2, 24, 15, 30, 6, 297, DateTimeKind.Unspecified).AddTicks(582),
                             DataType = "String",
                             Description = "Satış",
                             Group = "Department",
@@ -475,7 +484,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 132,
-                            CreatedDate = new DateTime(2026, 2, 24, 10, 1, 38, 433, DateTimeKind.Unspecified).AddTicks(7673),
+                            CreatedDate = new DateTime(2026, 2, 24, 15, 30, 6, 297, DateTimeKind.Unspecified).AddTicks(583),
                             DataType = "String",
                             Description = "Muhasebe",
                             Group = "Department",
@@ -489,7 +498,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 133,
-                            CreatedDate = new DateTime(2026, 2, 24, 10, 1, 38, 433, DateTimeKind.Unspecified).AddTicks(7676),
+                            CreatedDate = new DateTime(2026, 2, 24, 15, 30, 6, 297, DateTimeKind.Unspecified).AddTicks(585),
                             DataType = "String",
                             Description = "Yönetim",
                             Group = "Department",
@@ -503,7 +512,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 134,
-                            CreatedDate = new DateTime(2026, 2, 24, 10, 1, 38, 433, DateTimeKind.Unspecified).AddTicks(7679),
+                            CreatedDate = new DateTime(2026, 2, 24, 15, 30, 6, 297, DateTimeKind.Unspecified).AddTicks(586),
                             DataType = "String",
                             Description = "Diğer",
                             Group = "Department",
@@ -517,7 +526,7 @@ namespace KobiMuhendislikTicket.Migrations
                         new
                         {
                             Id = 200,
-                            CreatedDate = new DateTime(2026, 2, 24, 10, 1, 38, 433, DateTimeKind.Unspecified).AddTicks(7681),
+                            CreatedDate = new DateTime(2026, 2, 24, 15, 30, 6, 297, DateTimeKind.Unspecified).AddTicks(587),
                             DataType = "Int",
                             Description = "Varsayılan ticket limiti",
                             Group = "General",
@@ -536,46 +545,46 @@ namespace KobiMuhendislikTicket.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("CompanyName")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<string>("LogoUrl")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PhoneNumber")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("TaxNumber")
                         .IsRequired()
                         .HasMaxLength(10)
-                        .HasColumnType("varchar(10)");
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<string>("TaxOffice")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Username")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
@@ -586,7 +595,8 @@ namespace KobiMuhendislikTicket.Migrations
                         .IsUnique();
 
                     b.HasIndex("Username")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[Username] IS NOT NULL");
 
                     b.ToTable("Tenants");
                 });
@@ -597,26 +607,26 @@ namespace KobiMuhendislikTicket.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AssignedPerson")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("AssignedStaffId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ImagePath")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<int>("Priority")
                         .HasColumnType("int");
@@ -631,14 +641,14 @@ namespace KobiMuhendislikTicket.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("TicketCode")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -657,30 +667,30 @@ namespace KobiMuhendislikTicket.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AuthorName")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsAdminReply")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<string>("Message")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("TicketId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -695,27 +705,27 @@ namespace KobiMuhendislikTicket.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ActionBy")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<int>("TicketId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -730,23 +740,23 @@ namespace KobiMuhendislikTicket.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("ImagePath")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("bit");
 
                     b.Property<int>("TicketId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
