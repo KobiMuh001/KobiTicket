@@ -62,17 +62,31 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
-    
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+    options.UseMySql(
+        connectionString,
+        ServerVersion.AutoDetect(connectionString)
+    );
+
     if (builder.Environment.IsDevelopment())
     {
         options.LogTo(Console.WriteLine, LogLevel.Information)
                .EnableSensitiveDataLogging();
     }
 });
+//builder.Services.AddDbContext<ApplicationDbContext>(options =>
+//{
+//    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+
+//    if (builder.Environment.IsDevelopment())
+//    {
+//        options.LogTo(Console.WriteLine, LogLevel.Information)
+//               .EnableSensitiveDataLogging();
+//    }
+//});
 
 #region SCOPE
 builder.Services.AddScoped<ITenantRepository, TenantRepository>();
@@ -88,19 +102,17 @@ builder.Services.AddScoped<StaffService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<ProductService>();
+builder.Services.AddScoped<ILookupService, LookupService>();
+builder.Services.AddScoped<ISystemParameterService, SystemParameterService>();
 #endregion
 
-// Lookup / SystemParameter service
-builder.Services.AddScoped<KobiMuhendislikTicket.Application.Interfaces.ILookupService, KobiMuhendislikTicket.Application.Services.LookupService>();
-// SystemParameter CRUD service
-builder.Services.AddScoped<KobiMuhendislikTicket.Application.Interfaces.ISystemParameterService, KobiMuhendislikTicket.Application.Services.SystemParameterService>();
- 
 
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ITokenBlacklistService, TokenBlacklistService>();
 
-builder.Services.AddSignalR(); 
+builder.Services.AddSignalR();
 
+#region RATE LIMITER
 builder.Services.AddRateLimiter(options =>
 {
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
@@ -134,6 +146,8 @@ builder.Services.AddRateLimiter(options =>
         }, token);
     };
 });
+#endregion
+
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -154,12 +168,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         
         options.Events = new JwtBearerEvents
         {
-            // SignalR için token desteği
             OnMessageReceived = context =>
             {
                 var accessToken = context.Request.Query["access_token"];
                 
-                // WebSocket bağlantısı için Authorization header'dan oku
                 if (string.IsNullOrEmpty(accessToken))
                 {
                     var authHeader = context.Request.Headers["Authorization"].ToString();
@@ -200,8 +212,8 @@ builder.Services.AddCors(options =>
             policy
                 .SetIsOriginAllowed(_ => true)
                 .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowCredentials();
+                .AllowAnyMethod();
+                //.AllowCredentials();
         }
         else
         {
@@ -215,8 +227,8 @@ builder.Services.AddCors(options =>
             {
                 policy.WithOrigins(allowedOrigins)
                       .AllowAnyHeader()
-                      .AllowAnyMethod()
-                      .AllowCredentials();
+                      .AllowAnyMethod();
+                   //   .AllowCredentials();
             }
             else
             {
@@ -224,7 +236,6 @@ builder.Services.AddCors(options =>
                 // Buraya sunucu adresini manuel de ekleyebilirsin
                 policy.AllowAnyHeader()
                       .AllowAnyMethod(); 
-                      // Not: Burada AllowCredentials() kullanamazsın çünkü origin belli değil.
             }
         }
     });

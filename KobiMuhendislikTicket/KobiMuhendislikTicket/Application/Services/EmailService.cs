@@ -61,7 +61,6 @@ namespace KobiMuhendislikTicket.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "E-posta gönderilirken hata oluştu: {ToEmail}, Konu: {Subject}", toEmail, subject);
-                // Hata fırlatmıyoruz çünkü e-posta gönderilemese bile uygulama çalışmaya devam etmeli
             }
         }
         
