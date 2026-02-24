@@ -50,7 +50,7 @@ export class CustomerTicketCreateComponent implements OnInit {
     private systemParameterService: SystemParameterService,
     private router: Router,
     private route: ActivatedRoute
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.getTenantId();
@@ -58,7 +58,7 @@ export class CustomerTicketCreateComponent implements OnInit {
     if (this.tenantId) {
       this.loadProducts();
     }
-    
+
     // Check if productId is passed in query params
     this.route.queryParams.subscribe(params => {
       if (params['productId']) {
@@ -110,7 +110,7 @@ export class CustomerTicketCreateComponent implements OnInit {
           }
         }
       },
-      error: () => {}
+      error: () => { }
     });
   }
 
@@ -166,14 +166,14 @@ export class CustomerTicketCreateComponent implements OnInit {
     this.ticketService.createTicket(ticketData).subscribe({
       next: (response: any) => {
         const ticketId = response.ticketId;
-        
+
         // Eğer resim seçildiyse, ticket oluşturduktan sonra yükle
         if (this.selectedFile && ticketId) {
           this.uploadImage(ticketId);
         } else {
           this.successMessage = 'Destek talebiniz başarıyla oluşturuldu!';
           this.isSubmitting = false;
-          
+
           setTimeout(() => {
             this.router.navigate(['/customer/tickets']);
           }, 1500);
@@ -187,7 +187,8 @@ export class CustomerTicketCreateComponent implements OnInit {
         const fieldMap: { [key: string]: string } = {
           title: 'Başlık',
           description: 'Açıklama',
-          productId: 'Ürün',
+          productId: 'Ürün seç',
+          ProductId: 'Ürün seç',
           priority: 'Öncelik'
         };
 
@@ -217,7 +218,7 @@ export class CustomerTicketCreateComponent implements OnInit {
 
   onFileSelected(event: any): void {
     const file: File = event.target.files[0];
-    
+
     if (file) {
       // Dosya boyutu kontrolü (5MB)
       if (file.size > 5 * 1024 * 1024) {
@@ -262,7 +263,7 @@ export class CustomerTicketCreateComponent implements OnInit {
         this.successMessage = 'Destek talebiniz ve resim başarıyla yüklendi!';
         this.isSubmitting = false;
         this.clearFile();
-        
+
         setTimeout(() => {
           this.router.navigate(['/customer/tickets']);
         }, 1500);
@@ -271,7 +272,7 @@ export class CustomerTicketCreateComponent implements OnInit {
         // Ticket oluşturuldu fakat resim yüklenemedi
         this.successMessage = 'Destek talebiniz oluşturuldu ancak resim yüklenemedi.';
         this.isSubmitting = false;
-        
+
         setTimeout(() => {
           this.router.navigate(['/customer/tickets']);
         }, 1500);
